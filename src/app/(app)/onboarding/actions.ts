@@ -1,0 +1,126 @@
+"use server";
+
+import { redirect } from "next/navigation";
+import { ensureUserProfile, getPassionCatalog, saveUserPassions } from "@/lib/auth";
+import { createServerSupabaseClient } from "@/lib/supabase";
+
+function redirectOnboardingError(message: string): never {
+  const params = new URLSearchParams({ error: message });
+  redirect(`/onboarding?${params.toString()}`);
+}
+
+function errorDetailFromUnknown(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === "object" && error !== null) {
+    const maybeCode = "code" in error ? String(error.code) : null;
+    const maybeMessage = "message" in error ? String(error.message) : null;
+    const maybeDetails = "details" in error ? String(error.details) : null;
+    const maybeHint = "hint" in error ? String(error.hint) : null;
+
+    return [maybeCode, maybeMessage, maybeDetails, maybeHint]
+      .filter((value): value is string => Boolean(value))
+      .join(" | ");
+  }
+
+  return "Errore sconosciuto";
+}
+
+function toUserSafeErrorMessage(error: unknown): string {
+  const detail = errorDetailFromUnknown(error).slice(0, 180);
+  if (!detail) {
+    return "Salvataggio non riuscito. Riprova.";
+  }
+
+  return `Salvataggio non riuscito. Dettaglio: ${detail}`;
+}
+
+export async function saveOnboardingPassionsAction(formData: FormData): Promise<never> {
+  const selectedSlugs = Array.from(
+    new Set(
+      formData
+        .getAll("passionSlugs")
+        .filter((value): value is string => typeof value === "string")
+        .map((value) => value.trim())
+        .filter(Boolean),
+    ),
+  );
+
+  if (selectedSlugs.length === 0) {
+    redirectOnboardingError("Seleziona almeno una passione per continuare.");
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    redirect("/login");
+  }
+
+  try {
+    const ensuredProfile = await ensureUserProfile(supabase, user);
+    if (!ensuredProfile) {
+      throw new Error("Impossibile verificare il profilo pubblico utente (public.users).");
+    }
+  } catch (error) {
+    console.error("[onboarding] ensureUserProfile failed", {
+      userId: user.id,
+      detail: errorDetailFromUnknown(error),
+      rawError: error,
+    });
+    redirectOnboardingError(
+      `Profilo utente non pronto. Dettaglio: ${errorDetailFromUnknown(error).slice(0, 160)}`,
+    );
+  }
+
+  const { passions } = await getPassionCatalog(supabase);
+  const allowedSlugs = new Set(passions.map((passion) => passion.slug));
+  const validSelection = selectedSlugs.filter((slug) => allowedSlugs.has(slug));
+
+  if (validSelection.length !== selectedSlugs.length) {
+    const invalidSlugs = selectedSlugs.filter((slug) => !allowedSlugs.has(slug));
+    redirectOnboardingError(`Passioni non valide: ${invalidSlugs.join(", ")}`);
+  }
+
+  const { data: existingPassions, error: existingPassionsError } = await supabase
+    .from("passions")
+    .select("slug")
+    .in("slug", validSelection);
+
+  if (existingPassionsError) {
+    console.error("[onboarding] verify passions failed", {
+      userId: user.id,
+      code: existingPassionsError.code,
+      message: existingPassionsError.message,
+      details: existingPassionsError.details,
+      hint: existingPassionsError.hint,
+    });
+    redirectOnboardingError(`Verifica passioni fallita: ${existingPassionsError.message}`);
+  }
+
+  const existingSet = new Set((existingPassions ?? []).map((row) => row.slug));
+  const missingInDatabase = validSelection.filter((slug) => !existingSet.has(slug));
+  if (missingInDatabase.length > 0) {
+    redirectOnboardingError(
+      `Le passioni selezionate non esistono nel database: ${missingInDatabase.join(", ")}`,
+    );
+  }
+
+  try {
+    await saveUserPassions(supabase, user, validSelection);
+  } catch (error) {
+    console.error("[onboarding] saveUserPassions failed", {
+      userId: user.id,
+      detail: errorDetailFromUnknown(error),
+      rawError: error,
+    });
+    redirectOnboardingError(toUserSafeErrorMessage(error));
+  }
+
+  redirect("/feed");
+}
