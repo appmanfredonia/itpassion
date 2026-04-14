@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { saveOnboardingPassionsAction } from "@/app/(app)/onboarding/actions";
+import { StateCard } from "@/components/state-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,8 +24,18 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
     redirect("/login");
   }
 
-  const { passions, source } = await getPassionCatalog(supabase);
-  const selectedPassions = await getUserSelectedPassionSlugs(supabase, user);
+  let passions: Awaited<ReturnType<typeof getPassionCatalog>>["passions"] = [];
+  let catalogErrorMessage: string | null = null;
+  try {
+    ({ passions } = await getPassionCatalog(supabase));
+  } catch (error) {
+    console.error("[onboarding] load passions failed", error);
+    catalogErrorMessage = "Impossibile caricare le passioni dal database. Riprova tra poco.";
+  }
+
+  const selectedPassions = catalogErrorMessage
+    ? []
+    : await getUserSelectedPassionSlugs(supabase, user);
   const selectedSet = new Set(selectedPassions);
 
   return (
@@ -44,19 +55,21 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          {source === "mock" && (
-            <p className="rounded-md border border-border/70 bg-secondary/30 p-2 text-xs text-muted-foreground">
-              Catalogo passioni in modalita mock temporanea: collega la migration/seed Supabase per dati persistenti.
-            </p>
-          )}
           {params.error && (
             <p className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-sm text-destructive">
               {params.error}
             </p>
           )}
-          {passions.length === 0 ? (
+          {catalogErrorMessage ? (
+            <StateCard
+              variant="error"
+              title="Catalogo passioni non disponibile"
+              description={catalogErrorMessage}
+            />
+          ) : passions.length === 0 ? (
             <p className="rounded-md border border-border/70 bg-background/70 p-4 text-sm text-muted-foreground">
-              Nessuna passione disponibile al momento.
+              Nessuna passione disponibile nel database. Aggiungi almeno una passione per completare
+              l&apos;onboarding.
             </p>
           ) : (
             <form className="flex flex-col gap-4" action={saveOnboardingPassionsAction}>

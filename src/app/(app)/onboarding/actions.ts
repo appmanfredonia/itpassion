@@ -78,7 +78,24 @@ export async function saveOnboardingPassionsAction(formData: FormData): Promise<
     );
   }
 
-  const { passions } = await getPassionCatalog(supabase);
+  let passions: Awaited<ReturnType<typeof getPassionCatalog>>["passions"] = [];
+  try {
+    ({ passions } = await getPassionCatalog(supabase));
+  } catch (error) {
+    console.error("[onboarding] load passions catalog failed", {
+      userId: user.id,
+      detail: errorDetailFromUnknown(error),
+      rawError: error,
+    });
+    redirectOnboardingError("Catalogo passioni non disponibile. Riprova tra poco.");
+  }
+
+  if (passions.length === 0) {
+    redirectOnboardingError(
+      "Nessuna passione disponibile nel database. Contatta il supporto o riprova piu tardi.",
+    );
+  }
+
   const allowedSlugs = new Set(passions.map((passion) => passion.slug));
   const validSelection = selectedSlugs.filter((slug) => allowedSlugs.has(slug));
 

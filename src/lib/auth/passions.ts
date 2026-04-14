@@ -20,17 +20,6 @@ const PROTECTED_ROUTE_PREFIXES = [
   "/settings",
 ] as const;
 
-export const FALLBACK_PASSIONS: PassionOption[] = [
-  { slug: "fotografia", name: "Fotografia" },
-  { slug: "viaggi", name: "Viaggi" },
-  { slug: "design", name: "Design" },
-  { slug: "cucina", name: "Cucina" },
-  { slug: "tecnologia", name: "Tecnologia" },
-  { slug: "cinema", name: "Cinema" },
-  { slug: "fitness", name: "Fitness" },
-  { slug: "musica", name: "Musica" },
-];
-
 function isRelationMissingError(error: PostgrestError | null): boolean {
   return error?.code === "42P01";
 }
@@ -51,23 +40,15 @@ export function getAuthenticatedRedirectPath(hasPassions: boolean): "/onboarding
 
 export async function getPassionCatalog(
   supabase: SupabaseClient<Database>,
-): Promise<{ passions: PassionOption[]; source: "database" | "mock" }> {
+): Promise<{ passions: PassionOption[] }> {
   const { data, error } = await supabase.from("passions").select("slug, name").order("name");
 
-  if (error && !isRelationMissingError(error)) {
+  if (error) {
     throw error;
   }
 
-  if (error || !data || data.length === 0) {
-    return {
-      passions: FALLBACK_PASSIONS,
-      source: "mock",
-    };
-  }
-
   return {
-    passions: data,
-    source: "database",
+    passions: data ?? [],
   };
 }
 

@@ -26,6 +26,10 @@ export type BlockVisibilitySets = {
   blockedMeIds: string[];
 };
 
+function unique(values: string[]): string[] {
+  return Array.from(new Set(values));
+}
+
 function isMessagingRule(value: string): value is "everyone" | "followers" | "nobody" {
   return value === "everyone" || value === "followers" || value === "nobody";
 }
@@ -204,6 +208,42 @@ export async function getBlockVisibilitySets(
     blockedByMeIds: (blockedByMeRows ?? []).map((row) => row.blocked_id),
     blockedMeIds: (blockedMeRows ?? []).map((row) => row.blocker_id),
   };
+}
+
+export async function getHiddenPrivateProfileIds(
+  supabase: SupabaseClient<Database>,
+  viewerUserId: string,
+): Promise<string[]> {
+  const [{ data: privateRows, error: privateError }, { data: followedRows, error: followedError }] =
+    await Promise.all([
+      supabase
+        .from("privacy_settings")
+        .select("user_id")
+        .eq("is_profile_private", true),
+      supabase
+        .from("follows")
+        .select("following_id")
+        .eq("follower_id", viewerUserId),
+    ]);
+
+  if (privateError) {
+    throw privateError;
+  }
+  if (followedError) {
+    throw followedError;
+  }
+
+  const followedSet = new Set((followedRows ?? []).map((row) => row.following_id));
+  return unique(
+    (privateRows ?? [])
+      .map((row) => row.user_id)
+      .filter((privateUserId) => privateUserId !== viewerUserId && !followedSet.has(privateUserId)),
+  );
+}
+
+export function toSupabaseInFilter(values: string[]): string {
+  const escaped = unique(values).map((value) => `"${value.replace(/"/g, '\\"')}"`);
+  return `(${escaped.join(",")})`;
 }
 
 export async function canUserMessageTarget(

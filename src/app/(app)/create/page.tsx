@@ -27,7 +27,14 @@ export default async function CreatePage({ searchParams }: CreatePageProps) {
     redirect("/login");
   }
 
-  const { passions, source } = await getPassionCatalog(supabase);
+  let passions: Awaited<ReturnType<typeof getPassionCatalog>>["passions"] = [];
+  let catalogErrorMessage: string | null = null;
+  try {
+    ({ passions } = await getPassionCatalog(supabase));
+  } catch (error) {
+    console.error("[create] load passions failed", error);
+    catalogErrorMessage = "Impossibile leggere il catalogo passioni dal database.";
+  }
 
   return (
     <section className="mx-auto flex w-full max-w-3xl flex-col gap-6">
@@ -44,17 +51,18 @@ export default async function CreatePage({ searchParams }: CreatePageProps) {
           <CardDescription>Pubblica contenuti text, image o video con passione associata.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          {source === "mock" && (
-            <p className="rounded-md border border-border/70 bg-secondary/30 p-2 text-xs text-muted-foreground">
-              Catalogo passioni in fallback mock temporaneo.
-            </p>
-          )}
           {params.error && (
             <p className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-sm text-destructive">
               {params.error}
             </p>
           )}
-          {passions.length === 0 ? (
+          {catalogErrorMessage ? (
+            <StateCard
+              variant="error"
+              title="Catalogo passioni non disponibile"
+              description={catalogErrorMessage}
+            />
+          ) : passions.length === 0 ? (
             <StateCard
               variant="empty"
               title="Nessuna passione disponibile"

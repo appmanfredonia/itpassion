@@ -1,5 +1,9 @@
 import type { SupabaseClient, User } from "@supabase/supabase-js";
-import { getBlockVisibilitySets } from "@/lib/privacy";
+import {
+  getBlockVisibilitySets,
+  getHiddenPrivateProfileIds,
+  toSupabaseInFilter,
+} from "@/lib/privacy";
 import type { Database } from "@/types/database";
 
 export type FeedTab = "per-te" | "seguiti";
@@ -81,19 +85,36 @@ function normalizeSearchTerm(rawTerm: string): string {
 function createHiddenUserSet(
   blockedByMeIds: string[],
   blockedMeIds: string[],
+  hiddenPrivateProfileIds: string[],
 ): Set<string> {
-  return new Set([...blockedByMeIds, ...blockedMeIds]);
+  return new Set([...blockedByMeIds, ...blockedMeIds, ...hiddenPrivateProfileIds]);
 }
 
-function excludeBlockedPostRows(
+function excludeHiddenPostRows(
   postRows: PostRow[],
-  blockedUserIds: Set<string>,
+  hiddenUserIds: Set<string>,
 ): PostRow[] {
-  if (blockedUserIds.size === 0) {
+  if (hiddenUserIds.size === 0) {
     return postRows;
   }
 
-  return postRows.filter((row) => !blockedUserIds.has(row.user_id));
+  return postRows.filter((row) => !hiddenUserIds.has(row.user_id));
+}
+
+async function getHiddenUserSetForViewer(
+  supabase: SupabaseClient<Database>,
+  viewerUserId: string,
+): Promise<Set<string>> {
+  const [blockVisibility, hiddenPrivateProfileIds] = await Promise.all([
+    getBlockVisibilitySets(supabase, viewerUserId),
+    getHiddenPrivateProfileIds(supabase, viewerUserId),
+  ]);
+
+  return createHiddenUserSet(
+    blockVisibility.blockedByMeIds,
+    blockVisibility.blockedMeIds,
+    hiddenPrivateProfileIds,
+  );
 }
 
 async function fetchUsersByIds(
@@ -120,7 +141,7 @@ async function hydratePosts(
   supabase: SupabaseClient<Database>,
   viewerUserId: string,
   postRows: PostRow[],
-  blockedUserIds: Set<string> = new Set(),
+  hiddenUserIds: Set<string> = new Set(),
 ): Promise<FeedPost[]> {
   if (postRows.length === 0) {
     return [];
@@ -178,7 +199,7 @@ async function hydratePosts(
   }
 
   const commentRowsTyped: CommentRow[] = (commentsRows ?? []).filter(
-    (row) => !blockedUserIds.has(row.user_id),
+    (row) => !hiddenUserIds.has(row.user_id),
   );
   const commentAuthorIds = unique(commentRowsTyped.map((row) => row.user_id));
   const usersRows = await fetchUsersByIds(supabase, unique([...authorIds, ...commentAuthorIds]));
@@ -264,17 +285,18 @@ export async function getFeedPosts(
   user: User,
   tab: FeedTab,
 ): Promise<FeedQueryResult> {
-  const blockVisibility = await getBlockVisibilitySets(supabase, user.id);
-  const hiddenUserIds = createHiddenUserSet(
-    blockVisibility.blockedByMeIds,
-    blockVisibility.blockedMeIds,
-  );
+  const hiddenUserIds = await getHiddenUserSetForViewer(supabase, user.id);
+  const hiddenUserIdsList = Array.from(hiddenUserIds);
 
   let query = supabase
     .from("posts")
     .select("id, user_id, passion_slug, content_type, text_content, created_at, updated_at")
     .order("created_at", { ascending: false })
     .limit(30);
+
+  if (hiddenUserIdsList.length > 0) {
+    query = query.not("user_id", "in", toSupabaseInFilter(hiddenUserIdsList));
+  }
 
   if (tab === "seguiti") {
     const { data: followedRows, error: followsError } = await supabase
@@ -306,7 +328,7 @@ export async function getFeedPosts(
   const posts = await hydratePosts(
     supabase,
     user.id,
-    excludeBlockedPostRows(postRows ?? [], hiddenUserIds),
+    excludeHiddenPostRows(postRows ?? [], hiddenUserIds),
     hiddenUserIds,
   );
   return { posts, warning: null };
@@ -317,11 +339,7 @@ export async function getPostsByAuthor(
   viewerUserId: string,
   authorUserId: string,
 ): Promise<FeedPost[]> {
-  const blockVisibility = await getBlockVisibilitySets(supabase, viewerUserId);
-  const hiddenUserIds = createHiddenUserSet(
-    blockVisibility.blockedByMeIds,
-    blockVisibility.blockedMeIds,
-  );
+  const hiddenUserIds = await getHiddenUserSetForViewer(supabase, viewerUserId);
   if (hiddenUserIds.has(authorUserId)) {
     return [];
   }
@@ -340,7 +358,7 @@ export async function getPostsByAuthor(
   return hydratePosts(
     supabase,
     viewerUserId,
-    excludeBlockedPostRows(postRows ?? [], hiddenUserIds),
+    excludeHiddenPostRows(postRows ?? [], hiddenUserIds),
     hiddenUserIds,
   );
 }
@@ -349,11 +367,8 @@ export async function getSavedPosts(
   supabase: SupabaseClient<Database>,
   viewerUserId: string,
 ): Promise<FeedPost[]> {
-  const blockVisibility = await getBlockVisibilitySets(supabase, viewerUserId);
-  const hiddenUserIds = createHiddenUserSet(
-    blockVisibility.blockedByMeIds,
-    blockVisibility.blockedMeIds,
-  );
+  const hiddenUserIds = await getHiddenUserSetForViewer(supabase, viewerUserId);
+  const hiddenUserIdsList = Array.from(hiddenUserIds);
 
   const { data: savedRows, error: savedError } = await supabase
     .from("saved_posts")
@@ -372,10 +387,16 @@ export async function getSavedPosts(
   }
 
   const postIds = saved.map((row) => row.post_id);
-  const { data: postRows, error: postsError } = await supabase
+  let postsQuery = supabase
     .from("posts")
     .select("id, user_id, passion_slug, content_type, text_content, created_at, updated_at")
     .in("id", postIds);
+
+  if (hiddenUserIdsList.length > 0) {
+    postsQuery = postsQuery.not("user_id", "in", toSupabaseInFilter(hiddenUserIdsList));
+  }
+
+  const { data: postRows, error: postsError } = await postsQuery;
 
   if (postsError) {
     throw postsError;
@@ -384,7 +405,7 @@ export async function getSavedPosts(
   const hydratedPosts = await hydratePosts(
     supabase,
     viewerUserId,
-    excludeBlockedPostRows(postRows ?? [], hiddenUserIds),
+    excludeHiddenPostRows(postRows ?? [], hiddenUserIds),
     hiddenUserIds,
   );
   const savedTimeByPostId = new Map(saved.map((row) => [row.post_id, row.created_at]));
@@ -399,17 +420,20 @@ export async function getPostById(
   viewerUserId: string,
   postId: string,
 ): Promise<FeedPost | null> {
-  const blockVisibility = await getBlockVisibilitySets(supabase, viewerUserId);
-  const hiddenUserIds = createHiddenUserSet(
-    blockVisibility.blockedByMeIds,
-    blockVisibility.blockedMeIds,
-  );
+  const hiddenUserIds = await getHiddenUserSetForViewer(supabase, viewerUserId);
+  const hiddenUserIdsList = Array.from(hiddenUserIds);
 
-  const { data: postRows, error } = await supabase
+  let postQuery = supabase
     .from("posts")
     .select("id, user_id, passion_slug, content_type, text_content, created_at, updated_at")
     .eq("id", postId)
     .limit(1);
+
+  if (hiddenUserIdsList.length > 0) {
+    postQuery = postQuery.not("user_id", "in", toSupabaseInFilter(hiddenUserIdsList));
+  }
+
+  const { data: postRows, error } = await postQuery;
 
   if (error) {
     throw error;
@@ -418,7 +442,7 @@ export async function getPostById(
   const hydrated = await hydratePosts(
     supabase,
     viewerUserId,
-    excludeBlockedPostRows(postRows ?? [], hiddenUserIds),
+    excludeHiddenPostRows(postRows ?? [], hiddenUserIds),
     hiddenUserIds,
   );
   return hydrated[0] ?? null;
@@ -429,17 +453,20 @@ export async function getRecentPosts(
   viewerUserId: string,
   limit = 24,
 ): Promise<FeedPost[]> {
-  const blockVisibility = await getBlockVisibilitySets(supabase, viewerUserId);
-  const hiddenUserIds = createHiddenUserSet(
-    blockVisibility.blockedByMeIds,
-    blockVisibility.blockedMeIds,
-  );
+  const hiddenUserIds = await getHiddenUserSetForViewer(supabase, viewerUserId);
+  const hiddenUserIdsList = Array.from(hiddenUserIds);
 
-  const { data: postRows, error } = await supabase
+  let postsQuery = supabase
     .from("posts")
     .select("id, user_id, passion_slug, content_type, text_content, created_at, updated_at")
     .order("created_at", { ascending: false })
     .limit(limit);
+
+  if (hiddenUserIdsList.length > 0) {
+    postsQuery = postsQuery.not("user_id", "in", toSupabaseInFilter(hiddenUserIdsList));
+  }
+
+  const { data: postRows, error } = await postsQuery;
 
   if (error) {
     throw error;
@@ -448,7 +475,7 @@ export async function getRecentPosts(
   return hydratePosts(
     supabase,
     viewerUserId,
-    excludeBlockedPostRows(postRows ?? [], hiddenUserIds),
+    excludeHiddenPostRows(postRows ?? [], hiddenUserIds),
     hiddenUserIds,
   );
 }
@@ -459,18 +486,21 @@ export async function getRecentPostsByPassion(
   passionSlug: string,
   limit = 24,
 ): Promise<FeedPost[]> {
-  const blockVisibility = await getBlockVisibilitySets(supabase, viewerUserId);
-  const hiddenUserIds = createHiddenUserSet(
-    blockVisibility.blockedByMeIds,
-    blockVisibility.blockedMeIds,
-  );
+  const hiddenUserIds = await getHiddenUserSetForViewer(supabase, viewerUserId);
+  const hiddenUserIdsList = Array.from(hiddenUserIds);
 
-  const { data: postRows, error } = await supabase
+  let postsQuery = supabase
     .from("posts")
     .select("id, user_id, passion_slug, content_type, text_content, created_at, updated_at")
     .eq("passion_slug", passionSlug)
     .order("created_at", { ascending: false })
     .limit(limit);
+
+  if (hiddenUserIdsList.length > 0) {
+    postsQuery = postsQuery.not("user_id", "in", toSupabaseInFilter(hiddenUserIdsList));
+  }
+
+  const { data: postRows, error } = await postsQuery;
 
   if (error) {
     throw error;
@@ -479,7 +509,7 @@ export async function getRecentPostsByPassion(
   return hydratePosts(
     supabase,
     viewerUserId,
-    excludeBlockedPostRows(postRows ?? [], hiddenUserIds),
+    excludeHiddenPostRows(postRows ?? [], hiddenUserIds),
     hiddenUserIds,
   );
 }
@@ -490,11 +520,8 @@ export async function searchPosts(
   rawTerm: string,
   limit = 20,
 ): Promise<FeedPost[]> {
-  const blockVisibility = await getBlockVisibilitySets(supabase, viewerUserId);
-  const hiddenUserIds = createHiddenUserSet(
-    blockVisibility.blockedByMeIds,
-    blockVisibility.blockedMeIds,
-  );
+  const hiddenUserIds = await getHiddenUserSetForViewer(supabase, viewerUserId);
+  const hiddenUserIdsList = Array.from(hiddenUserIds);
 
   const term = normalizeSearchTerm(rawTerm);
   if (term.length < 2) {
@@ -502,12 +529,18 @@ export async function searchPosts(
   }
 
   const pattern = `%${term}%`;
-  const { data: postRows, error } = await supabase
+  let postsQuery = supabase
     .from("posts")
     .select("id, user_id, passion_slug, content_type, text_content, created_at, updated_at")
     .or(`text_content.ilike.${pattern},passion_slug.ilike.${pattern}`)
     .order("created_at", { ascending: false })
     .limit(limit);
+
+  if (hiddenUserIdsList.length > 0) {
+    postsQuery = postsQuery.not("user_id", "in", toSupabaseInFilter(hiddenUserIdsList));
+  }
+
+  const { data: postRows, error } = await postsQuery;
 
   if (error) {
     throw error;
@@ -516,7 +549,7 @@ export async function searchPosts(
   const hydrated = await hydratePosts(
     supabase,
     viewerUserId,
-    excludeBlockedPostRows(postRows ?? [], hiddenUserIds),
+    excludeHiddenPostRows(postRows ?? [], hiddenUserIds),
     hiddenUserIds,
   );
   return dedupePostsById(hydrated);

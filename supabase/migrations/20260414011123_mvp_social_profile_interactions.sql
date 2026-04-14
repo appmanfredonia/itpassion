@@ -22,7 +22,7 @@ create table if not exists public.follows (
 );
 
 create table if not exists public.likes (
-  post_id uuid not null references public.posts(id) on delete cascade,
+  post_id uuid not null,
   user_id uuid not null references public.users(id) on delete cascade,
   created_at timestamptz not null default timezone('utc', now()),
   primary key (post_id, user_id)
@@ -30,7 +30,7 @@ create table if not exists public.likes (
 
 create table if not exists public.comments (
   id uuid primary key default gen_random_uuid(),
-  post_id uuid not null references public.posts(id) on delete cascade,
+  post_id uuid not null,
   user_id uuid not null references public.users(id) on delete cascade,
   content text not null,
   created_at timestamptz not null default timezone('utc', now()),
@@ -39,7 +39,7 @@ create table if not exists public.comments (
 );
 
 create table if not exists public.saved_posts (
-  post_id uuid not null references public.posts(id) on delete cascade,
+  post_id uuid not null,
   user_id uuid not null references public.users(id) on delete cascade,
   created_at timestamptz not null default timezone('utc', now()),
   primary key (post_id, user_id)

@@ -5,6 +5,7 @@ import {
   toggleLikeAction,
   toggleSavePostAction,
 } from "@/app/(app)/feed/actions";
+import { PostMediaGallery } from "@/components/feed/post-media-gallery";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,28 +65,7 @@ export function PostCard({ post, returnPath }: PostCardProps) {
       <CardContent className="flex flex-col gap-4">
         {post.textContent && <p className="text-sm text-muted-foreground">{post.textContent}</p>}
 
-        {post.media.length > 0 && (
-          <div className="flex flex-col gap-2">
-            {post.media.map((mediaItem) => (
-              <div
-                key={`${post.id}-${mediaItem.url}`}
-                className="rounded-lg border border-border/70 bg-card/70 p-3"
-              >
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {mediaItem.kind}
-                </p>
-                <a
-                  href={mediaItem.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="truncate text-sm text-primary hover:underline"
-                >
-                  {mediaItem.url}
-                </a>
-              </div>
-            ))}
-          </div>
-        )}
+        <PostMediaGallery contentType={post.contentType} media={post.media} />
 
         <div className="flex flex-wrap items-center gap-2">
           <Link href={`/feed?post=${post.id}`} className="text-xs text-primary hover:underline">

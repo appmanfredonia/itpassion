@@ -20,6 +20,54 @@ create table if not exists public.post_media (
   created_at timestamptz not null default timezone('utc', now())
 );
 
+-- FK verso posts aggiunte qui per rispettare l'ordine di creazione su db pulito.
+do
+$$
+begin
+  if to_regclass('public.likes') is not null
+    and not exists (
+      select 1
+      from pg_constraint
+      where conname = 'likes_post_id_fkey'
+        and conrelid = 'public.likes'::regclass
+    ) then
+    alter table public.likes
+      add constraint likes_post_id_fkey
+      foreign key (post_id)
+      references public.posts(id)
+      on delete cascade;
+  end if;
+
+  if to_regclass('public.comments') is not null
+    and not exists (
+      select 1
+      from pg_constraint
+      where conname = 'comments_post_id_fkey'
+        and conrelid = 'public.comments'::regclass
+    ) then
+    alter table public.comments
+      add constraint comments_post_id_fkey
+      foreign key (post_id)
+      references public.posts(id)
+      on delete cascade;
+  end if;
+
+  if to_regclass('public.saved_posts') is not null
+    and not exists (
+      select 1
+      from pg_constraint
+      where conname = 'saved_posts_post_id_fkey'
+        and conrelid = 'public.saved_posts'::regclass
+    ) then
+    alter table public.saved_posts
+      add constraint saved_posts_post_id_fkey
+      foreign key (post_id)
+      references public.posts(id)
+      on delete cascade;
+  end if;
+end
+$$;
+
 create index if not exists posts_created_at_idx on public.posts(created_at desc);
 create index if not exists posts_user_id_created_at_idx on public.posts(user_id, created_at desc);
 create index if not exists posts_passion_slug_created_at_idx on public.posts(passion_slug, created_at desc);
@@ -104,4 +152,3 @@ begin
   end if;
 end
 $$;
-

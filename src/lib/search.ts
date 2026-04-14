@@ -1,6 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { searchPosts, type FeedPost } from "@/lib/feed";
-import { getBlockVisibilitySets } from "@/lib/privacy";
+import {
+  getBlockVisibilitySets,
+  getHiddenPrivateProfileIds,
+  toSupabaseInFilter,
+} from "@/lib/privacy";
 import type { Database } from "@/types/database";
 
 export type SearchUserResult = {
@@ -47,17 +51,30 @@ export async function searchDiscoveryData(
   }
 
   const ilikePattern = `%${term}%`;
-  const blockVisibility = await getBlockVisibilitySets(supabase, viewerUserId);
+  const [blockVisibility, hiddenPrivateProfileIds] = await Promise.all([
+    getBlockVisibilitySets(supabase, viewerUserId),
+    getHiddenPrivateProfileIds(supabase, viewerUserId),
+  ]);
   const blockedByMeIds = new Set(blockVisibility.blockedByMeIds);
   const blockedMeIds = new Set(blockVisibility.blockedMeIds);
+  const hiddenPrivateIds = new Set(hiddenPrivateProfileIds);
+  const userResultExclusions = Array.from(
+    new Set([...blockVisibility.blockedMeIds, ...hiddenPrivateProfileIds]),
+  );
+
+  let usersQuery = supabase
+    .from("users")
+    .select("id, username, display_name, bio, avatar_url")
+    .or(`username.ilike.${ilikePattern},display_name.ilike.${ilikePattern}`)
+    .order("username", { ascending: true })
+    .limit(12);
+
+  if (userResultExclusions.length > 0) {
+    usersQuery = usersQuery.not("id", "in", toSupabaseInFilter(userResultExclusions));
+  }
 
   const [usersResponse, passionsResponse, posts] = await Promise.all([
-    supabase
-      .from("users")
-      .select("id, username, display_name, bio, avatar_url")
-      .or(`username.ilike.${ilikePattern},display_name.ilike.${ilikePattern}`)
-      .order("username", { ascending: true })
-      .limit(12),
+    usersQuery,
     supabase
       .from("passions")
       .select("slug, name")
@@ -75,7 +92,7 @@ export async function searchDiscoveryData(
   }
 
   const users: SearchUserResult[] = (usersResponse.data ?? [])
-    .filter((row) => !blockedMeIds.has(row.id))
+    .filter((row) => !blockedMeIds.has(row.id) && !hiddenPrivateIds.has(row.id))
     .map((row) => ({
       id: row.id,
       username: row.username,

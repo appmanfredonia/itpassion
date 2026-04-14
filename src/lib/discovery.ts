@@ -1,6 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getRecentPosts, getRecentPostsByPassion, type FeedPost } from "@/lib/feed";
-import { getBlockVisibilitySets } from "@/lib/privacy";
+import {
+  getBlockVisibilitySets,
+  getHiddenPrivateProfileIds,
+  toSupabaseInFilter,
+} from "@/lib/privacy";
 import type { Database } from "@/types/database";
 
 export type ExplorePassion = {
@@ -30,10 +34,18 @@ export async function getExploreData(
   viewerUserId: string,
   selectedPassionSlugRaw: string | undefined,
 ): Promise<ExploreData> {
-  const blockVisibility = await getBlockVisibilitySets(supabase, viewerUserId);
+  const [blockVisibility, hiddenPrivateProfileIds] = await Promise.all([
+    getBlockVisibilitySets(supabase, viewerUserId),
+    getHiddenPrivateProfileIds(supabase, viewerUserId),
+  ]);
   const hiddenUserIds = new Set(
-    [...blockVisibility.blockedByMeIds, ...blockVisibility.blockedMeIds],
+    [
+      ...blockVisibility.blockedByMeIds,
+      ...blockVisibility.blockedMeIds,
+      ...hiddenPrivateProfileIds,
+    ],
   );
+  const hiddenUserIdsList = Array.from(hiddenUserIds);
 
   const { data: passionsRows, error: passionsError } = await supabase
     .from("passions")
@@ -55,11 +67,21 @@ export async function getExploreData(
     ? await getRecentPostsByPassion(supabase, viewerUserId, selectedPassionSlug, 24)
     : await getRecentPosts(supabase, viewerUserId, 24);
 
-  const { data: recentPassionRows, error: recentPassionError } = await supabase
+  let recentPassionsQuery = supabase
     .from("posts")
     .select("passion_slug, user_id")
     .order("created_at", { ascending: false })
     .limit(300);
+
+  if (hiddenUserIdsList.length > 0) {
+    recentPassionsQuery = recentPassionsQuery.not(
+      "user_id",
+      "in",
+      toSupabaseInFilter(hiddenUserIdsList),
+    );
+  }
+
+  const { data: recentPassionRows, error: recentPassionError } = await recentPassionsQuery;
 
   if (recentPassionError) {
     throw recentPassionError;
