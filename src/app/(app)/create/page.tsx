@@ -61,7 +61,7 @@ export default async function CreatePage({ searchParams }: CreatePageProps) {
               description="Aggiungi passioni nel database prima di pubblicare nuovi contenuti."
             />
           ) : (
-            <form className="flex flex-col gap-4" action={createPostAction}>
+            <form className="flex flex-col gap-4" action={createPostAction} encType="multipart/form-data">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="post-content-type">Tipo contenuto</Label>
                 <select
@@ -104,14 +104,11 @@ export default async function CreatePage({ searchParams }: CreatePageProps) {
               </div>
 
               <div className="flex flex-col gap-2">
-                <Label htmlFor="post-media-url">URL media (image/video)</Label>
-                <Input
-                  id="post-media-url"
-                  name="mediaUrl"
-                  type="url"
-                  placeholder="https://..."
-                  autoComplete="off"
-                />
+                <Label htmlFor="post-media-file">File media (image/video)</Label>
+                <Input id="post-media-file" name="mediaFile" type="file" accept="image/*,video/*" />
+                <p className="text-xs text-muted-foreground">
+                  Per Image carica un file immagine, per Video carica un file video (max 40MB).
+                </p>
               </div>
 
               <Button type="submit">Pubblica e torna al feed</Button>

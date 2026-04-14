@@ -5,9 +5,48 @@ import { ensureUserProfile, getPassionCatalog } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase";
 
 type ContentType = "text" | "image" | "video";
+const POST_MEDIA_BUCKET = "post-media";
+const MAX_MEDIA_FILE_SIZE_BYTES = 40 * 1024 * 1024;
 
 function isValidContentType(value: string): value is ContentType {
   return value === "text" || value === "image" || value === "video";
+}
+
+function toUploadedFile(value: FormDataEntryValue | null): File | null {
+  if (!(value instanceof File) || value.size === 0) {
+    return null;
+  }
+
+  return value;
+}
+
+function isCompatibleMediaFile(contentType: ContentType, file: File): boolean {
+  if (contentType === "image") {
+    return file.type.startsWith("image/");
+  }
+
+  if (contentType === "video") {
+    return file.type.startsWith("video/");
+  }
+
+  return false;
+}
+
+function buildSafeFileName(fileName: string): string {
+  const sanitized = fileName
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+
+  return sanitized.length > 0 ? sanitized : "media-file";
+}
+
+function buildMediaStoragePath(userId: string, postId: string, originalFileName: string): string {
+  const dayKey = new Date().toISOString().slice(0, 10);
+  const safeFileName = buildSafeFileName(originalFileName);
+  return `${userId}/${dayKey}/${postId}-${crypto.randomUUID()}-${safeFileName}`;
 }
 
 function redirectCreateError(message: string): never {
@@ -34,7 +73,7 @@ export async function createPostAction(formData: FormData): Promise<never> {
 
   const contentTypeRaw = formData.get("contentType");
   const textContentRaw = formData.get("textContent");
-  const mediaUrlRaw = formData.get("mediaUrl");
+  const mediaFileRaw = formData.get("mediaFile");
   const passionSlugRaw = formData.get("passionSlug");
 
   if (
@@ -47,14 +86,28 @@ export async function createPostAction(formData: FormData): Promise<never> {
   }
 
   const textContent = typeof textContentRaw === "string" ? textContentRaw.trim() : "";
-  const mediaUrl = typeof mediaUrlRaw === "string" ? mediaUrlRaw.trim() : "";
+  const mediaFile = toUploadedFile(mediaFileRaw);
 
   if (contentTypeRaw === "text" && textContent.length === 0) {
     redirectCreateError("Per un post testuale inserisci un contenuto.");
   }
 
-  if ((contentTypeRaw === "image" || contentTypeRaw === "video") && mediaUrl.length === 0) {
-    redirectCreateError("Per contenuti image/video inserisci un URL media valido.");
+  if (contentTypeRaw === "image" || contentTypeRaw === "video") {
+    if (!mediaFile) {
+      redirectCreateError("Per contenuti image/video carica un file media.");
+    }
+
+    if (mediaFile.size > MAX_MEDIA_FILE_SIZE_BYTES) {
+      redirectCreateError("File troppo grande. Limite massimo 40MB.");
+    }
+
+    if (!isCompatibleMediaFile(contentTypeRaw, mediaFile)) {
+      redirectCreateError(
+        contentTypeRaw === "image"
+          ? "Il file selezionato non e un'immagine valida."
+          : "Il file selezionato non e un video valido.",
+      );
+    }
   }
 
   const { passions } = await getPassionCatalog(supabase);
@@ -78,14 +131,41 @@ export async function createPostAction(formData: FormData): Promise<never> {
     redirectCreateError("Creazione post non riuscita. Verifica migrazioni e policy.");
   }
 
-  if ((contentTypeRaw === "image" || contentTypeRaw === "video") && mediaUrl.length > 0) {
+  if ((contentTypeRaw === "image" || contentTypeRaw === "video") && mediaFile) {
+    const mediaStoragePath = buildMediaStoragePath(user.id, createdPost.id, mediaFile.name);
+    const { error: mediaUploadError } = await supabase.storage.from(POST_MEDIA_BUCKET).upload(
+      mediaStoragePath,
+      mediaFile,
+      {
+        cacheControl: "3600",
+        upsert: false,
+        contentType: mediaFile.type || undefined,
+      },
+    );
+
+    if (mediaUploadError) {
+      await supabase.from("posts").delete().eq("id", createdPost.id).eq("user_id", user.id);
+      redirectCreateError("Upload media non riuscito. Verifica bucket Storage e policy.");
+    }
+
+    const {
+      data: { publicUrl: mediaPublicUrl },
+    } = supabase.storage.from(POST_MEDIA_BUCKET).getPublicUrl(mediaStoragePath);
+
+    if (!mediaPublicUrl) {
+      await supabase.storage.from(POST_MEDIA_BUCKET).remove([mediaStoragePath]);
+      await supabase.from("posts").delete().eq("id", createdPost.id).eq("user_id", user.id);
+      redirectCreateError("Generazione URL media non riuscita. Post annullato, riprova.");
+    }
+
     const { error: mediaInsertError } = await supabase.from("post_media").insert({
       post_id: createdPost.id,
-      media_url: mediaUrl,
+      media_url: mediaPublicUrl,
       media_kind: contentTypeRaw,
     });
 
     if (mediaInsertError) {
+      await supabase.storage.from(POST_MEDIA_BUCKET).remove([mediaStoragePath]);
       await supabase.from("posts").delete().eq("id", createdPost.id).eq("user_id", user.id);
       redirectCreateError("Salvataggio media non riuscito. Post annullato, riprova.");
     }

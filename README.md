@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ItPassion MVP
 
-## Getting Started
+MVP social network basato sulle passioni, costruito con:
 
-First, run the development server:
+- Next.js (App Router)
+- TypeScript
+- Tailwind CSS + shadcn/ui
+- Supabase (Auth, Postgres, Storage, Realtime)
+- Vercel
+
+## Requisiti
+
+- Node.js 20+
+- npm 10+
+
+## Setup locale
+
+1. Installa dipendenze:
+
+```bash
+npm install
+```
+
+2. Primo setup ambiente (una volta per macchina/progetto):
+
+```bash
+npm run env:bootstrap
+```
+
+3. Avvia in sviluppo:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Script ambiente
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `npm run env:check`: verifica le variabili obbligatorie da `.env.example`
+- `npm run env:pull`: sincronizza `.env.local` da Vercel
+- `npm run vercel:link`: collega la cartella al progetto Vercel
+- `npm run env:bootstrap`: link + pull + check (setup completo)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`env:check` gira automaticamente prima di `dev` e `build` per evitare preview/deploy con configurazione incompleta.
 
-## Learn More
+## Configurazione stabile Preview su Vercel
 
-To learn more about Next.js, take a look at the following resources:
+Per evitare di passare env a mano ad ogni preview:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. collega il repository GitHub al progetto Vercel;
+2. imposta in Vercel le env richieste per **Development, Preview, Production**:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+3. ogni push su branch genera preview con le stesse env gia configurate.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Troubleshooting rapido
 
-## Deploy on Vercel
+Se compare `Internal Server Error` subito dopo deploy:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. controlla che le env richieste siano presenti in Vercel su tutti gli ambienti;
+2. riesegui `npm run env:pull` in locale;
+3. verifica con `npm run env:check`.

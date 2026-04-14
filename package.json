@@ -3,11 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "npm run env:check -- development",
     "dev": "next dev",
+    "prebuild": "npm run env:check -- production",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "env:check": "node scripts/check-env.mjs",
+    "env:pull": "npx vercel env pull .env.local --yes",
+    "vercel:link": "npx vercel link --yes --project itpassion-mvp --scope appmanfredonia-8899s-projects",
+    "env:bootstrap": "npm run vercel:link && npm run env:pull && npm run env:check"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.0",
