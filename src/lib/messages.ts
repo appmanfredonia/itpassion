@@ -152,11 +152,6 @@ export async function getOrCreateDirectConversation(
   currentUserId: string,
   targetUserId: string,
 ): Promise<{ conversationId: string | null; reason: string | null }> {
-  const permission = await canUserMessageTarget(supabase, currentUserId, targetUserId);
-  if (!permission.allowed) {
-    return { conversationId: null, reason: permission.reason };
-  }
-
   const existingConversationId = await getExistingDirectConversationId(
     supabase,
     currentUserId,
@@ -164,6 +159,11 @@ export async function getOrCreateDirectConversation(
   );
   if (existingConversationId) {
     return { conversationId: existingConversationId, reason: null };
+  }
+
+  const permission = await canUserMessageTarget(supabase, currentUserId, targetUserId);
+  if (!permission.allowed) {
+    return { conversationId: null, reason: permission.reason };
   }
 
   const createdConversationId = await createDirectConversation(

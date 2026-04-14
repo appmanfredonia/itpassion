@@ -36,6 +36,10 @@ type MessagesPageProps = {
   }>;
 };
 
+function messagesPath(conversationId: string | null): string {
+  return conversationId ? `/messages?c=${conversationId}` : "/messages";
+}
+
 function formatCreatedAt(isoDate: string): string {
   return new Intl.DateTimeFormat("it-IT", {
     dateStyle: "short",
@@ -77,7 +81,9 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
 
     if (requestedUsername) {
       const normalizedUsername = normalizeUsername(requestedUsername);
-      if (normalizedUsername.length >= 3) {
+      if (normalizedUsername.length < 3) {
+        bootstrapError = "Username destinatario non valido.";
+      } else {
         const targetProfile = await getProfileByUsername(supabase, normalizedUsername);
         if (!targetProfile) {
           bootstrapError = "Profilo destinatario non trovato.";
@@ -120,6 +126,10 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
         user.id,
         selectedConversationId,
       );
+      if (!selectedConversation) {
+        bootstrapError = "Conversazione non trovata o non accessibile.";
+        selectedConversationId = null;
+      }
     }
   } catch {
     hasError = true;
@@ -140,6 +150,16 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
 
   const selectedConversationItem = selectedConversationId
     ? conversations.find((conversation) => conversation.conversationId === selectedConversationId) ?? null
+    : null;
+  const isConversationSelected = Boolean(
+    selectedConversationId && selectedConversation && selectedConversationItem,
+  );
+  const activeConversation = isConversationSelected
+    ? {
+        id: selectedConversationId as string,
+        data: selectedConversation as NonNullable<typeof selectedConversation>,
+        item: selectedConversationItem as ConversationListItem,
+      }
     : null;
 
   return (
@@ -177,6 +197,25 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
         </p>
       )}
 
+      <form action="/messages" method="get" className="rounded-xl border border-border/70 bg-background/60 p-3">
+        <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+          Nuova conversazione
+        </p>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Input
+            name="user"
+            placeholder="Inserisci username (es. mario.rossi)"
+            defaultValue={requestedUsername ?? ""}
+            autoComplete="off"
+            minLength={3}
+            maxLength={24}
+          />
+          <Button type="submit" size="sm">
+            Apri chat
+          </Button>
+        </div>
+      </form>
+
       {conversations.length === 0 ? (
         <StateCard
           variant="empty"
@@ -185,14 +224,19 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
         />
       ) : (
         <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
-          <aside className="flex max-h-[70vh] flex-col gap-2 overflow-auto rounded-xl border border-border/70 bg-background/60 p-3">
+          <aside
+            className={cn(
+              "flex max-h-[70vh] flex-col gap-2 overflow-auto rounded-xl border border-border/70 bg-background/60 p-3",
+              isConversationSelected && "hidden lg:flex",
+            )}
+          >
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
               Conversazioni
             </p>
             {conversations.map((conversation) => (
               <Link
                 key={conversation.conversationId}
-                href={`/messages?c=${conversation.conversationId}`}
+                href={messagesPath(conversation.conversationId)}
                 className={cn(
                   "rounded-lg border border-border/70 bg-card/70 p-3 hover:border-primary/40",
                   selectedConversationId === conversation.conversationId &&
@@ -212,7 +256,13 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                   <div className="flex min-w-0 flex-col">
                     <p className="truncate text-sm font-medium">@{conversation.otherUsername}</p>
                     <p className="truncate text-xs text-muted-foreground">
+                      {conversation.otherDisplayName}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
                       {conversation.lastMessageText ?? "Nessun messaggio"}
+                    </p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      {formatCreatedAt(conversation.lastMessageAt)}
                     </p>
                   </div>
                 </div>
@@ -220,8 +270,13 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
             ))}
           </aside>
 
-          <div className="flex min-h-[70vh] flex-col rounded-xl border border-border/70 bg-background/60">
-            {!selectedConversationId || !selectedConversation || !selectedConversationItem ? (
+          <div
+            className={cn(
+              "flex min-h-[70vh] flex-col rounded-xl border border-border/70 bg-background/60",
+              !isConversationSelected && "hidden lg:flex",
+            )}
+          >
+            {!isConversationSelected ? (
               <div className="flex flex-1 items-center p-4">
                 <StateCard
                   variant="empty"
@@ -234,41 +289,47 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                 <div className="flex items-center justify-between gap-3 border-b border-border/70 p-4">
                   <div className="flex items-center gap-3">
                     <Avatar>
-                      {selectedConversationItem.otherAvatarUrl && (
+                      {activeConversation!.item.otherAvatarUrl && (
                         <AvatarImage
-                          src={selectedConversationItem.otherAvatarUrl}
-                          alt={`Avatar di @${selectedConversationItem.otherUsername}`}
+                          src={activeConversation!.item.otherAvatarUrl}
+                          alt={`Avatar di @${activeConversation!.item.otherUsername}`}
                         />
                       )}
                       <AvatarFallback>
-                        {avatarFallback(selectedConversationItem.otherUsername)}
+                        {avatarFallback(activeConversation!.item.otherUsername)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col">
                       <p className="text-sm font-medium">
-                        @{selectedConversationItem.otherUsername}
+                        @{activeConversation!.item.otherUsername}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Ultima attivita {formatCreatedAt(selectedConversationItem.lastMessageAt)}
+                        Ultima attivita {formatCreatedAt(activeConversation!.item.lastMessageAt)}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {!selectedConversation.isBlockedByMe && !selectedConversation.hasBlockedMe && (
+                    <Link
+                      href="/messages"
+                      className={cn(buttonVariants({ size: "xs", variant: "ghost" }), "lg:hidden")}
+                    >
+                      Conversazioni
+                    </Link>
+                    {!activeConversation!.data.isBlockedByMe && !activeConversation!.data.hasBlockedMe && (
                       <Link
-                        href={`/profile/${selectedConversationItem.otherUsername}`}
+                        href={`/profile/${activeConversation!.item.otherUsername}`}
                         className={buttonVariants({ size: "xs", variant: "outline" })}
                       >
                         Apri profilo
                       </Link>
                     )}
-                    {selectedConversation.isBlockedByMe ? (
+                    {activeConversation!.data.isBlockedByMe ? (
                       <form action={unblockUserFromMessagesAction}>
-                        <input type="hidden" name="conversationId" value={selectedConversationId} />
+                        <input type="hidden" name="conversationId" value={activeConversation!.id} />
                         <input
                           type="hidden"
                           name="targetUserId"
-                          value={selectedConversationItem.otherUserId}
+                          value={activeConversation!.item.otherUserId}
                         />
                         <Button type="submit" size="xs" variant="outline">
                           Sblocca
@@ -276,11 +337,11 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                       </form>
                     ) : (
                       <form action={blockUserFromMessagesAction}>
-                        <input type="hidden" name="conversationId" value={selectedConversationId} />
+                        <input type="hidden" name="conversationId" value={activeConversation!.id} />
                         <input
                           type="hidden"
                           name="targetUserId"
-                          value={selectedConversationItem.otherUserId}
+                          value={activeConversation!.item.otherUserId}
                         />
                         <Button type="submit" size="xs" variant="destructive">
                           Blocca
@@ -291,18 +352,18 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                 </div>
 
                 <div className="flex flex-1 flex-col gap-2 overflow-auto p-4">
-                  {selectedConversation.messages.length === 0 ? (
+                  {activeConversation!.data.messages.length === 0 ? (
                     <StateCard
                       variant="empty"
                       title="Nessun messaggio"
                       description={
-                        selectedConversation.canSendMessages
+                        activeConversation!.data.canSendMessages
                           ? "Invia il primo messaggio per iniziare la conversazione."
                           : "Storico vuoto. Non puoi inviare nuovi messaggi in questa conversazione."
                       }
                     />
                   ) : (
-                    selectedConversation.messages.map((message) => (
+                    activeConversation!.data.messages.map((message) => (
                       <div
                         key={message.id}
                         className={cn(
@@ -321,31 +382,31 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                   )}
                 </div>
 
-                {!selectedConversation.canSendMessages && (
+                {!activeConversation!.data.canSendMessages && (
                   <p className="mx-4 mb-2 rounded-md border border-border/70 bg-secondary/30 p-2 text-sm text-muted-foreground">
-                    {selectedConversation.sendBlockedReason ??
-                      "Non puoi più inviare messaggi in questa conversazione."}
+                    {activeConversation!.data.sendBlockedReason ??
+                      "Non puoi piu inviare messaggi in questa conversazione."}
                   </p>
                 )}
 
                 <form action={sendMessageAction} className="border-t border-border/70 p-4">
-                  <input type="hidden" name="conversationId" value={selectedConversationId} />
+                  <input type="hidden" name="conversationId" value={activeConversation!.id} />
                   <div className="flex flex-col gap-2 sm:flex-row">
                     <Input
                       name="content"
                       placeholder={
-                        selectedConversation.canSendMessages
+                        activeConversation!.data.canSendMessages
                           ? "Scrivi un messaggio..."
                           : "Invio disabilitato"
                       }
                       maxLength={2000}
                       autoComplete="off"
-                      disabled={!selectedConversation.canSendMessages}
+                      disabled={!activeConversation!.data.canSendMessages}
                     />
                     <Button
                       type="submit"
                       size="sm"
-                      disabled={!selectedConversation.canSendMessages}
+                      disabled={!activeConversation!.data.canSendMessages}
                     >
                       Invia
                     </Button>

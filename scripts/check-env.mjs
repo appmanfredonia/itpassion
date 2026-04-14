@@ -129,6 +129,9 @@ function main() {
   console.error("");
   console.error("Passi consigliati per un setup stabile:");
   console.error(linkStep);
+  console.error(
+    "   Opzionale: imposta VERCEL_SCOPE e VERCEL_PROJECT_NAME per un link non interattivo.",
+  );
   console.error("2) Sincronizza le env locali: npm run env:pull");
   console.error("3) Imposta le stesse env su Vercel per Development/Preview/Production.");
   console.error("");

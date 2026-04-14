@@ -14,7 +14,7 @@ export function AppNavigation({ mobile = false }: AppNavigationProps) {
   const pathname = usePathname();
 
   return (
-    <nav className={cn("flex", mobile ? "grid grid-cols-4 gap-2" : "flex-col gap-1")}>
+    <nav className={cn("flex", mobile ? "grid grid-cols-5 gap-2" : "flex-col gap-1")}>
       {appNavigation.map((item) => {
         const isActive =
           pathname === item.href ||
@@ -40,4 +40,3 @@ export function AppNavigation({ mobile = false }: AppNavigationProps) {
     </nav>
   );
 }
-

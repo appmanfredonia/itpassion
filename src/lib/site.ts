@@ -11,8 +11,8 @@ export const appNavigation: NavItem[] = [
   { href: "/explore", label: "Esplora", shortLabel: "Esplora" },
   { href: "/search", label: "Cerca", shortLabel: "Cerca" },
   { href: "/messages", label: "Messaggi", shortLabel: "Chat" },
+  { href: "/notifications", label: "Notifiche", shortLabel: "Notif" },
   { href: "/saved", label: "Salvati", shortLabel: "Salvati" },
   { href: "/profile", label: "Profilo", shortLabel: "Profilo" },
   { href: "/settings", label: "Impostazioni", shortLabel: "Set" },
 ];
-

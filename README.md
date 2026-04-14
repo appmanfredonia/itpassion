@@ -21,13 +21,29 @@ MVP social network basato sulle passioni, costruito con:
 npm install
 ```
 
-2. Primo setup ambiente (una volta per macchina/progetto):
+2. Configura le variabili runtime:
+
+```bash
+cp .env.example .env.local
+```
+
+Compila in `.env.local`:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+3. (Opzionale ma consigliato) Bootstrap env da Vercel:
 
 ```bash
 npm run env:bootstrap
 ```
 
-3. Avvia in sviluppo:
+Se vuoi un link non interattivo verso Vercel CLI, imposta prima:
+
+- `VERCEL_SCOPE`
+- `VERCEL_PROJECT_NAME`
+
+4. Avvia in sviluppo:
 
 ```bash
 npm run dev
@@ -37,7 +53,7 @@ npm run dev
 
 - `npm run env:check`: verifica le variabili obbligatorie da `.env.example`
 - `npm run env:pull`: sincronizza `.env.local` da Vercel
-- `npm run vercel:link`: collega la cartella al progetto Vercel
+- `npm run vercel:link`: collega la cartella al progetto Vercel (senza hardcode di team/progetto)
 - `npm run env:bootstrap`: link + pull + check (setup completo)
 
 `env:check` gira automaticamente prima di `dev` e `build` per evitare preview/deploy con configurazione incompleta.
@@ -51,6 +67,12 @@ Per evitare di passare env a mano ad ogni preview:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 3. ogni push su branch genera preview con le stesse env gia configurate.
+
+Se usi la CLI in CI o su una nuova macchina:
+
+- collega il progetto una volta (`npm run vercel:link`);
+- evita valori hardcoded e usa eventualmente `VERCEL_SCOPE` + `VERCEL_PROJECT_NAME`;
+- mantieni su Vercel le stesse env per Development/Preview/Production.
 
 ## Troubleshooting rapido
 

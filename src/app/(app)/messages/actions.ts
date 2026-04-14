@@ -169,7 +169,7 @@ export async function sendMessageAction(formData: FormData): Promise<never> {
         ok: false,
         message:
           conversationData.sendBlockedReason ??
-          "Non puoi più inviare messaggi in questa conversazione.",
+          "Non puoi piu inviare messaggi in questa conversazione.",
       };
     } else {
       const recipient = conversationData.participants.find(

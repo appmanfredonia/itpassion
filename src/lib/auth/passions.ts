@@ -16,6 +16,7 @@ const PROTECTED_ROUTE_PREFIXES = [
   "/explore",
   "/search",
   "/messages",
+  "/notifications",
   "/saved",
   "/settings",
 ] as const;

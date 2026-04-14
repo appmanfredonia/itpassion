@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit",
     "env:check": "node scripts/check-env.mjs",
     "env:pull": "npx vercel env pull .env.local --yes",
-    "vercel:link": "npx vercel link --yes --project itpassion-mvp --scope appmanfredonia-8899s-projects",
+    "vercel:link": "node scripts/vercel-link.mjs",
     "env:bootstrap": "npm run vercel:link && npm run env:pull && npm run env:check"
   },
   "dependencies": {
