@@ -49,3 +49,4 @@ dev-now*.log
 dev-server*.log
 runtime-check*.log
 *.err.log
+supabase/.temp/
