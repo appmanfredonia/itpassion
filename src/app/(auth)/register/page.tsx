@@ -31,7 +31,7 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
       <CardHeader>
         <CardTitle>Registrazione</CardTitle>
         <CardDescription>
-          Crea il tuo account ItPassion e inizia il percorso di onboarding passioni.
+          Crea il tuo account e inizia subito il tuo percorso su ItPassion.
         </CardDescription>
       </CardHeader>
       <CardContent>

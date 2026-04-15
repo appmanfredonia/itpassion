@@ -73,6 +73,24 @@ function errorDetailFromUnknown(error: unknown): string {
   return "Errore sconosciuto";
 }
 
+function mapStorageUploadErrorToMessage(error: unknown): string {
+  const detail = errorDetailFromUnknown(error).toLowerCase();
+
+  if (detail.includes("bucket") && detail.includes("not found")) {
+    return "Bucket media non trovato. Applica le migrazioni Storage e riprova.";
+  }
+
+  if (detail.includes("mime") || detail.includes("invalid mime")) {
+    return "Formato file non supportato dal bucket media. Verifica configurazione Storage.";
+  }
+
+  if (detail.includes("row-level security") || detail.includes("policy")) {
+    return "Upload bloccato dalle policy Storage. Verifica RLS del bucket post-media.";
+  }
+
+  return "Upload media non riuscito. Verifica bucket Storage e policy.";
+}
+
 export async function createPostAction(formData: FormData): Promise<never> {
   const supabase = await createServerSupabaseClient();
   const {
@@ -178,8 +196,19 @@ export async function createPostAction(formData: FormData): Promise<never> {
     );
 
     if (mediaUploadError) {
+      console.error("[create] media upload failed", {
+        userId: user.id,
+        postId: createdPost.id,
+        bucket: POST_MEDIA_BUCKET,
+        path: mediaStoragePath,
+        fileName: mediaFile.name,
+        fileType: mediaFile.type,
+        fileSize: mediaFile.size,
+        detail: errorDetailFromUnknown(mediaUploadError),
+        rawError: mediaUploadError,
+      });
       await supabase.from("posts").delete().eq("id", createdPost.id).eq("user_id", user.id);
-      redirectCreateError("Upload media non riuscito. Verifica bucket Storage e policy.");
+      redirectCreateError(mapStorageUploadErrorToMessage(mediaUploadError));
     }
 
     const {

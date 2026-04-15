@@ -73,37 +73,63 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const returnPath = searchData.term ? `/search?q=${encodeURIComponent(searchData.term)}` : "/search";
 
   return (
-    <section className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+    <section className="mx-auto flex w-full max-w-5xl flex-col gap-7">
       <SectionHeader
         badge="Milestone 5"
         title="Ricerca"
-        description="Trova utenti, passioni e contenuti con una ricerca semplice e reale."
+        description="Cerca utenti, passioni e contenuti in modo semplice e immediato."
       />
 
-      <form action="/search" method="get" className="flex flex-col gap-2 sm:flex-row">
-        <Input
-          name="q"
-          defaultValue={searchData.term}
-          placeholder="Cerca utenti, passioni o contenuti..."
-          autoComplete="off"
-        />
-        <Button type="submit" size="sm">
-          Cerca
-        </Button>
+      <form action="/search" method="get" className="surface-panel flex flex-col gap-3 p-4">
+        <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+          Ricerca editoriale
+        </p>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Input
+            name="q"
+            defaultValue={searchData.term}
+            placeholder="Cerca utenti, passioni o contenuti..."
+            autoComplete="off"
+          />
+          <Button type="submit" size="sm" className="sm:min-w-24">
+            Cerca
+          </Button>
+        </div>
       </form>
 
+      <div className="grid gap-3 md:grid-cols-3">
+        <div className="surface-soft p-4">
+          <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+            Utenti
+          </p>
+          <p className="mt-1 text-sm font-semibold tracking-tight">{searchData.users.length}</p>
+        </div>
+        <div className="surface-soft p-4">
+          <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+            Passioni
+          </p>
+          <p className="mt-1 text-sm font-semibold tracking-tight">{searchData.passions.length}</p>
+        </div>
+        <div className="surface-soft p-4">
+          <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+            Contenuti
+          </p>
+          <p className="mt-1 text-sm font-semibold tracking-tight">{searchData.posts.length}</p>
+        </div>
+      </div>
+
       {params.commentError && (
-        <p className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-sm text-destructive">
+        <p className="rounded-xl border border-destructive/50 bg-destructive/10 p-2.5 text-sm text-destructive">
           {params.commentError}
         </p>
       )}
       {params.blockError && (
-        <p className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-sm text-destructive">
+        <p className="rounded-xl border border-destructive/50 bg-destructive/10 p-2.5 text-sm text-destructive">
           {params.blockError}
         </p>
       )}
       {params.blockSuccess && (
-        <p className="rounded-md border border-border/70 bg-secondary/30 p-2 text-sm text-muted-foreground">
+        <p className="rounded-xl border border-border/70 bg-secondary/30 p-2.5 text-sm text-muted-foreground">
           {params.blockSuccess}
         </p>
       )}
@@ -128,8 +154,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         />
       ) : (
         <div className="flex flex-col gap-6">
-          <section className="flex flex-col gap-3">
-            <h2 className="text-lg font-semibold">Utenti</h2>
+          <section className="surface-panel flex flex-col gap-3 p-4">
+            <h2 className="text-lg font-semibold tracking-tight">Utenti</h2>
             {searchData.users.length === 0 ? (
               <p className="text-sm text-muted-foreground">Nessun utente trovato.</p>
             ) : (
@@ -137,7 +163,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 {searchData.users.map((userResult) => (
                   <div
                     key={userResult.id}
-                    className="flex flex-col gap-3 rounded-xl border border-border/70 bg-background/60 p-3"
+                    className="surface-soft flex flex-col gap-3 p-3.5"
                   >
                     {userResult.isBlockedByMe ? (
                       <div className="flex items-center gap-3">
@@ -151,7 +177,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                           <AvatarFallback>{avatarFallback(userResult.username)}</AvatarFallback>
                         </Avatar>
                         <div className="flex min-w-0 flex-col">
-                          <p className="truncate text-sm font-medium">@{userResult.username}</p>
+                          <p className="truncate text-sm font-semibold tracking-tight">
+                            @{userResult.username}
+                          </p>
                           <p className="truncate text-xs text-muted-foreground">
                             {userResult.displayName}
                           </p>
@@ -163,7 +191,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     ) : (
                       <Link
                         href={`/profile/${userResult.username}`}
-                        className="hover:text-primary"
+                        className="transition-colors hover:text-primary"
                       >
                         <div className="flex items-center gap-3">
                           <Avatar>
@@ -176,7 +204,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                             <AvatarFallback>{avatarFallback(userResult.username)}</AvatarFallback>
                           </Avatar>
                           <div className="flex min-w-0 flex-col">
-                            <p className="truncate text-sm font-medium">@{userResult.username}</p>
+                            <p className="truncate text-sm font-semibold tracking-tight">
+                              @{userResult.username}
+                            </p>
                             <p className="truncate text-xs text-muted-foreground">
                               {userResult.displayName}
                             </p>
@@ -184,7 +214,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                         </div>
                       </Link>
                     )}
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       {userResult.isBlockedByMe ? (
                         <form action={unblockUserAction}>
                           <input type="hidden" name="targetUserId" value={userResult.id} />
@@ -197,13 +227,13 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                         <>
                           <Link
                             href={`/messages?user=${userResult.username}`}
-                            className="rounded-md border border-border/70 px-2 py-1 text-xs hover:border-primary/40"
+                            className="rounded-lg border border-border/70 px-2.5 py-1 text-xs font-medium transition-colors hover:border-primary/40 hover:text-foreground"
                           >
                             Messaggio
                           </Link>
                           <Link
                             href={`/profile/${userResult.username}`}
-                            className="rounded-md border border-border/70 px-2 py-1 text-xs hover:border-primary/40"
+                            className="rounded-lg border border-border/70 px-2.5 py-1 text-xs font-medium transition-colors hover:border-primary/40 hover:text-foreground"
                           >
                             Apri profilo
                           </Link>
@@ -216,8 +246,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             )}
           </section>
 
-          <section className="flex flex-col gap-3">
-            <h2 className="text-lg font-semibold">Passioni</h2>
+          <section className="surface-panel flex flex-col gap-3 p-4">
+            <h2 className="text-lg font-semibold tracking-tight">Passioni</h2>
             {searchData.passions.length === 0 ? (
               <p className="text-sm text-muted-foreground">Nessuna passione trovata.</p>
             ) : (
@@ -231,8 +261,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             )}
           </section>
 
-          <section className="flex flex-col gap-3">
-            <h2 className="text-lg font-semibold">Contenuti</h2>
+          <section className="surface-panel flex flex-col gap-3 p-4">
+            <h2 className="text-lg font-semibold tracking-tight">Contenuti</h2>
             {searchData.posts.length === 0 ? (
               <p className="text-sm text-muted-foreground">Nessun contenuto trovato.</p>
             ) : (

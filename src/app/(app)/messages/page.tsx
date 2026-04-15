@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { MessageCircleMore, Plus, ShieldAlert } from "lucide-react";
 import {
   blockUserFromMessagesAction,
   sendMessageAction,
@@ -161,45 +162,90 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
         item: selectedConversationItem as ConversationListItem,
       }
     : null;
+  const topBanners: Array<{ id: string; text: string; variant: "error" | "info" }> = [];
+
+  if (params.error) {
+    topBanners.push({ id: "error", text: params.error, variant: "error" });
+  }
+  if (params.messageError) {
+    topBanners.push({
+      id: "message-error",
+      text: params.messageError,
+      variant: "error",
+    });
+  }
+  if (bootstrapError) {
+    topBanners.push({ id: "bootstrap", text: bootstrapError, variant: "info" });
+  }
+  if (params.blockError) {
+    topBanners.push({ id: "block-error", text: params.blockError, variant: "error" });
+  }
+  if (params.blockSuccess) {
+    topBanners.push({ id: "block-success", text: params.blockSuccess, variant: "info" });
+  }
 
   return (
-    <section className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+    <section className="mx-auto flex w-full max-w-6xl flex-col gap-7">
       <SectionHeader
         badge="Milestone 6"
         title="Messaggi privati"
-        description="Conversazioni 1:1 con regole privacy e blocchi applicati."
+        description="Chat 1:1 semplici e private, con regole di privacy e blocco attive."
       />
 
-      {params.error && (
-        <p className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-sm text-destructive">
-          {params.error}
-        </p>
-      )}
-      {params.messageError && (
-        <p className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-sm text-destructive">
-          {params.messageError}
-        </p>
-      )}
-      {bootstrapError && (
-        <p className="rounded-md border border-border/70 bg-secondary/30 p-2 text-sm text-muted-foreground">
-          {bootstrapError}
-        </p>
-      )}
-      {params.blockError && (
-        <p className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-sm text-destructive">
-          {params.blockError}
-        </p>
-      )}
-      {params.blockSuccess && (
-        <p className="rounded-md border border-border/70 bg-secondary/30 p-2 text-sm text-muted-foreground">
-          {params.blockSuccess}
-        </p>
+      <div className="grid gap-3 md:grid-cols-3">
+        <div className="surface-soft p-4">
+          <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+            Conversazioni
+          </p>
+          <p className="mt-1 text-sm font-semibold tracking-tight">{conversations.length}</p>
+        </div>
+        <div className="surface-soft p-4">
+          <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+            Chat attiva
+          </p>
+          <p className="mt-1 truncate text-sm font-semibold tracking-tight">
+            {activeConversation ? `@${activeConversation.item.otherUsername}` : "Nessuna selezionata"}
+          </p>
+        </div>
+        <div className="surface-soft p-4">
+          <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+            Stato invio
+          </p>
+          <p className="mt-1 text-sm font-semibold tracking-tight">
+            {activeConversation
+              ? activeConversation.data.canSendMessages
+                ? "Attivo"
+                : "Disattivato"
+              : "In attesa"}
+          </p>
+        </div>
+      </div>
+
+      {topBanners.length > 0 && (
+        <div className="flex flex-col gap-2">
+          {topBanners.map((banner) => (
+            <p
+              key={banner.id}
+              className={cn(
+                "rounded-xl border p-2.5 text-sm",
+                banner.variant === "error"
+                  ? "border-destructive/50 bg-destructive/10 text-destructive"
+                  : "border-border/70 bg-secondary/30 text-muted-foreground",
+              )}
+            >
+              {banner.text}
+            </p>
+          ))}
+        </div>
       )}
 
-      <form action="/messages" method="get" className="rounded-xl border border-border/70 bg-background/60 p-3">
-        <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
-          Nuova conversazione
-        </p>
+      <form action="/messages" method="get" className="surface-panel flex flex-col gap-3 p-4">
+        <div className="flex items-center gap-2">
+          <span className="rounded-full border border-border/70 bg-surface-1 p-1.5">
+            <Plus className="size-3.5 text-primary" />
+          </span>
+          <p className="text-sm font-semibold tracking-tight">Nuova conversazione</p>
+        </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <Input
             name="user"
@@ -209,7 +255,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
             minLength={3}
             maxLength={24}
           />
-          <Button type="submit" size="sm">
+          <Button type="submit" size="sm" className="sm:min-w-28">
             Apri chat
           </Button>
         </div>
@@ -222,24 +268,30 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
           description="Avvia una chat dal profilo pubblico o dalla ricerca utenti."
         />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
+        <div className="grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)]">
           <aside
             className={cn(
-              "flex max-h-[70vh] flex-col gap-2 overflow-auto rounded-xl border border-border/70 bg-background/60 p-3",
+              "surface-panel no-scrollbar flex max-h-[72vh] flex-col gap-2 overflow-auto p-3.5",
               isConversationSelected && "hidden lg:flex",
             )}
           >
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Conversazioni
+            <div className="flex items-center gap-2 px-1">
+              <MessageCircleMore className="size-4 text-primary" />
+              <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+                Conversazioni
+              </p>
+            </div>
+            <p className="px-1 text-xs text-muted-foreground">
+              Scorri le chat recenti
             </p>
             {conversations.map((conversation) => (
               <Link
                 key={conversation.conversationId}
                 href={messagesPath(conversation.conversationId)}
                 className={cn(
-                  "rounded-lg border border-border/70 bg-card/70 p-3 hover:border-primary/40",
+                  "rounded-xl border border-border/70 bg-surface-1 p-3.5 transition-[border-color,background-color,transform] duration-150 hover:border-primary/45 hover:bg-surface-2/90",
                   selectedConversationId === conversation.conversationId &&
-                    "border-primary/50 bg-primary/10",
+                    "border-primary/50 bg-primary/12",
                 )}
               >
                 <div className="flex items-center gap-3">
@@ -253,14 +305,16 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                     <AvatarFallback>{avatarFallback(conversation.otherUsername)}</AvatarFallback>
                   </Avatar>
                   <div className="flex min-w-0 flex-col">
-                    <p className="truncate text-sm font-medium">@{conversation.otherUsername}</p>
+                    <p className="truncate text-sm font-semibold tracking-tight">
+                      @{conversation.otherUsername}
+                    </p>
                     <p className="truncate text-xs text-muted-foreground">
                       {conversation.otherDisplayName}
                     </p>
-                    <p className="truncate text-xs text-muted-foreground">
+                    <p className="mt-1 truncate text-xs text-muted-foreground">
                       {conversation.lastMessageText ?? "Nessun messaggio"}
                     </p>
-                    <p className="mt-1 text-[11px] text-muted-foreground">
+                    <p className="mt-1 text-[11px] text-muted-foreground/90">
                       {formatCreatedAt(conversation.lastMessageAt)}
                     </p>
                   </div>
@@ -271,12 +325,12 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
 
           <div
             className={cn(
-              "flex min-h-[70vh] flex-col rounded-xl border border-border/70 bg-background/60",
+              "surface-panel flex min-h-[72vh] flex-col overflow-hidden",
               !isConversationSelected && "hidden lg:flex",
             )}
           >
             {!isConversationSelected ? (
-              <div className="flex flex-1 items-center p-4">
+              <div className="flex flex-1 items-center p-5">
                 <StateCard
                   variant="empty"
                   title="Seleziona una conversazione"
@@ -285,7 +339,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
               </div>
             ) : (
               <>
-                <div className="flex items-center justify-between gap-3 border-b border-border/70 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 bg-surface-1 px-4 py-3.5">
                   <div className="flex items-center gap-3">
                     <Avatar>
                       {activeConversation!.item.otherAvatarUrl && (
@@ -299,7 +353,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col">
-                      <p className="text-sm font-medium">
+                      <p className="text-sm font-semibold tracking-tight">
                         @{activeConversation!.item.otherUsername}
                       </p>
                       <p className="text-xs text-muted-foreground">
@@ -307,7 +361,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center justify-end gap-1.5">
                     <Link
                       href="/messages"
                       className={cn(buttonVariants({ size: "xs", variant: "ghost" }), "lg:hidden")}
@@ -350,7 +404,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                   </div>
                 </div>
 
-                <div className="flex flex-1 flex-col gap-2 overflow-auto p-4">
+                <div className="no-scrollbar flex flex-1 flex-col gap-2.5 overflow-auto px-4 py-4">
                   {activeConversation!.data.messages.length === 0 ? (
                     <StateCard
                       variant="empty"
@@ -366,29 +420,32 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                       <div
                         key={message.id}
                         className={cn(
-                          "max-w-[80%] rounded-lg border border-border/70 p-3",
+                          "max-w-[80%] rounded-2xl border p-3",
                           message.isMine
-                            ? "ml-auto bg-primary/15"
-                            : "mr-auto bg-card/70",
+                            ? "ml-auto border-primary/45 bg-primary/14"
+                            : "mr-auto border-border/70 bg-surface-1",
                         )}
                       >
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-[11px] text-muted-foreground">
                           @{message.senderUsername} - {formatCreatedAt(message.createdAt)}
                         </p>
-                        <p className="text-sm">{message.content}</p>
+                        <p className="mt-1 text-sm leading-relaxed break-words">{message.content}</p>
                       </div>
                     ))
                   )}
                 </div>
 
                 {!activeConversation!.data.canSendMessages && (
-                  <p className="mx-4 mb-2 rounded-md border border-border/70 bg-secondary/30 p-2 text-sm text-muted-foreground">
-                    {activeConversation!.data.sendBlockedReason ??
-                      "Non puoi piu inviare messaggi in questa conversazione."}
-                  </p>
+                  <div className="mx-4 mb-2 flex items-start gap-2 rounded-xl border border-border/70 bg-secondary/35 p-2.5 text-sm text-muted-foreground">
+                    <ShieldAlert className="mt-0.5 size-4 shrink-0 text-primary" />
+                    <p>
+                      {activeConversation!.data.sendBlockedReason ??
+                        "In questa conversazione non puoi piu inviare nuovi messaggi."}
+                    </p>
+                  </div>
                 )}
 
-                <form action={sendMessageAction} className="border-t border-border/70 p-4">
+                <form action={sendMessageAction} className="border-t border-border/70 bg-surface-1 px-4 py-3.5">
                   <input type="hidden" name="conversationId" value={activeConversation!.id} />
                   <div className="flex flex-col gap-2 sm:flex-row">
                     <Input
@@ -405,6 +462,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                     <Button
                       type="submit"
                       size="sm"
+                      className="sm:min-w-24"
                       disabled={!activeConversation!.data.canSendMessages}
                     >
                       Invia
@@ -419,3 +477,4 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
     </section>
   );
 }
+

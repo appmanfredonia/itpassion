@@ -59,7 +59,7 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
         <h1 className="text-2xl font-semibold md:text-3xl">Esplora</h1>
         <StateCard
           variant="error"
-          title="Errore caricamento discovery"
+          title="Errore caricamento Esplora"
           description="Impossibile caricare passioni o contenuti da Supabase."
         />
       </section>
@@ -75,7 +75,7 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
       <SectionHeader
         badge="Milestone 5"
         title="Esplora"
-        description="Discovery reale basata su passioni, autori e contenuti recenti."
+        description="Scoperta reale basata su passioni, autori e contenuti recenti."
       />
 
       {params.commentError && (
@@ -95,13 +95,13 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
           <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
             Filtra per passione
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2.5">
             <Link
               href="/explore"
               className={cn(
                 buttonVariants({
-                  size: "xs",
-                  variant: data.selectedPassionSlug ? "ghost" : "secondary",
+                  size: "sm",
+                  variant: data.selectedPassionSlug ? "outline" : "secondary",
                 }),
               )}
             >
@@ -113,9 +113,9 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
                 href={`/explore?passion=${passion.slug}`}
                 className={cn(
                   buttonVariants({
-                    size: "xs",
+                    size: "sm",
                     variant:
-                      data.selectedPassionSlug === passion.slug ? "secondary" : "ghost",
+                      data.selectedPassionSlug === passion.slug ? "secondary" : "outline",
                   }),
                 )}
               >

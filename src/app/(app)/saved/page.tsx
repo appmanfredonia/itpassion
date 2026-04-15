@@ -54,21 +54,44 @@ export default async function SavedPage({ searchParams }: SavedPageProps) {
   const hasUnavailableSaved = savedResult.unavailableSavedCount > 0;
 
   return (
-    <section className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+    <section className="mx-auto flex w-full max-w-5xl flex-col gap-7">
       <SectionHeader
         badge="Milestone 4"
         title="Contenuti salvati"
-        description="Raccogli e ritrova i post che vuoi tenere a portata di mano."
+        description="Conserva qui i post che vuoi ritrovare velocemente."
       />
 
+      <div className="grid gap-3 md:grid-cols-3">
+        <div className="surface-soft p-4">
+          <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+            Salvati totali
+          </p>
+          <p className="mt-1 text-sm font-semibold tracking-tight">{savedResult.totalSavedCount}</p>
+        </div>
+        <div className="surface-soft p-4">
+          <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+            Disponibili ora
+          </p>
+          <p className="mt-1 text-sm font-semibold tracking-tight">{posts.length}</p>
+        </div>
+        <div className="surface-soft p-4">
+          <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+            Non disponibili
+          </p>
+          <p className="mt-1 text-sm font-semibold tracking-tight">
+            {savedResult.unavailableSavedCount}
+          </p>
+        </div>
+      </div>
+
       {params.commentError && (
-        <p className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-sm text-destructive">
+        <p className="rounded-xl border border-destructive/50 bg-destructive/10 p-2.5 text-sm text-destructive">
           {params.commentError}
         </p>
       )}
 
       {hasUnavailableSaved && (
-        <p className="rounded-md border border-border/70 bg-card/70 p-3 text-sm text-muted-foreground">
+        <p className="rounded-xl border border-border/70 bg-secondary/35 p-3 text-sm text-muted-foreground">
           {savedResult.unavailableSavedCount === 1
             ? "1 contenuto salvato non e disponibile per privacy, blocco utente o rimozione."
             : `${savedResult.unavailableSavedCount} contenuti salvati non sono disponibili per privacy, blocco utente o rimozione.`}
@@ -90,7 +113,7 @@ export default async function SavedPage({ searchParams }: SavedPageProps) {
           />
         )
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="surface-panel flex flex-col gap-3 p-3.5">
           {posts.map((post) => (
             <PostCard key={post.id} post={post} returnPath="/saved" />
           ))}

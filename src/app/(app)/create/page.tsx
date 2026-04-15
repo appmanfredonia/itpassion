@@ -47,7 +47,9 @@ export default async function CreatePage({ searchParams }: CreatePageProps) {
       <Card className="border-border/70 bg-card/85">
         <CardHeader>
           <CardTitle>Nuovo post</CardTitle>
-          <CardDescription>Pubblica contenuti text, image o video con passione associata.</CardDescription>
+          <CardDescription>
+            Pubblica un contenuto testuale, una foto o un video legato a una passione.
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           {params.error && (
@@ -68,7 +70,7 @@ export default async function CreatePage({ searchParams }: CreatePageProps) {
               description="Aggiungi passioni nel database prima di pubblicare nuovi contenuti."
             />
           ) : (
-            <form className="flex flex-col gap-4" action={createPostAction} encType="multipart/form-data">
+            <form className="flex flex-col gap-4" action={createPostAction}>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="post-content-type">Tipo contenuto</Label>
                 <select
@@ -77,8 +79,8 @@ export default async function CreatePage({ searchParams }: CreatePageProps) {
                   defaultValue="text"
                   className="h-9 rounded-md border border-input bg-background px-3 text-sm"
                 >
-                  <option value="text">Text</option>
-                  <option value="image">Image</option>
+                  <option value="text">Testo</option>
+                  <option value="image">Foto</option>
                   <option value="video">Video</option>
                 </select>
               </div>
@@ -105,16 +107,16 @@ export default async function CreatePage({ searchParams }: CreatePageProps) {
                 <Textarea
                   id="post-text"
                   name="textContent"
-                  placeholder="Scrivi il contenuto del post o una caption per image/video..."
+                  placeholder="Scrivi il contenuto del post o una caption per foto/video..."
                   className="min-h-28 resize-none"
                 />
               </div>
 
               <div className="flex flex-col gap-2">
-                <Label htmlFor="post-media-file">File media (image/video)</Label>
+                <Label htmlFor="post-media-file">File media (foto/video)</Label>
                 <Input id="post-media-file" name="mediaFile" type="file" accept="image/*,video/*" />
                 <p className="text-xs text-muted-foreground">
-                  Per Image carica un file immagine, per Video carica un file video (max 40MB).
+                  Carica un file immagine o video (max 40MB).
                 </p>
               </div>
 

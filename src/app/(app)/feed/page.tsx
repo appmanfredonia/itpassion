@@ -109,10 +109,10 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
       <SectionHeader
         badge="Milestone 3"
         title="Feed"
-        description="Un flusso pulito e moderno per seguire passioni, creator e conversazioni."
+        description="Un flusso pulito e moderno per seguire passioni, autori e conversazioni."
         action={
           <Link href="/create" className={buttonVariants({ size: "sm" })}>
-            Crea post
+            Nuovo post
           </Link>
         }
       />

@@ -46,7 +46,7 @@ export function AppShell({ children, userEmail, userName, logoutAction }: AppShe
               <div className="hidden min-w-0 flex-col md:flex">
                 <p className="truncate text-sm font-semibold tracking-tight">Spazio ItPassion</p>
                 <p className="truncate text-xs text-muted-foreground">
-                  Feed, profilo, messaggi e impostazioni in una shell condivisa
+                  Feed, profilo, messaggi e impostazioni in un&apos;unica esperienza
                 </p>
               </div>
             </div>
@@ -64,7 +64,7 @@ export function AppShell({ children, userEmail, userName, logoutAction }: AppShe
             </div>
           </header>
 
-          <main className="flex-1 overflow-y-auto px-4 py-5 md:px-6 md:py-6">{children}</main>
+          <main className="flex-1 overflow-y-auto px-4 py-5 pb-8 md:px-6 md:py-6">{children}</main>
 
           <footer className="border-t border-border/70 bg-surface-1 p-2 lg:hidden">
             <AppNavigation mobile />

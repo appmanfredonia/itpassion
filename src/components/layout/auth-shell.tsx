@@ -17,11 +17,10 @@ export function AuthShell({ children }: AuthShellProps) {
               Milestone 1 - Accesso
             </p>
             <h1 className="mt-3 text-3xl font-semibold tracking-tight text-balance md:text-4xl">
-              Accedi alla community delle passioni.
+              Benvenuto nella community delle passioni.
             </h1>
             <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
-              Questa area gestisce autenticazione e primi redirect del percorso MVP: login,
-              registrazione e routing sono pronti per Supabase.
+              Accedi o crea il tuo account per entrare nel tuo spazio ItPassion e iniziare subito.
             </p>
           </section>
           <div className="surface-panel p-1.5">{children}</div>

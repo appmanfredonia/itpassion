@@ -39,7 +39,7 @@ export function PostCard({ post, returnPath }: PostCardProps) {
   return (
     <Card id={`post-${post.id}`} className="surface-panel">
       <CardHeader className="pb-2">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             <Avatar size="lg">
               {post.authorAvatarUrl && (
@@ -59,7 +59,7 @@ export function PostCard({ post, returnPath }: PostCardProps) {
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
             <Link href={`/explore?passion=${post.passionSlug}`}>
               <Badge variant="secondary">{post.passionName}</Badge>
             </Link>
@@ -76,7 +76,7 @@ export function PostCard({ post, returnPath }: PostCardProps) {
 
       <CardContent className="flex flex-col gap-4">
         {post.textContent && (
-          <p className="text-sm leading-relaxed text-foreground/95">{post.textContent}</p>
+          <p className="text-sm leading-relaxed break-words text-foreground/95">{post.textContent}</p>
         )}
 
         <PostMediaGallery contentType={post.contentType} media={post.media} />
@@ -127,7 +127,9 @@ export function PostCard({ post, returnPath }: PostCardProps) {
                     >
                       @{comment.authorUsername}
                     </Link>
-                    <p className="text-sm leading-relaxed text-foreground/90">{comment.content}</p>
+                    <p className="text-sm leading-relaxed break-words text-foreground/90">
+                      {comment.content}
+                    </p>
                   </div>
                   {comment.canDelete && (
                     <form action={deleteCommentAction}>
