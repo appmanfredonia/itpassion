@@ -103,6 +103,23 @@ export async function ensureUserProfile(
   supabase: SupabaseClient<Database>,
   user: User,
 ): Promise<AppProfile | null> {
+  const { data: existingProfile, error: existingProfileError } = await supabase
+    .from("users")
+    .select("id, username, display_name, bio, avatar_url")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (existingProfileError) {
+    if (isRelationMissingError(existingProfileError)) {
+      return null;
+    }
+    throw existingProfileError;
+  }
+
+  if (existingProfile) {
+    return mapProfileRow(existingProfile);
+  }
+
   const baseProfile = buildFallbackProfileFromAuthUser(user);
   const usernameFromMetadata = toValidUsernameOrNull(getMetadataString(user, "username"));
   const preferredUsername = usernameFromMetadata ?? baseProfile.username;

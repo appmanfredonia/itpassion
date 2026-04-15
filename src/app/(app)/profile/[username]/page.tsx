@@ -7,8 +7,8 @@ import {
 } from "@/app/(app)/settings/actions";
 import { PostCard } from "@/components/feed/post-card";
 import { ProfileHeader } from "@/components/profile/profile-header";
+import { SectionHeader } from "@/components/section-header";
 import { StateCard } from "@/components/state-card";
-import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   ensureUserProfile,
@@ -152,14 +152,11 @@ export default async function PublicProfilePage({
 
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <Badge variant="secondary" className="text-[10px] tracking-[0.2em] uppercase">
-          Milestone 4
-        </Badge>
-        <h1 className="text-2xl font-semibold md:text-3xl">
-          Profilo di @{profileData.profile.username}
-        </h1>
-      </div>
+      <SectionHeader
+        badge="Milestone 4"
+        title={`Profilo di @${profileData.profile.username}`}
+        description="Profilo pubblico con follow, messaggi diretti e contenuti condivisi."
+      />
 
       {pageParams.commentError && (
         <p className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-sm text-destructive">
@@ -218,6 +215,20 @@ export default async function PublicProfilePage({
         }
       />
 
+      <div className="surface-soft flex flex-wrap items-center justify-between gap-3 p-3">
+        <div className="flex flex-col">
+          <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+            Contenuti visibili
+          </p>
+          <p className="text-sm font-semibold tracking-tight">
+            {canViewPrivateProfile ? posts.length : 0}
+          </p>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {isTargetProfilePrivate ? "Profilo privato" : "Profilo pubblico"}
+        </p>
+      </div>
+
       {!canViewPrivateProfile ? (
         <StateCard
           variant="empty"
@@ -231,7 +242,7 @@ export default async function PublicProfilePage({
           description="Questo profilo non ha ancora pubblicato contenuti."
         />
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           {posts.map((post) => (
             <PostCard key={post.id} post={post} returnPath={returnPath} />
           ))}

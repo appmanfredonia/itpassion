@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { saveOnboardingPassionsAction } from "@/app/(app)/onboarding/actions";
+import { SectionHeader } from "@/components/section-header";
 import { StateCard } from "@/components/state-card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getPassionCatalog, getUserSelectedPassionSlugs } from "@/lib/auth";
@@ -40,12 +40,11 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
 
   return (
     <section className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <Badge variant="secondary" className="text-[10px] tracking-[0.2em] uppercase">
-          Milestone 2
-        </Badge>
-        <h1 className="text-2xl font-semibold md:text-3xl">Scegli le tue passioni</h1>
-      </div>
+      <SectionHeader
+        badge="Milestone 2"
+        title="Scegli le tue passioni"
+        description="Seleziona gli interessi principali per personalizzare feed ed esperienza."
+      />
 
       <Card className="border-border/70 bg-card/85">
         <CardHeader>

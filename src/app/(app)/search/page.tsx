@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { unblockUserAction } from "@/app/(app)/settings/actions";
 import { PostCard } from "@/components/feed/post-card";
+import { SectionHeader } from "@/components/section-header";
 import { StateCard } from "@/components/state-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -73,12 +74,11 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <Badge variant="secondary" className="text-[10px] tracking-[0.2em] uppercase">
-          Milestone 5
-        </Badge>
-        <h1 className="text-2xl font-semibold md:text-3xl">Ricerca</h1>
-      </div>
+      <SectionHeader
+        badge="Milestone 5"
+        title="Ricerca"
+        description="Trova utenti, passioni e contenuti con una ricerca semplice e reale."
+      />
 
       <form action="/search" method="get" className="flex flex-col gap-2 sm:flex-row">
         <Input

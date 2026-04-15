@@ -7,26 +7,26 @@ type AuthShellProps = {
 
 export function AuthShell({ children }: AuthShellProps) {
   return (
-    <div className="min-h-screen px-4 py-8 md:px-6">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
+    <div className="min-h-screen px-4 py-7 md:px-6 md:py-8">
+      <div className="mx-auto flex w-full max-w-[1100px] flex-col gap-6">
         <BrandMark />
-        <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr] lg:items-start">
-          <section className="rounded-2xl border border-border/70 bg-card/70 p-6 backdrop-blur md:p-8">
-            <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">
-              Milestone 1 · Accesso
+
+        <div className="grid gap-5 lg:grid-cols-[1.18fr_1fr] lg:items-start">
+          <section className="surface-elevated p-6 md:p-8">
+            <p className="text-[10px] tracking-[0.18em] text-muted-foreground uppercase">
+              Milestone 1 - Accesso
             </p>
-            <h1 className="mt-3 text-3xl font-semibold text-balance md:text-4xl">
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-balance md:text-4xl">
               Accedi alla community delle passioni.
             </h1>
-            <p className="mt-4 max-w-xl text-sm text-muted-foreground md:text-base">
-              In questa milestone prepariamo accesso e struttura base: login, registrazione e
-              routing auth sono pronti per il collegamento Supabase.
+            <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
+              Questa area gestisce autenticazione e primi redirect del percorso MVP: login,
+              registrazione e routing sono pronti per Supabase.
             </p>
           </section>
-          {children}
+          <div className="surface-panel p-1.5">{children}</div>
         </div>
       </div>
     </div>
   );
 }
-

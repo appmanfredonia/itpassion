@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PostCard } from "@/components/feed/post-card";
+import { SectionHeader } from "@/components/section-header";
 import { StateCard } from "@/components/state-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { ensureUserProfile } from "@/lib/auth";
 import {
@@ -72,12 +72,11 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
 
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <Badge variant="secondary" className="text-[10px] tracking-[0.2em] uppercase">
-          Milestone 5
-        </Badge>
-        <h1 className="text-2xl font-semibold md:text-3xl">Esplora</h1>
-      </div>
+      <SectionHeader
+        badge="Milestone 5"
+        title="Esplora"
+        description="Discovery reale basata su passioni, autori e contenuti recenti."
+      />
 
       {params.commentError && (
         <p className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-sm text-destructive">
@@ -92,8 +91,8 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
           description="Aggiungi passioni nel database per attivare la discovery."
         />
       ) : (
-        <div className="flex flex-col gap-3 rounded-xl border border-border/70 bg-background/60 p-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <div className="surface-panel flex flex-col gap-3 p-3.5">
+          <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
             Filtra per passione
           </p>
           <div className="flex flex-wrap gap-2">
@@ -127,25 +126,31 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
         </div>
       )}
 
-      <div className="grid gap-3 md:grid-cols-2">
-        <div className="rounded-xl border border-border/70 bg-card/70 p-4">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+      <div className="grid gap-3 md:grid-cols-3">
+        <div className="surface-soft p-4">
+          <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
             Passione attiva
           </p>
-          <p className="text-sm font-medium">
+          <p className="mt-1 text-sm font-semibold tracking-tight">
             {data.selectedPassionName ?? "Tutte le passioni"}
           </p>
         </div>
-        <div className="rounded-xl border border-border/70 bg-card/70 p-4">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+        <div className="surface-soft p-4">
+          <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
             Contenuti in vista
           </p>
-          <p className="text-sm font-medium">{data.posts.length}</p>
+          <p className="mt-1 text-sm font-semibold tracking-tight">{data.posts.length}</p>
+        </div>
+        <div className="surface-soft p-4">
+          <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+            Autori in evidenza
+          </p>
+          <p className="mt-1 text-sm font-semibold tracking-tight">{data.authors.length}</p>
         </div>
       </div>
 
       <div className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">Autori reali</h2>
+        <h2 className="text-lg font-semibold tracking-tight">Autori reali</h2>
         {data.authors.length === 0 ? (
           <StateCard
             variant="empty"
@@ -158,7 +163,7 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
               <Link
                 key={author.userId}
                 href={`/profile/${author.username}`}
-                className="rounded-xl border border-border/70 bg-background/60 p-3 hover:border-primary/40"
+                className="surface-soft p-3 hover:border-primary/40"
               >
                 <div className="flex items-center gap-3">
                   <Avatar>
@@ -181,7 +186,7 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
       </div>
 
       <div className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">Contenuti recenti</h2>
+        <h2 className="text-lg font-semibold tracking-tight">Contenuti recenti</h2>
         {data.posts.length === 0 ? (
           <StateCard
             variant="empty"

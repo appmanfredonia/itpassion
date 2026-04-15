@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createPostAction } from "@/app/(app)/create/actions";
+import { SectionHeader } from "@/components/section-header";
 import { StateCard } from "@/components/state-card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -38,12 +38,11 @@ export default async function CreatePage({ searchParams }: CreatePageProps) {
 
   return (
     <section className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <Badge variant="secondary" className="text-[10px] tracking-[0.2em] uppercase">
-          Milestone 3
-        </Badge>
-        <h1 className="text-2xl font-semibold md:text-3xl">Crea contenuto</h1>
-      </div>
+      <SectionHeader
+        badge="Milestone 3"
+        title="Crea contenuto"
+        description="Pubblica testo, immagini o video collegati a una passione reale."
+      />
 
       <Card className="border-border/70 bg-card/85">
         <CardHeader>

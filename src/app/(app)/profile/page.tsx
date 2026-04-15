@@ -2,8 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PostCard } from "@/components/feed/post-card";
 import { ProfileHeader } from "@/components/profile/profile-header";
+import { SectionHeader } from "@/components/section-header";
 import { StateCard } from "@/components/state-card";
-import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import {
   buildFallbackProfileFromAuthUser,
@@ -58,12 +58,11 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
 
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <Badge variant="secondary" className="text-[10px] tracking-[0.2em] uppercase">
-          Milestone 4
-        </Badge>
-        <h1 className="text-2xl font-semibold md:text-3xl">Il tuo profilo</h1>
-      </div>
+      <SectionHeader
+        badge="Milestone 4"
+        title="Il tuo profilo"
+        description="Identita personale, passioni principali e archivio contenuti in un'unica vista."
+      />
 
       {params.commentError && (
         <p className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-sm text-destructive">
@@ -76,14 +75,31 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
         counters={profileData.counters}
         passions={profileData.passions}
         actionSlot={
-          <Link
-            href={`/profile/${profileData.profile.username}`}
-            className={buttonVariants({ size: "sm", variant: "outline" })}
-          >
-            Vista pubblica
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href="/settings" className={buttonVariants({ size: "sm", variant: "secondary" })}>
+              Modifica profilo
+            </Link>
+            <Link
+              href={`/profile/${profileData.profile.username}`}
+              className={buttonVariants({ size: "sm", variant: "outline" })}
+            >
+              Vista pubblica
+            </Link>
+          </div>
         }
       />
+
+      <div className="surface-soft flex flex-wrap items-center justify-between gap-3 p-3">
+        <div className="flex flex-col">
+          <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+            Contenuti pubblicati
+          </p>
+          <p className="text-sm font-semibold tracking-tight">{posts.length}</p>
+        </div>
+        <Link href="/create" className={buttonVariants({ size: "sm" })}>
+          Crea nuovo post
+        </Link>
+      </div>
 
       {posts.length === 0 ? (
         <StateCard
@@ -92,7 +108,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
           description="Pubblica dal tab Crea per iniziare a popolare il profilo."
         />
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           {posts.map((post) => (
             <PostCard key={post.id} post={post} returnPath="/profile" />
           ))}

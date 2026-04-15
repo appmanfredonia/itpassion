@@ -10,16 +10,16 @@ type BrandMarkProps = {
 
 export function BrandMark({ compact = false, className }: BrandMarkProps) {
   return (
-    <Link href="/" className={cn("inline-flex items-center gap-2", className)}>
-      <span className="inline-flex size-9 items-center justify-center rounded-xl bg-primary font-semibold text-primary-foreground shadow-lg shadow-primary/20">
+    <Link href="/" className={cn("inline-flex items-center gap-2.5", className)}>
+      <span className="inline-flex size-9 items-center justify-center rounded-xl border border-primary/35 bg-gradient-to-br from-primary/90 to-accent/90 font-semibold text-primary-foreground shadow-[0_12px_34px_-20px_oklch(0.76_0.11_198)]">
         IP
       </span>
       {!compact && (
         <span className="flex flex-col gap-1">
-          <span className="text-sm font-semibold leading-none">{siteConfig.name}</span>
+          <span className="text-sm font-semibold leading-none tracking-tight">{siteConfig.name}</span>
           <Badge
             variant="secondary"
-            className="w-fit text-[10px] tracking-[0.2em] uppercase"
+            className="w-fit text-[10px] tracking-[0.18em] uppercase"
           >
             MVP
           </Badge>
@@ -28,4 +28,3 @@ export function BrandMark({ compact = false, className }: BrandMarkProps) {
     </Link>
   );
 }
-

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { SectionHeader } from "@/components/section-header";
 import { ensureUserProfile } from "@/lib/auth";
 import { getNotifications, type NotificationItem } from "@/lib/notifications";
 import { createServerSupabaseClient } from "@/lib/supabase";
@@ -73,12 +74,11 @@ export default async function NotificationsPage() {
 
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <Badge variant="secondary" className="text-[10px] tracking-[0.2em] uppercase">
-          Milestone 6
-        </Badge>
-        <h1 className="text-2xl font-semibold md:text-3xl">Notifiche</h1>
-      </div>
+      <SectionHeader
+        badge="Milestone 6"
+        title="Notifiche"
+        description="Follower, like, commenti e attivita chat recenti in un unico stream."
+      />
 
       {notifications.length === 0 ? (
         <StateCard

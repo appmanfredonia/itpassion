@@ -1,17 +1,25 @@
 import { redirect } from "next/navigation";
 import {
+  updateProfileDetailsAction,
+  updateProfilePassionsAction,
   blockUserAction,
   unblockUserAction,
   updatePrivacySettingsAction,
 } from "@/app/(app)/settings/actions";
+import { SectionHeader } from "@/components/section-header";
 import { StateCard } from "@/components/state-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ensureUserProfile } from "@/lib/auth";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  buildFallbackProfileFromAuthUser,
+  ensureUserProfile,
+  getPassionCatalog,
+  getUserSelectedPassionSlugs,
+} from "@/lib/auth";
 import {
   ensurePrivacySettings,
   getBlockedUsersList,
@@ -23,6 +31,10 @@ type SettingsPageProps = {
   searchParams: Promise<{
     error?: string;
     success?: string;
+    profileError?: string;
+    profileSuccess?: string;
+    passionsError?: string;
+    passionsSuccess?: string;
     blockError?: string;
     blockSuccess?: string;
   }>;
@@ -50,11 +62,23 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
   let hasError = false;
   let privacySettings: UserPrivacySettings | null = null;
   let blockedUsers: Awaited<ReturnType<typeof getBlockedUsersList>> = [];
+  let profile = buildFallbackProfileFromAuthUser(user);
+  let passions: Awaited<ReturnType<typeof getPassionCatalog>>["passions"] = [];
+  let selectedPassionSlugs: string[] = [];
+  let passionsLoadError: string | null = null;
 
   try {
-    await ensureUserProfile(supabase, user);
+    const ensuredProfile = await ensureUserProfile(supabase, user);
+    profile = ensuredProfile ?? buildFallbackProfileFromAuthUser(user);
     privacySettings = await ensurePrivacySettings(supabase, user.id);
     blockedUsers = await getBlockedUsersList(supabase, user.id);
+
+    try {
+      ({ passions } = await getPassionCatalog(supabase));
+      selectedPassionSlugs = await getUserSelectedPassionSlugs(supabase, user);
+    } catch {
+      passionsLoadError = "Impossibile caricare le passioni dal database.";
+    }
   } catch {
     hasError = true;
   }
@@ -62,24 +86,25 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
   if (hasError || !privacySettings) {
     return (
       <section className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-        <h1 className="text-2xl font-semibold md:text-3xl">Impostazioni privacy</h1>
+        <h1 className="text-2xl font-semibold md:text-3xl">Impostazioni account</h1>
         <StateCard
           variant="error"
           title="Errore caricamento impostazioni"
-          description="Controlla privacy_settings e blocked_users prima di riprovare."
+          description="Controlla users, privacy_settings e blocked_users prima di riprovare."
         />
       </section>
     );
   }
 
+  const selectedPassionSet = new Set(selectedPassionSlugs);
+
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <Badge variant="secondary" className="text-[10px] tracking-[0.2em] uppercase">
-          Milestone 6
-        </Badge>
-        <h1 className="text-2xl font-semibold md:text-3xl">Impostazioni privacy</h1>
-      </div>
+      <SectionHeader
+        badge="Milestone 6"
+        title="Impostazioni account"
+        description="Aggiorna profilo, passioni, privacy e gestione blocchi."
+      />
 
       {params.error && (
         <p className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-sm text-destructive">
@@ -89,6 +114,26 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
       {params.success && (
         <p className="rounded-md border border-border/70 bg-secondary/30 p-2 text-sm text-muted-foreground">
           {params.success}
+        </p>
+      )}
+      {params.profileError && (
+        <p className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-sm text-destructive">
+          {params.profileError}
+        </p>
+      )}
+      {params.profileSuccess && (
+        <p className="rounded-md border border-border/70 bg-secondary/30 p-2 text-sm text-muted-foreground">
+          {params.profileSuccess}
+        </p>
+      )}
+      {params.passionsError && (
+        <p className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-sm text-destructive">
+          {params.passionsError}
+        </p>
+      )}
+      {params.passionsSuccess && (
+        <p className="rounded-md border border-border/70 bg-secondary/30 p-2 text-sm text-muted-foreground">
+          {params.passionsSuccess}
         </p>
       )}
       {params.blockError && (
@@ -101,6 +146,103 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
           {params.blockSuccess}
         </p>
       )}
+
+      <Card className="border-border/70 bg-card/85">
+        <CardHeader>
+          <CardTitle>Profilo</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form action={updateProfileDetailsAction} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="settings-username">Nome utente</Label>
+              <Input
+                id="settings-username"
+                name="username"
+                defaultValue={profile.username}
+                autoComplete="username"
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                3-24 caratteri: lettere minuscole, numeri, underscore o punto.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="settings-display-name">Nome visualizzato</Label>
+              <Input
+                id="settings-display-name"
+                name="displayName"
+                defaultValue={profile.displayName}
+                maxLength={60}
+                required
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="settings-bio">Bio</Label>
+              <Textarea
+                id="settings-bio"
+                name="bio"
+                defaultValue={profile.bio ?? ""}
+                maxLength={280}
+                placeholder="Racconta qualcosa delle tue passioni..."
+              />
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              Citta non disponibile nel modello dati attuale (`public.users`).
+            </p>
+
+            <Button type="submit" size="sm">
+              Salva profilo
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/70 bg-card/85">
+        <CardHeader>
+          <CardTitle>Passioni principali</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          {passionsLoadError ? (
+            <StateCard
+              variant="error"
+              title="Catalogo passioni non disponibile"
+              description={passionsLoadError}
+            />
+          ) : passions.length === 0 ? (
+            <StateCard
+              variant="empty"
+              title="Nessuna passione disponibile"
+              description="Aggiungi passioni nel database per aggiornare il profilo."
+            />
+          ) : (
+            <form action={updateProfilePassionsAction} className="flex flex-col gap-4">
+              <div className="grid gap-2 sm:grid-cols-2">
+                {passions.map((passion) => (
+                  <label
+                    key={passion.slug}
+                    className="flex items-center gap-3 rounded-xl border border-border/70 bg-background/60 p-3 text-sm hover:border-primary/40"
+                  >
+                    <input
+                      type="checkbox"
+                      name="passionSlugs"
+                      value={passion.slug}
+                      defaultChecked={selectedPassionSet.has(passion.slug)}
+                      className="size-4 rounded border-border bg-background accent-primary"
+                    />
+                    <span className="font-medium">{passion.name}</span>
+                  </label>
+                ))}
+              </div>
+              <Button type="submit" size="sm" variant="secondary">
+                Aggiorna passioni
+              </Button>
+            </form>
+          )}
+        </CardContent>
+      </Card>
 
       <Card className="border-border/70 bg-card/85">
         <CardHeader>

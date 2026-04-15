@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
+import { SectionHeader } from "@/components/section-header";
 import { StateCard } from "@/components/state-card";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 type MvpPageProps = {
@@ -13,12 +13,7 @@ type MvpPageProps = {
 export function MvpPage({ title, description, milestone, children }: MvpPageProps) {
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <Badge variant="secondary" className="text-[10px] tracking-[0.2em] uppercase">
-          {milestone}
-        </Badge>
-        <h1 className="text-2xl font-semibold md:text-3xl">{title}</h1>
-      </div>
+      <SectionHeader badge={milestone} title={title} description={description} />
 
       <Card className="border-border/70 bg-card/85">
         <CardHeader>
@@ -54,4 +49,3 @@ export function MvpPage({ title, description, milestone, children }: MvpPageProp
     </section>
   );
 }
-

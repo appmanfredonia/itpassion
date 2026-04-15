@@ -19,9 +19,9 @@ export function StateCard({ variant, title, description }: StateCardProps) {
   const Icon = stateIcon[variant];
 
   return (
-    <Card className="border-border/70 bg-background/60">
+    <Card className="border-border/70 bg-surface-1">
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-sm">
+        <CardTitle className="flex items-center gap-2 text-sm tracking-tight">
           <Icon
             className={cn("size-4", variant === "loading" && "animate-spin", variant === "error" && "text-destructive")}
           />
@@ -41,4 +41,3 @@ export function StateCard({ variant, title, description }: StateCardProps) {
     </Card>
   );
 }
-

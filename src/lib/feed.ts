@@ -10,4 +10,5 @@ export {
   type FeedPost,
   type FeedQueryResult,
   type FeedTab,
+  type SavedPostsResult,
 } from "./posts";

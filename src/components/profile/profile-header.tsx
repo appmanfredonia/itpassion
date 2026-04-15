@@ -1,3 +1,4 @@
+import { Sparkles } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,40 +29,44 @@ export function ProfileHeader({
   actionSlot,
 }: ProfileHeaderProps) {
   return (
-    <Card className="border-border/70 bg-background/60">
-      <CardContent className="flex flex-col gap-5 p-5">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Avatar size="lg">
+    <Card className="surface-elevated overflow-hidden">
+      <div className="h-24 border-b border-border/70 bg-gradient-to-r from-primary/22 via-accent/16 to-transparent" />
+      <CardContent className="flex flex-col gap-5 p-5 md:p-6">
+        <div className="-mt-13 flex flex-wrap items-start justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-4">
+            <Avatar size="lg" className="ring-4 ring-background/85 shadow-[0_16px_36px_-24px_oklch(0_0_0_/_0.8)]">
               {profile.avatarUrl && (
                 <AvatarImage src={profile.avatarUrl} alt={`Avatar di @${profile.username}`} />
               )}
               <AvatarFallback>{avatarFallback(profile.username)}</AvatarFallback>
             </Avatar>
-            <div className="flex flex-col">
-              <p className="text-lg font-semibold">{profile.displayName}</p>
-              <p className="text-sm text-muted-foreground">@{profile.username}</p>
+            <div className="flex min-w-0 flex-col">
+              <p className="truncate text-lg font-semibold tracking-tight">{profile.displayName}</p>
+              <p className="truncate text-sm text-muted-foreground">@{profile.username}</p>
             </div>
           </div>
           {actionSlot}
         </div>
 
-        <p className="text-sm text-muted-foreground">
-          {profile.bio ?? "Bio non impostata."}
-        </p>
+        <div className="surface-soft flex items-start gap-2 p-3">
+          <Sparkles className="mt-0.5 size-4 text-primary" />
+          <p className="text-sm leading-relaxed text-foreground/90">
+            {profile.bio ?? "Bio non impostata."}
+          </p>
+        </div>
 
         <div className="grid gap-2 sm:grid-cols-3">
-          <div className="rounded-lg border border-border/70 bg-card/70 p-3">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Post</p>
-            <p className="text-lg font-semibold">{counters.postsCount}</p>
+          <div className="rounded-xl border border-border/70 bg-surface-1 p-3">
+            <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">Post</p>
+            <p className="mt-1 text-xl font-semibold tracking-tight">{counters.postsCount}</p>
           </div>
-          <div className="rounded-lg border border-border/70 bg-card/70 p-3">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Follower</p>
-            <p className="text-lg font-semibold">{counters.followersCount}</p>
+          <div className="rounded-xl border border-border/70 bg-surface-1 p-3">
+            <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">Follower</p>
+            <p className="mt-1 text-xl font-semibold tracking-tight">{counters.followersCount}</p>
           </div>
-          <div className="rounded-lg border border-border/70 bg-card/70 p-3">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Seguiti</p>
-            <p className="text-lg font-semibold">{counters.followingCount}</p>
+          <div className="rounded-xl border border-border/70 bg-surface-1 p-3">
+            <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">Seguiti</p>
+            <p className="mt-1 text-xl font-semibold tracking-tight">{counters.followingCount}</p>
           </div>
         </div>
 
@@ -70,7 +75,7 @@ export function ProfileHeader({
             <Badge variant="outline">Nessuna passione selezionata</Badge>
           ) : (
             passions.map((passion) => (
-              <Badge key={passion.slug} variant="outline">
+              <Badge key={passion.slug} variant="secondary">
                 {passion.name}
               </Badge>
             ))

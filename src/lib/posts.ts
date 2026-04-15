@@ -46,6 +46,12 @@ export type FeedQueryResult = {
   warning: string | null;
 };
 
+export type SavedPostsResult = {
+  posts: FeedPost[];
+  totalSavedCount: number;
+  unavailableSavedCount: number;
+};
+
 type PostRow = Database["public"]["Tables"]["posts"]["Row"];
 type UserRow = Database["public"]["Tables"]["users"]["Row"];
 type CommentRow = Database["public"]["Tables"]["comments"]["Row"];
@@ -366,7 +372,7 @@ export async function getPostsByAuthor(
 export async function getSavedPosts(
   supabase: SupabaseClient<Database>,
   viewerUserId: string,
-): Promise<FeedPost[]> {
+): Promise<SavedPostsResult> {
   const hiddenUserIds = await getHiddenUserSetForViewer(supabase, viewerUserId);
   const hiddenUserIdsList = Array.from(hiddenUserIds);
 
@@ -383,7 +389,11 @@ export async function getSavedPosts(
 
   const saved = savedRows ?? [];
   if (saved.length === 0) {
-    return [];
+    return {
+      posts: [],
+      totalSavedCount: 0,
+      unavailableSavedCount: 0,
+    };
   }
 
   const postIds = saved.map((row) => row.post_id);
@@ -409,10 +419,17 @@ export async function getSavedPosts(
     hiddenUserIds,
   );
   const savedTimeByPostId = new Map(saved.map((row) => [row.post_id, row.created_at]));
-
-  return hydratedPosts.sort((a, b) =>
+  const sortedPosts = hydratedPosts.sort((a, b) =>
     sortDescByDate(savedTimeByPostId.get(a.id) ?? a.createdAt, savedTimeByPostId.get(b.id) ?? b.createdAt),
   );
+  const availablePostIdSet = new Set(sortedPosts.map((post) => post.id));
+  const unavailableSavedCount = saved.filter((savedRow) => !availablePostIdSet.has(savedRow.post_id)).length;
+
+  return {
+    posts: sortedPosts,
+    totalSavedCount: saved.length,
+    unavailableSavedCount,
+  };
 }
 
 export async function getPostById(

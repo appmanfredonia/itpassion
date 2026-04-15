@@ -10,7 +10,7 @@ export default function SettingsLoading() {
       <StateCard
         variant="loading"
         title="Caricamento impostazioni"
-        description="Stiamo recuperando privacy e utenti bloccati."
+        description="Stiamo recuperando profilo, passioni, privacy e utenti bloccati."
       />
     </section>
   );

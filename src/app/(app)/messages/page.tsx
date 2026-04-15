@@ -5,9 +5,9 @@ import {
   sendMessageAction,
   unblockUserFromMessagesAction,
 } from "@/app/(app)/messages/actions";
+import { SectionHeader } from "@/components/section-header";
 import { StateCard } from "@/components/state-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -164,12 +164,11 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <Badge variant="secondary" className="text-[10px] tracking-[0.2em] uppercase">
-          Milestone 6
-        </Badge>
-        <h1 className="text-2xl font-semibold md:text-3xl">Messaggi privati</h1>
-      </div>
+      <SectionHeader
+        badge="Milestone 6"
+        title="Messaggi privati"
+        description="Conversazioni 1:1 con regole privacy e blocchi applicati."
+      />
 
       {params.error && (
         <p className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-sm text-destructive">

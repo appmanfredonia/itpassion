@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PostCard } from "@/components/feed/post-card";
+import { SectionHeader } from "@/components/section-header";
 import { StateCard } from "@/components/state-card";
 import { buttonVariants } from "@/components/ui/button";
 import { ensureUserProfile } from "@/lib/auth";
@@ -100,37 +101,54 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
     }
   }
 
+  const visiblePostsCount = resolvedPosts.length;
+  const tabLabel = selectedTab === "seguiti" ? "Seguiti" : "Per te";
+
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-col">
-          <h1 className="text-2xl font-semibold md:text-3xl">Feed</h1>
-          <p className="text-sm text-muted-foreground">Per te e Seguiti con interazioni social MVP.</p>
-        </div>
-        <Link href="/create" className={buttonVariants({ size: "sm" })}>
-          Crea post
-        </Link>
-      </div>
+      <SectionHeader
+        badge="Milestone 3"
+        title="Feed"
+        description="Un flusso pulito e moderno per seguire passioni, creator e conversazioni."
+        action={
+          <Link href="/create" className={buttonVariants({ size: "sm" })}>
+            Crea post
+          </Link>
+        }
+      />
 
-      <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-background/60 p-2">
-        <Link
-          href="/feed?tab=per-te"
-          className={cn(
-            buttonVariants({ size: "sm", variant: selectedTab === "per-te" ? "secondary" : "ghost" }),
-            "flex-1",
-          )}
-        >
-          Per te
-        </Link>
-        <Link
-          href="/feed?tab=seguiti"
-          className={cn(
-            buttonVariants({ size: "sm", variant: selectedTab === "seguiti" ? "secondary" : "ghost" }),
-            "flex-1",
-          )}
-        >
-          Seguiti
-        </Link>
+      <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+        <div className="surface-soft flex items-center gap-2 p-2">
+          <Link
+            href="/feed?tab=per-te"
+            className={cn(
+              buttonVariants({ size: "sm", variant: selectedTab === "per-te" ? "secondary" : "ghost" }),
+              "flex-1",
+            )}
+          >
+            Per te
+          </Link>
+          <Link
+            href="/feed?tab=seguiti"
+            className={cn(
+              buttonVariants({ size: "sm", variant: selectedTab === "seguiti" ? "secondary" : "ghost" }),
+              "flex-1",
+            )}
+          >
+            Seguiti
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <div className="surface-soft min-w-[132px] p-3">
+            <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">Vista</p>
+            <p className="mt-1 text-sm font-semibold tracking-tight">{tabLabel}</p>
+          </div>
+          <div className="surface-soft min-w-[132px] p-3">
+            <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">Post visibili</p>
+            <p className="mt-1 text-sm font-semibold tracking-tight">{visiblePostsCount}</p>
+          </div>
+        </div>
       </div>
 
       {params.commentError && (
