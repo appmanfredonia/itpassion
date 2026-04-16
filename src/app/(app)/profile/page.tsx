@@ -75,7 +75,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
         counters={profileData.counters}
         passions={profileData.passions}
         actionSlot={
-          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
             <Link href="/settings" className={buttonVariants({ size: "sm", variant: "secondary" })}>
               Modifica profilo
             </Link>

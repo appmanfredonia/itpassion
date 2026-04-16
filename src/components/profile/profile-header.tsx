@@ -29,26 +29,38 @@ export function ProfileHeader({
   actionSlot,
 }: ProfileHeaderProps) {
   return (
-    <Card className="surface-elevated overflow-hidden rounded-[1.9rem] border-border/80">
-      <div className="relative h-[6.75rem] border-b border-border/80 bg-[radial-gradient(circle_at_25%_20%,oklch(0.73_0.16_294_/_0.24),transparent_32%),radial-gradient(circle_at_78%_30%,oklch(0.7_0.15_243_/_0.2),transparent_30%),linear-gradient(135deg,oklch(0.17_0.02_270),oklch(0.13_0.02_272))] md:h-[8rem]" />
-      <CardContent className="flex flex-col gap-4 p-4 pt-3 md:p-5">
-        <div className="-mt-8 flex flex-col gap-4 sm:-mt-12 sm:flex-row sm:items-end sm:justify-between">
-          <div className="flex min-w-0 items-end gap-3.5">
+    <Card className="surface-elevated overflow-visible rounded-[1.9rem] border-border/80">
+      <div className="relative overflow-hidden rounded-t-[1.9rem] border-b border-border/80">
+        <div className="h-[6.9rem] bg-[radial-gradient(circle_at_25%_20%,oklch(0.73_0.16_294_/_0.24),transparent_32%),radial-gradient(circle_at_78%_30%,oklch(0.7_0.15_243_/_0.2),transparent_30%),linear-gradient(135deg,oklch(0.17_0.02_270),oklch(0.13_0.02_272))] md:h-[8.1rem]" />
+      </div>
+      <CardContent className="flex flex-col gap-4 p-4 pt-4 md:p-5 md:pt-5">
+        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] gap-x-3 gap-y-3 sm:gap-x-4 sm:gap-y-2">
+          <div className="row-span-2 flex items-start">
             <Avatar
               size="lg"
-              className="size-20 ring-4 ring-background/88 shadow-[0_24px_50px_-30px_oklch(0_0_0_/_0.88)] sm:size-24"
+              className="-mt-11 size-20 ring-4 ring-background/92 shadow-[0_24px_50px_-30px_oklch(0_0_0_/_0.88)] sm:-mt-14 sm:size-24"
             >
               {profile.avatarUrl && (
                 <AvatarImage src={profile.avatarUrl} alt={`Avatar di @${profile.username}`} />
               )}
               <AvatarFallback>{avatarFallback(profile.username)}</AvatarFallback>
             </Avatar>
-            <div className="flex min-w-0 flex-1 flex-col">
-              <p className="truncate text-xl font-semibold tracking-[-0.03em]">{profile.displayName}</p>
-              <p className="truncate text-sm text-muted-foreground">@{profile.username}</p>
-            </div>
           </div>
-          {actionSlot ? <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">{actionSlot}</div> : null}
+
+          <div className="col-span-2 min-w-0 pt-2 sm:col-span-1 sm:self-end sm:pt-4">
+            <p className="text-xl font-semibold tracking-[-0.03em] break-words text-balance sm:text-[1.45rem]">
+              {profile.displayName}
+            </p>
+            <p className="pt-0.5 text-sm text-muted-foreground break-all sm:break-words">
+              @{profile.username}
+            </p>
+          </div>
+
+          {actionSlot ? (
+            <div className="col-span-2 col-start-2 row-start-2 flex flex-wrap items-center gap-2 pt-1 sm:col-span-1 sm:col-start-3 sm:row-span-2 sm:row-start-1 sm:items-end sm:justify-end sm:self-end sm:pt-0">
+              {actionSlot}
+            </div>
+          ) : null}
         </div>
 
         <div className="surface-soft flex items-start gap-2 rounded-[1.35rem] border-border/80 bg-black/14 p-3">

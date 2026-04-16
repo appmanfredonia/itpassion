@@ -188,7 +188,7 @@ export default async function PublicProfilePage({
               Torna al tuo profilo
             </Link>
           ) : (
-            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
               <form action={toggleFollowAction}>
                 <input type="hidden" name="targetUserId" value={profileData.profile.id} />
                 <input type="hidden" name="returnPath" value={returnPath} />
