@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { PostCard } from "@/components/feed/post-card";
+import { PostVisualGrid } from "@/components/feed/post-visual-grid";
 import { SectionHeader } from "@/components/section-header";
 import { StateCard } from "@/components/state-card";
 import { ensureUserProfile } from "@/lib/auth";
@@ -58,23 +58,23 @@ export default async function SavedPage({ searchParams }: SavedPageProps) {
       <SectionHeader
         badge="Milestone 4"
         title="Contenuti salvati"
-        description="Conserva qui i post che vuoi ritrovare velocemente."
+        description="Una raccolta piu compatta e premium, coerente con il feed e con gli stati privacy."
       />
 
-      <div className="grid gap-3 md:grid-cols-3">
-        <div className="surface-soft p-4">
+      <div className="grid grid-cols-3 gap-3">
+        <div className="app-grid-stat">
           <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
             Salvati totali
           </p>
           <p className="mt-1 text-sm font-semibold tracking-tight">{savedResult.totalSavedCount}</p>
         </div>
-        <div className="surface-soft p-4">
+        <div className="app-grid-stat">
           <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
             Disponibili ora
           </p>
           <p className="mt-1 text-sm font-semibold tracking-tight">{posts.length}</p>
         </div>
-        <div className="surface-soft p-4">
+        <div className="app-grid-stat">
           <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
             Non disponibili
           </p>
@@ -113,10 +113,8 @@ export default async function SavedPage({ searchParams }: SavedPageProps) {
           />
         )
       ) : (
-        <div className="surface-panel flex flex-col gap-3 p-3.5">
-          {posts.map((post) => (
-            <PostCard key={post.id} post={post} returnPath="/saved" />
-          ))}
+        <div className="app-page-shell flex flex-col gap-3">
+          <PostVisualGrid posts={posts} columns={2} dense />
         </div>
       )}
     </section>

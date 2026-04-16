@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { PostCard } from "@/components/feed/post-card";
+import { PostVisualGrid } from "@/components/feed/post-visual-grid";
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { SectionHeader } from "@/components/section-header";
 import { StateCard } from "@/components/state-card";
@@ -61,7 +61,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
       <SectionHeader
         badge="Milestone 4"
         title="Il tuo profilo"
-        description="Identita personale, passioni principali e archivio contenuti in un'unica vista."
+        description="Header piu editoriale, metriche forti e gallery contenuti piu vicina al mockup."
       />
 
       {params.commentError && (
@@ -89,12 +89,12 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
         }
       />
 
-      <div className="surface-soft flex flex-wrap items-center justify-between gap-3 p-3">
+      <div className="app-page-shell flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-col">
           <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
             Contenuti pubblicati
           </p>
-          <p className="text-sm font-semibold tracking-tight">{posts.length}</p>
+          <p className="text-lg font-semibold tracking-tight">{posts.length}</p>
         </div>
         <Link href="/create" className={buttonVariants({ size: "sm" })}>
           Crea nuovo post
@@ -108,11 +108,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
           description="Pubblica dal tab Crea per iniziare a popolare il profilo."
         />
       ) : (
-        <div className="flex flex-col gap-4">
-          {posts.map((post) => (
-            <PostCard key={post.id} post={post} returnPath="/profile" />
-          ))}
-        </div>
+        <PostVisualGrid posts={posts} columns={3} />
       )}
     </section>
   );

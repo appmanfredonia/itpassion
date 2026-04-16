@@ -19,15 +19,21 @@ export function SectionHeader({
 }: SectionHeaderProps) {
   return (
     <div className={cn("flex flex-wrap items-start justify-between gap-4", className)}>
-      <div className="flex min-w-0 flex-col gap-2">
+      <div className="flex min-w-0 flex-col gap-3">
         {badge && (
-          <Badge variant="secondary" className="w-fit text-[10px] tracking-[0.18em] uppercase">
+          <Badge
+            variant="secondary"
+            className="w-fit border-primary/20 bg-primary/10 px-3 py-1 text-[10px] tracking-[0.18em] text-primary uppercase"
+          >
             {badge}
           </Badge>
         )}
-        <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">{title}</h1>
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-semibold tracking-[-0.03em] md:text-[2rem]">{title}</h1>
+          <span className="h-px w-16 bg-gradient-to-r from-primary via-accent to-transparent" />
+        </div>
         {description && (
-          <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">{description}</p>
+          <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground/95">{description}</p>
         )}
       </div>
       {action ? <div className="shrink-0">{action}</div> : null}

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { PostCard } from "@/components/feed/post-card";
+import { Search } from "lucide-react";
+import { PostVisualGrid } from "@/components/feed/post-visual-grid";
 import { SectionHeader } from "@/components/section-header";
 import { StateCard } from "@/components/state-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -66,16 +67,12 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
     );
   }
 
-  const returnPath = data.selectedPassionSlug
-    ? `/explore?passion=${data.selectedPassionSlug}`
-    : "/explore";
-
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-col gap-6">
       <SectionHeader
         badge="Milestone 5"
         title="Esplora"
-        description="Scoperta reale basata su passioni, autori e contenuti recenti."
+        description="Ricerca visuale, persone da scoprire e contenuti popolari in una struttura molto piu editoriale."
       />
 
       {params.commentError && (
@@ -91,10 +88,13 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
           description="Aggiungi passioni nel database per attivare la discovery."
         />
       ) : (
-        <div className="surface-panel flex flex-col gap-3 p-3.5">
-          <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-            Filtra per passione
-          </p>
+        <div className="app-page-shell flex flex-col gap-4">
+          <div className="flex items-center gap-3 rounded-[1.4rem] border border-border/80 bg-black/14 px-3 py-3">
+            <Search className="size-4 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
+              Cerca passioni, persone o post visuali
+            </p>
+          </div>
           <div className="flex flex-wrap gap-2.5">
             <Link
               href="/explore"
@@ -126,8 +126,8 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
         </div>
       )}
 
-      <div className="grid gap-3 md:grid-cols-3">
-        <div className="surface-soft p-4">
+      <div className="grid grid-cols-3 gap-3">
+        <div className="app-grid-stat">
           <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
             Passione attiva
           </p>
@@ -135,13 +135,13 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
             {data.selectedPassionName ?? "Tutte le passioni"}
           </p>
         </div>
-        <div className="surface-soft p-4">
+        <div className="app-grid-stat">
           <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
             Contenuti in vista
           </p>
           <p className="mt-1 text-sm font-semibold tracking-tight">{data.posts.length}</p>
         </div>
-        <div className="surface-soft p-4">
+        <div className="app-grid-stat">
           <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
             Autori in evidenza
           </p>
@@ -150,7 +150,7 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
       </div>
 
       <div className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold tracking-tight">Autori reali</h2>
+        <h2 className="text-lg font-semibold tracking-tight">Persone da scoprire</h2>
         {data.authors.length === 0 ? (
           <StateCard
             variant="empty"
@@ -163,8 +163,9 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
               <Link
                 key={author.userId}
                 href={`/profile/${author.username}`}
-                className="surface-soft p-3 hover:border-primary/40"
+                className="group relative overflow-hidden rounded-[1.6rem] border border-border/80 bg-surface-1/95 p-4 shadow-[0_22px_44px_-30px_oklch(0_0_0_/_0.9)] transition-[border-color,transform,background-color] duration-200 hover:border-primary/40 hover:bg-surface-2 hover:-translate-y-0.5"
               >
+                <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-r from-primary/16 via-accent/10 to-transparent" />
                 <div className="flex items-center gap-3">
                   <Avatar>
                     {author.avatarUrl && (
@@ -173,11 +174,14 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
                     <AvatarFallback>{avatarFallback(author.username)}</AvatarFallback>
                   </Avatar>
                   <div className="flex min-w-0 flex-col">
-                    <p className="truncate text-sm font-medium">@{author.username}</p>
+                    <p className="truncate text-sm font-semibold">@{author.username}</p>
                     <p className="truncate text-xs text-muted-foreground">
                       {author.postsCountInView} contenuti in vista
                     </p>
                   </div>
+                  <span className="ml-auto rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
+                    Apri
+                  </span>
                 </div>
               </Link>
             ))}
@@ -186,7 +190,7 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
       </div>
 
       <div className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold tracking-tight">Contenuti recenti</h2>
+        <h2 className="text-lg font-semibold tracking-tight">Post popolari</h2>
         {data.posts.length === 0 ? (
           <StateCard
             variant="empty"
@@ -194,11 +198,7 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
             description="Prova una passione diversa o pubblica nuovi contenuti."
           />
         ) : (
-          <div className="flex flex-col gap-3">
-            {data.posts.map((post) => (
-              <PostCard key={post.id} post={post} returnPath={returnPath} />
-            ))}
-          </div>
+          <PostVisualGrid posts={data.posts} columns={2} dense />
         )}
       </div>
     </section>

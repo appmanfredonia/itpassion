@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Search } from "lucide-react";
 import { PostCard } from "@/components/feed/post-card";
+import { FeedStoryStrip } from "@/components/feed/feed-story-strip";
 import { SectionHeader } from "@/components/section-header";
 import { StateCard } from "@/components/state-card";
 import { buttonVariants } from "@/components/ui/button";
@@ -103,52 +105,75 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
 
   const visiblePostsCount = resolvedPosts.length;
   const tabLabel = selectedTab === "seguiti" ? "Seguiti" : "Per te";
+  const storyItems = Array.from(
+    new Map(
+      resolvedPosts.map((post) => [
+        post.userId,
+        {
+          userId: post.userId,
+          username: post.authorUsername,
+          displayName: post.authorDisplayName,
+          avatarUrl: post.authorAvatarUrl,
+        },
+      ]),
+    ).values(),
+  ).slice(0, 8);
 
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-col gap-6">
       <SectionHeader
         badge="Milestone 3"
         title="Feed"
-        description="Un flusso pulito e moderno per seguire passioni, autori e conversazioni."
+        description="Per te e Seguiti in una superficie piu mobile-first, con storie visuali e media dominanti."
         action={
-          <Link href="/create" className={buttonVariants({ size: "sm" })}>
-            Nuovo post
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/search"
+              className={buttonVariants({ size: "icon-sm", variant: "outline" })}
+            >
+              <Search className="size-4" />
+            </Link>
+            <Link href="/create" className={buttonVariants({ size: "sm" })}>
+              Nuovo post
+            </Link>
+          </div>
         }
       />
 
-      <div className="grid gap-3 md:grid-cols-[1fr_auto]">
-        <div className="surface-soft flex items-center gap-2 p-2">
-          <Link
-            href="/feed?tab=per-te"
-            className={cn(
-              buttonVariants({ size: "sm", variant: selectedTab === "per-te" ? "secondary" : "ghost" }),
-              "flex-1",
-            )}
-          >
-            Per te
-          </Link>
-          <Link
-            href="/feed?tab=seguiti"
-            className={cn(
-              buttonVariants({ size: "sm", variant: selectedTab === "seguiti" ? "secondary" : "ghost" }),
-              "flex-1",
-            )}
-          >
-            Seguiti
-          </Link>
+      <div className="app-page-shell flex flex-col gap-4">
+        <div className="flex items-center justify-between gap-4 border-b border-border/80 pb-3">
+          <div className="flex items-center gap-5">
+            <Link
+              href="/feed?tab=per-te"
+              className={cn(
+                "relative text-sm font-semibold transition-colors",
+                selectedTab === "per-te" ? "text-foreground" : "text-muted-foreground",
+              )}
+            >
+              Per te
+              {selectedTab === "per-te" ? (
+                <span className="absolute -bottom-3 left-0 h-0.5 w-full rounded-full bg-gradient-to-r from-primary to-accent" />
+              ) : null}
+            </Link>
+            <Link
+              href="/feed?tab=seguiti"
+              className={cn(
+                "relative text-sm font-semibold transition-colors",
+                selectedTab === "seguiti" ? "text-foreground" : "text-muted-foreground",
+              )}
+            >
+              Seguiti
+              {selectedTab === "seguiti" ? (
+                <span className="absolute -bottom-3 left-0 h-0.5 w-full rounded-full bg-gradient-to-r from-primary to-accent" />
+              ) : null}
+            </Link>
+          </div>
+          <p className="rounded-full border border-border/80 bg-surface-1 px-3 py-1 text-[11px] font-medium text-muted-foreground">
+            {tabLabel} / {visiblePostsCount}
+          </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <div className="surface-soft min-w-[132px] p-3">
-            <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">Vista</p>
-            <p className="mt-1 text-sm font-semibold tracking-tight">{tabLabel}</p>
-          </div>
-          <div className="surface-soft min-w-[132px] p-3">
-            <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">Post visibili</p>
-            <p className="mt-1 text-sm font-semibold tracking-tight">{visiblePostsCount}</p>
-          </div>
-        </div>
+        <FeedStoryStrip items={storyItems} />
       </div>
 
       {params.commentError && (
@@ -181,7 +206,12 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
       ) : (
         <div className="flex flex-col gap-3">
           {resolvedPosts.map((post) => (
-            <PostCard key={post.id} post={post} returnPath={returnPath} />
+            <PostCard
+              key={post.id}
+              post={post}
+              returnPath={returnPath}
+              commentPreviewLimit={1}
+            />
           ))}
         </div>
       )}

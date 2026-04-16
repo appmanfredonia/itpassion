@@ -14,6 +14,8 @@ export type NotificationItem = {
   content: string;
   createdAt: string;
   href: string;
+  relatedPostId: string | null;
+  previewImageUrl: string | null;
 };
 
 type UserLookup = {
@@ -190,6 +192,29 @@ export async function getNotifications(
     throw conversationsResponse.error;
   }
 
+  const relatedPostIds = unique([
+    ...(likesResponse.data ?? []).map((row) => row.post_id),
+    ...(commentsResponse.data ?? []).map((row) => row.post_id),
+  ]);
+  const { data: mediaRows, error: mediaError } =
+    relatedPostIds.length > 0
+      ? await supabase
+          .from("post_media")
+          .select("post_id, media_url")
+          .in("post_id", relatedPostIds)
+      : { data: [], error: null };
+
+  if (mediaError) {
+    throw mediaError;
+  }
+
+  const previewImageByPostId = new Map<string, string>();
+  (mediaRows ?? []).forEach((row) => {
+    if (!previewImageByPostId.has(row.post_id)) {
+      previewImageByPostId.set(row.post_id, row.media_url);
+    }
+  });
+
   const actorIds = unique([
     ...(followRows ?? []).map((row) => row.follower_id),
     ...(likesResponse.data ?? []).map((row) => row.user_id),
@@ -218,6 +243,8 @@ export async function getNotifications(
       content: "ha iniziato a seguirti.",
       createdAt: row.created_at,
       href: `/profile/${actor.username}`,
+      relatedPostId: null,
+      previewImageUrl: null,
     });
   });
 
@@ -239,6 +266,8 @@ export async function getNotifications(
       content: `ha messo mi piace al tuo post${postHint}.`,
       createdAt: row.created_at,
       href: `/feed?post=${row.post_id}`,
+      relatedPostId: row.post_id,
+      previewImageUrl: previewImageByPostId.get(row.post_id) ?? null,
     });
   });
 
@@ -258,6 +287,8 @@ export async function getNotifications(
       content: `ha commentato: "${truncate(row.content, 90)}"`,
       createdAt: row.created_at,
       href: `/feed?post=${row.post_id}`,
+      relatedPostId: row.post_id,
+      previewImageUrl: previewImageByPostId.get(row.post_id) ?? null,
     });
   });
 
@@ -277,6 +308,8 @@ export async function getNotifications(
       content: `ti ha scritto: "${truncate(row.content, 90)}"`,
       createdAt: row.created_at,
       href: `/messages?c=${row.conversation_id}`,
+      relatedPostId: null,
+      previewImageUrl: null,
     });
   });
 
@@ -296,6 +329,8 @@ export async function getNotifications(
       content: "ha avviato una conversazione con te.",
       createdAt: row.created_at,
       href: `/messages?c=${row.id}`,
+      relatedPostId: null,
+      previewImageUrl: null,
     });
   });
 

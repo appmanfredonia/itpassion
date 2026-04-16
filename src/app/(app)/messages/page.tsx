@@ -117,7 +117,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
       }
     }
 
-    if (!selectedConversationId && conversations.length > 0) {
+    if (!selectedConversationId && requestedUsername && conversations.length > 0) {
       selectedConversationId = conversations[0].conversationId;
     }
 
@@ -189,29 +189,29 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
       <SectionHeader
         badge="Milestone 6"
         title="Messaggi privati"
-        description="Chat 1:1 semplici e private, con regole di privacy e blocco attive."
+        description="Lista chat piu densa, conversazione piu reale e composizione piu vicina al mockup mobile."
       />
 
-      <div className="grid gap-3 md:grid-cols-3">
-        <div className="surface-soft p-4">
+      <div className="grid grid-cols-3 gap-3">
+        <div className="app-grid-stat">
           <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
             Conversazioni
           </p>
           <p className="mt-1 text-sm font-semibold tracking-tight">{conversations.length}</p>
         </div>
-        <div className="surface-soft p-4">
+        <div className="app-grid-stat">
           <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
             Chat attiva
           </p>
-          <p className="mt-1 truncate text-sm font-semibold tracking-tight">
+          <p className="mt-1 truncate text-[13px] font-semibold tracking-tight">
             {activeConversation ? `@${activeConversation.item.otherUsername}` : "Nessuna selezionata"}
           </p>
         </div>
-        <div className="surface-soft p-4">
+        <div className="app-grid-stat">
           <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
             Stato invio
           </p>
-          <p className="mt-1 text-sm font-semibold tracking-tight">
+          <p className="mt-1 text-[13px] font-semibold tracking-tight">
             {activeConversation
               ? activeConversation.data.canSendMessages
                 ? "Attivo"
@@ -239,9 +239,9 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
         </div>
       )}
 
-      <form action="/messages" method="get" className="surface-panel flex flex-col gap-3 p-4">
+      <form action="/messages" method="get" className="app-page-shell flex flex-col gap-3">
         <div className="flex items-center gap-2">
-          <span className="rounded-full border border-border/70 bg-surface-1 p-1.5">
+          <span className="rounded-full border border-primary/20 bg-primary/10 p-1.5">
             <Plus className="size-3.5 text-primary" />
           </span>
           <p className="text-sm font-semibold tracking-tight">Nuova conversazione</p>
@@ -271,7 +271,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
         <div className="grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)]">
           <aside
             className={cn(
-              "surface-panel no-scrollbar flex max-h-[72vh] flex-col gap-2 overflow-auto p-3.5",
+              "surface-panel no-scrollbar flex max-h-[72vh] flex-col gap-2 overflow-auto rounded-[2rem] border-border/80 bg-card/88 p-3.5",
               isConversationSelected && "hidden lg:flex",
             )}
           >
@@ -289,9 +289,9 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                 key={conversation.conversationId}
                 href={messagesPath(conversation.conversationId)}
                 className={cn(
-                  "rounded-xl border border-border/70 bg-surface-1 p-3.5 transition-[border-color,background-color,transform] duration-150 hover:border-primary/45 hover:bg-surface-2/90",
+                  "rounded-[1.5rem] border border-border/80 bg-surface-1/95 p-3.5 transition-[border-color,background-color,transform,box-shadow] duration-200 hover:border-primary/45 hover:bg-surface-2/90 hover:shadow-[0_20px_40px_-28px_oklch(0.73_0.16_294_/_0.75)]",
                   selectedConversationId === conversation.conversationId &&
-                    "border-primary/50 bg-primary/12",
+                    "border-primary/50 bg-gradient-to-r from-primary/18 to-accent/10",
                 )}
               >
                 <div className="flex items-center gap-3">
@@ -318,6 +318,9 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                       {formatCreatedAt(conversation.lastMessageAt)}
                     </p>
                   </div>
+                  {selectedConversationId === conversation.conversationId ? (
+                    <span className="ml-auto mt-1 size-2 rounded-full bg-primary shadow-[0_0_16px_oklch(0.73_0.16_294_/_0.9)]" />
+                  ) : null}
                 </div>
               </Link>
             ))}
@@ -325,7 +328,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
 
           <div
             className={cn(
-              "surface-panel flex min-h-[72vh] flex-col overflow-hidden",
+              "surface-panel flex min-h-[72vh] flex-col overflow-hidden rounded-[2rem] border-border/80 bg-card/88",
               !isConversationSelected && "hidden lg:flex",
             )}
           >
@@ -339,7 +342,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
               </div>
             ) : (
               <>
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 bg-surface-1 px-4 py-3.5">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 bg-surface-1/95 px-4 py-3.5">
                   <div className="flex items-center gap-3">
                     <Avatar>
                       {activeConversation!.item.otherAvatarUrl && (
@@ -404,7 +407,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                   </div>
                 </div>
 
-                <div className="no-scrollbar flex flex-1 flex-col gap-2.5 overflow-auto px-4 py-4">
+                <div className="no-scrollbar flex flex-1 flex-col gap-2.5 overflow-auto bg-[radial-gradient(circle_at_top,oklch(0.73_0.16_294_/_0.08),transparent_28%)] px-4 py-4">
                   {activeConversation!.data.messages.length === 0 ? (
                     <StateCard
                       variant="empty"
@@ -420,10 +423,10 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                       <div
                         key={message.id}
                         className={cn(
-                          "max-w-[80%] rounded-2xl border p-3",
+                          "max-w-[82%] rounded-[1.5rem] border p-3.5 shadow-[0_18px_36px_-28px_oklch(0_0_0_/_0.9)]",
                           message.isMine
-                            ? "ml-auto border-primary/45 bg-primary/14"
-                            : "mr-auto border-border/70 bg-surface-1",
+                            ? "ml-auto border-primary/45 bg-gradient-to-br from-primary/18 to-accent/10"
+                            : "mr-auto border-border/80 bg-surface-1/95",
                         )}
                       >
                         <p className="text-[11px] text-muted-foreground">
@@ -436,7 +439,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                 </div>
 
                 {!activeConversation!.data.canSendMessages && (
-                  <div className="mx-4 mb-2 flex items-start gap-2 rounded-xl border border-border/70 bg-secondary/35 p-2.5 text-sm text-muted-foreground">
+                  <div className="mx-4 mb-2 flex items-start gap-2 rounded-2xl border border-border/80 bg-secondary/35 p-3 text-sm text-muted-foreground">
                     <ShieldAlert className="mt-0.5 size-4 shrink-0 text-primary" />
                     <p>
                       {activeConversation!.data.sendBlockedReason ??
@@ -445,7 +448,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                   </div>
                 )}
 
-                <form action={sendMessageAction} className="border-t border-border/70 bg-surface-1 px-4 py-3.5">
+                <form action={sendMessageAction} className="border-t border-border/80 bg-surface-1/95 px-4 py-3.5">
                   <input type="hidden" name="conversationId" value={activeConversation!.id} />
                   <div className="flex flex-col gap-2 sm:flex-row">
                     <Input

@@ -22,6 +22,11 @@ type AppNavigationProps = {
 
 export function AppNavigation({ mobile = false }: AppNavigationProps) {
   const pathname = usePathname();
+  const items = mobile
+    ? appNavigation.filter((item) =>
+        ["/feed", "/explore", "/create", "/messages", "/profile"].includes(item.href),
+      )
+    : appNavigation;
 
   return (
     <nav
@@ -29,10 +34,10 @@ export function AppNavigation({ mobile = false }: AppNavigationProps) {
         "flex",
         mobile
           ? "no-scrollbar -mx-1 overflow-x-auto px-1"
-          : "flex-col gap-1.5",
+          : "flex-col gap-2",
       )}
     >
-      {appNavigation.map((item) => {
+      {items.map((item) => {
         const isActive =
           pathname === item.href ||
           pathname.startsWith(`${item.href}/`) ||
@@ -56,16 +61,26 @@ export function AppNavigation({ mobile = false }: AppNavigationProps) {
             key={item.href}
             href={item.href}
             className={cn(
-              "group/nav-item inline-flex items-center gap-2 rounded-xl border text-sm font-medium tracking-tight transition-[border-color,background-color,color,transform] duration-150",
+              "group/nav-item inline-flex items-center gap-2 rounded-2xl border text-sm font-medium tracking-tight transition-[border-color,background-color,color,box-shadow,transform] duration-200",
               isActive
-                ? "border-primary/45 bg-primary/14 text-foreground shadow-[0_14px_28px_-24px_oklch(0.76_0.11_198)]"
-                : "border-transparent text-muted-foreground hover:border-border/70 hover:bg-surface-1 hover:text-foreground",
+                ? "border-primary/40 bg-gradient-to-r from-primary/22 to-accent/12 text-foreground shadow-[0_18px_38px_-24px_oklch(0.73_0.16_294_/_0.82)]"
+                : "border-transparent bg-transparent text-muted-foreground hover:border-border/80 hover:bg-surface-1 hover:text-foreground",
               mobile
-                ? "mr-1.5 min-w-[4.75rem] flex-col justify-center gap-1 px-2.5 py-2 text-[11px]"
-                : "w-full justify-start px-3 py-2.5",
+                ? "mr-2 min-w-[4.8rem] flex-col justify-center gap-1 rounded-[1.4rem] px-2.5 py-2.5 text-[11px]"
+                : "w-full justify-start px-3.5 py-3",
             )}
           >
-            <Icon className={cn("size-4", mobile && "size-3.5")} />
+            <span
+              className={cn(
+                "inline-flex items-center justify-center rounded-full border border-transparent transition-colors duration-200",
+                isActive
+                  ? "bg-primary/18 text-primary shadow-[0_10px_22px_-16px_oklch(0.73_0.16_294_/_0.9)]"
+                  : "bg-surface-1/40 text-muted-foreground group-hover/nav-item:bg-surface-2 group-hover/nav-item:text-foreground",
+                mobile ? "size-8" : "size-9",
+              )}
+            >
+              <Icon className={cn("size-4", mobile && "size-3.5")} />
+            </span>
             {mobile ? item.shortLabel : item.label}
           </Link>
         );

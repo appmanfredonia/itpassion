@@ -5,7 +5,7 @@ import { toggleFollowAction } from "@/app/(app)/profile/actions";
 import {
   blockUserAction,
 } from "@/app/(app)/settings/actions";
-import { PostCard } from "@/components/feed/post-card";
+import { PostVisualGrid } from "@/components/feed/post-visual-grid";
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { SectionHeader } from "@/components/section-header";
 import { StateCard } from "@/components/state-card";
@@ -155,7 +155,7 @@ export default async function PublicProfilePage({
       <SectionHeader
         badge="Milestone 4"
         title={`Profilo di @${profileData.profile.username}`}
-        description="Profilo pubblico con follow, messaggi diretti e contenuti condivisi."
+        description="Profilo pubblico piu forte e visivo, con CTA e contenuti immersivi."
       />
 
       {pageParams.commentError && (
@@ -215,12 +215,12 @@ export default async function PublicProfilePage({
         }
       />
 
-      <div className="surface-soft flex flex-wrap items-center justify-between gap-3 p-3">
+      <div className="app-page-shell flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-col">
           <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
             Contenuti visibili
           </p>
-          <p className="text-sm font-semibold tracking-tight">
+          <p className="text-lg font-semibold tracking-tight">
             {canViewPrivateProfile ? posts.length : 0}
           </p>
         </div>
@@ -242,11 +242,7 @@ export default async function PublicProfilePage({
           description="Questo profilo non ha ancora pubblicato contenuti."
         />
       ) : (
-        <div className="flex flex-col gap-4">
-          {posts.map((post) => (
-            <PostCard key={post.id} post={post} returnPath={returnPath} />
-          ))}
-        </div>
+        <PostVisualGrid posts={posts} columns={3} />
       )}
     </section>
   );

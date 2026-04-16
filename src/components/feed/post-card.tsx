@@ -13,10 +13,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import type { FeedPost } from "@/lib/feed";
+import { cn } from "@/lib/utils";
 
 type PostCardProps = {
   post: FeedPost;
   returnPath: string;
+  commentPreviewLimit?: number;
 };
 
 function formatCreatedAt(isoDate: string): string {
@@ -35,10 +37,16 @@ function avatarFallback(username: string): string {
   return normalized.slice(0, 2).toUpperCase();
 }
 
-export function PostCard({ post, returnPath }: PostCardProps) {
+export function PostCard({
+  post,
+  returnPath,
+  commentPreviewLimit = 1,
+}: PostCardProps) {
+  const hiddenCommentsCount = Math.max(post.comments.length - commentPreviewLimit, 0);
+
   return (
-    <Card id={`post-${post.id}`} className="surface-panel">
-      <CardHeader className="pb-2">
+    <Card id={`post-${post.id}`} className="surface-panel rounded-[1.9rem] border-border/80 bg-card/85 py-3">
+      <CardHeader className="pb-1.5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             <Avatar size="lg">
@@ -55,17 +63,19 @@ export function PostCard({ post, returnPath }: PostCardProps) {
               >
                 @{post.authorUsername}
               </Link>
-              <p className="text-[11px] text-muted-foreground">{formatCreatedAt(post.createdAt)}</p>
+              <p className="text-[11px] text-muted-foreground/90">{formatCreatedAt(post.createdAt)}</p>
             </div>
           </div>
 
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             <Link href={`/explore?passion=${post.passionSlug}`}>
-              <Badge variant="secondary">{post.passionName}</Badge>
+              <Badge variant="secondary" className="border-primary/20 bg-primary/10 text-primary">
+                {post.passionName}
+              </Badge>
             </Link>
             <Link
               href={`/feed?post=${post.id}`}
-              className="inline-flex items-center gap-1 rounded-lg border border-border/70 bg-surface-1 px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+              className="inline-flex items-center gap-1 rounded-full border border-border/80 bg-black/16 px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
             >
               Apri
               <ArrowUpRight className="size-3" />
@@ -74,14 +84,16 @@ export function PostCard({ post, returnPath }: PostCardProps) {
         </div>
       </CardHeader>
 
-      <CardContent className="flex flex-col gap-4">
+      <CardContent className="flex flex-col gap-3.5">
         {post.textContent && (
-          <p className="text-sm leading-relaxed break-words text-foreground/95">{post.textContent}</p>
+          <p className="px-0.5 text-sm leading-relaxed break-words text-foreground/95">{post.textContent}</p>
         )}
 
-        <PostMediaGallery contentType={post.contentType} media={post.media} />
+        <div className="-mx-4 sm:mx-0">
+          <PostMediaGallery contentType={post.contentType} media={post.media} />
+        </div>
 
-        <div className="surface-soft flex flex-wrap items-center gap-2 p-2">
+        <div className="surface-soft flex flex-wrap items-center gap-2 rounded-[1.45rem] border-border/80 bg-black/14 p-2.5">
           <form action={toggleLikeAction}>
             <input type="hidden" name="postId" value={post.id} />
             <input type="hidden" name="returnPath" value={returnPath} />
@@ -106,7 +118,7 @@ export function PostCard({ post, returnPath }: PostCardProps) {
           </p>
         </div>
 
-        <div className="surface-soft flex flex-col gap-3 p-3">
+        <div className="surface-soft flex flex-col gap-3 rounded-[1.55rem] border-border/80 bg-surface-1/95 p-3">
           <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
             Commenti
           </p>
@@ -115,10 +127,13 @@ export function PostCard({ post, returnPath }: PostCardProps) {
             <p className="text-xs text-muted-foreground">Nessun commento al momento.</p>
           ) : (
             <div className="flex flex-col gap-2">
-              {post.comments.map((comment) => (
+              {post.comments.map((comment, index) => (
                 <div
                   key={comment.id}
-                  className="flex items-start justify-between gap-3 rounded-lg border border-border/70 bg-surface-2 px-3 py-2.5"
+                  className={cn(
+                    "items-start justify-between gap-3 rounded-2xl border border-border/80 bg-black/12 px-3 py-2.5",
+                    index < commentPreviewLimit ? "flex" : "hidden sm:flex",
+                  )}
                 >
                   <div className="flex min-w-0 flex-col gap-1">
                     <Link
@@ -145,6 +160,14 @@ export function PostCard({ post, returnPath }: PostCardProps) {
               ))}
             </div>
           )}
+
+          {hiddenCommentsCount > 0 ? (
+            <p className="text-[11px] text-muted-foreground">
+              {hiddenCommentsCount === 1
+                ? "1 commento in piu visibile aprendo il post."
+                : `${hiddenCommentsCount} commenti in piu visibili aprendo il post.`}
+            </p>
+          ) : null}
 
           <form action={addCommentAction} className="flex flex-col gap-2 sm:flex-row">
             <input type="hidden" name="postId" value={post.id} />

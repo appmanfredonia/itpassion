@@ -67,7 +67,13 @@ export function PostMediaGallery({ contentType, media }: PostMediaGalleryProps) 
 
   return (
     <div className="flex flex-col gap-2.5">
-      <div className={renderableMedia.length > 1 ? "grid grid-cols-1 gap-3 sm:grid-cols-2" : "grid grid-cols-1 gap-3"}>
+      <div
+        className={
+          renderableMedia.length > 1
+            ? "grid grid-cols-1 gap-3 sm:grid-cols-2"
+            : "grid grid-cols-1 gap-3"
+        }
+      >
         {renderableMedia.map((mediaItem, index) => {
           const mediaLabel = getMediaTypeLabel(mediaItem.kind);
           const mediaAlt = `${mediaLabel} ${index + 1} del post`;
@@ -75,9 +81,9 @@ export function PostMediaGallery({ contentType, media }: PostMediaGalleryProps) 
           return (
             <figure
               key={`${mediaItem.kind}-${mediaItem.url}-${index}`}
-              className="overflow-hidden rounded-2xl border border-border/70 bg-surface-2"
+              className="group/media overflow-hidden rounded-[1.7rem] border border-border/80 bg-surface-2 shadow-[0_26px_52px_-34px_oklch(0_0_0_/_0.92)]"
             >
-              <div className="aspect-video w-full bg-muted/20">
+              <div className="relative aspect-[4/5] w-full bg-muted/20 sm:aspect-[4/4.2]">
                 {mediaItem.kind === "image" ? (
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -85,18 +91,24 @@ export function PostMediaGallery({ contentType, media }: PostMediaGalleryProps) 
                       src={mediaItem.url}
                       alt={mediaAlt}
                       loading="lazy"
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover/media:scale-[1.03]"
                     />
                   </>
                 ) : (
-                  <video controls preload="metadata" playsInline className="h-full w-full object-cover">
+                  <video
+                    controls
+                    preload="metadata"
+                    playsInline
+                    className="h-full w-full object-cover"
+                  >
                     <source src={mediaItem.url} />
                     Il tuo browser non supporta la riproduzione video.
                   </video>
                 )}
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/55 via-black/8 to-transparent" />
               </div>
-              <figcaption className="flex items-center justify-between gap-2 border-t border-border/60 px-3 py-2">
-                <span className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+              <figcaption className="flex items-center justify-between gap-2 border-t border-border/70 bg-black/16 px-3 py-2.5">
+                <span className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                   {mediaLabel}
                 </span>
                 <a
