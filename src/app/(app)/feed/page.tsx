@@ -140,7 +140,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
         }
       />
 
-      <div className="app-page-shell flex flex-col gap-4">
+      <div className="app-page-shell flex flex-col gap-3">
         <div className="flex items-center justify-between gap-4 border-b border-border/80 pb-3">
           <div className="flex items-center gap-5">
             <Link
@@ -204,7 +204,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
           }
         />
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2.5">
           {resolvedPosts.map((post) => (
             <PostCard
               key={post.id}

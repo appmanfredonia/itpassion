@@ -126,7 +126,7 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="stats-grid">
         <div className="app-grid-stat">
           <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
             Passione attiva
@@ -158,22 +158,22 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
             description="Pubblica contenuti per popolare gli autori in Esplora."
           />
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
             {data.authors.map((author) => (
               <Link
                 key={author.userId}
                 href={`/profile/${author.username}`}
-                className="group relative overflow-hidden rounded-[1.6rem] border border-border/80 bg-surface-1/95 p-4 shadow-[0_22px_44px_-30px_oklch(0_0_0_/_0.9)] transition-[border-color,transform,background-color] duration-200 hover:border-primary/40 hover:bg-surface-2 hover:-translate-y-0.5"
+                className="group relative overflow-hidden rounded-[1.5rem] border border-border/80 bg-surface-1/95 p-3.5 shadow-[0_22px_44px_-30px_oklch(0_0_0_/_0.9)] transition-[border-color,transform,background-color] duration-200 hover:border-primary/40 hover:bg-surface-2 hover:-translate-y-0.5"
               >
                 <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-r from-primary/16 via-accent/10 to-transparent" />
-                <div className="flex items-center gap-3">
+                <div className="flex min-w-0 items-center gap-3">
                   <Avatar>
                     {author.avatarUrl && (
                       <AvatarImage src={author.avatarUrl} alt={`Avatar di @${author.username}`} />
                     )}
                     <AvatarFallback>{avatarFallback(author.username)}</AvatarFallback>
                   </Avatar>
-                  <div className="flex min-w-0 flex-col">
+                  <div className="flex min-w-0 flex-1 flex-col">
                     <p className="truncate text-sm font-semibold">@{author.username}</p>
                     <p className="truncate text-xs text-muted-foreground">
                       {author.postsCountInView} contenuti in vista

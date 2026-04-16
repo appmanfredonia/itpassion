@@ -192,7 +192,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
         description="Lista chat piu densa, conversazione piu reale e composizione piu vicina al mockup mobile."
       />
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="stats-grid">
         <div className="app-grid-stat">
           <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
             Conversazioni
@@ -268,10 +268,10 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
           description="Avvia una chat dal profilo pubblico o dalla ricerca utenti."
         />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)]">
+        <div className="grid min-h-0 gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
           <aside
             className={cn(
-              "surface-panel no-scrollbar flex max-h-[72vh] flex-col gap-2 overflow-auto rounded-[2rem] border-border/80 bg-card/88 p-3.5",
+              "surface-panel no-scrollbar flex min-h-0 max-h-[68vh] flex-col gap-2 overflow-auto rounded-[2rem] border-border/80 bg-card/88 p-3.5",
               isConversationSelected && "hidden lg:flex",
             )}
           >
@@ -328,7 +328,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
 
           <div
             className={cn(
-              "surface-panel flex min-h-[72vh] flex-col overflow-hidden rounded-[2rem] border-border/80 bg-card/88",
+              "surface-panel flex min-h-[68vh] min-w-0 flex-col overflow-hidden rounded-[2rem] border-border/80 bg-card/88",
               !isConversationSelected && "hidden lg:flex",
             )}
           >
@@ -342,8 +342,8 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
               </div>
             ) : (
               <>
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 bg-surface-1/95 px-4 py-3.5">
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 bg-surface-1/95 px-4 py-3">
+                  <div className="flex min-w-0 items-center gap-3">
                     <Avatar>
                       {activeConversation!.item.otherAvatarUrl && (
                         <AvatarImage
@@ -355,7 +355,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                         {avatarFallback(activeConversation!.item.otherUsername)}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex flex-col">
+                    <div className="flex min-w-0 flex-col">
                       <p className="text-sm font-semibold tracking-tight">
                         @{activeConversation!.item.otherUsername}
                       </p>
@@ -407,7 +407,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                   </div>
                 </div>
 
-                <div className="no-scrollbar flex flex-1 flex-col gap-2.5 overflow-auto bg-[radial-gradient(circle_at_top,oklch(0.73_0.16_294_/_0.08),transparent_28%)] px-4 py-4">
+                <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-2.5 overflow-auto bg-[radial-gradient(circle_at_top,oklch(0.73_0.16_294_/_0.08),transparent_28%)] px-4 py-4">
                   {activeConversation!.data.messages.length === 0 ? (
                     <StateCard
                       variant="empty"

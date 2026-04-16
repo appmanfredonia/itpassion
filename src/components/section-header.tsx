@@ -18,8 +18,8 @@ export function SectionHeader({
   className,
 }: SectionHeaderProps) {
   return (
-    <div className={cn("flex flex-wrap items-start justify-between gap-4", className)}>
-      <div className="flex min-w-0 flex-col gap-3">
+    <div className={cn("flex flex-wrap items-start justify-between gap-3 md:gap-4", className)}>
+      <div className="flex min-w-0 flex-1 flex-col gap-2.5">
         {badge && (
           <Badge
             variant="secondary"
@@ -28,15 +28,17 @@ export function SectionHeader({
             {badge}
           </Badge>
         )}
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold tracking-[-0.03em] md:text-[2rem]">{title}</h1>
+        <div className="flex min-w-0 flex-col gap-1">
+          <h1 className="max-w-[22rem] text-2xl font-semibold tracking-[-0.03em] text-balance md:max-w-none md:text-[2rem]">
+            {title}
+          </h1>
           <span className="h-px w-16 bg-gradient-to-r from-primary via-accent to-transparent" />
         </div>
         {description && (
-          <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground/95">{description}</p>
+          <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground/95">{description}</p>
         )}
       </div>
-      {action ? <div className="shrink-0">{action}</div> : null}
+      {action ? <div className="flex w-full flex-wrap justify-start gap-2 sm:w-auto sm:justify-end">{action}</div> : null}
     </div>
   );
 }

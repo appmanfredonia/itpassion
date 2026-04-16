@@ -162,7 +162,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
         description="Aggiorna profilo, passioni, privacy e gestione blocchi."
       />
 
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="stats-grid">
         <div className="surface-soft p-4">
           <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
             Username attivo
@@ -398,7 +398,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
                 blockedUsers.map((blockedUser) => (
                   <div
                     key={blockedUser.userId}
-                    className="surface-soft flex flex-wrap items-center justify-between gap-3 p-3"
+                    className="surface-soft flex flex-wrap items-start justify-between gap-3 p-3 sm:items-center"
                   >
                     <div className="flex items-center gap-3">
                       <Avatar>

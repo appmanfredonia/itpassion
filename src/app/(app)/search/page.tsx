@@ -97,7 +97,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         </div>
       </form>
 
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="stats-grid">
         <div className="surface-soft p-4">
           <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
             Utenti
@@ -163,7 +163,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 {searchData.users.map((userResult) => (
                   <div
                     key={userResult.id}
-                    className="surface-soft flex flex-col gap-3 p-3.5"
+                    className="surface-soft flex h-full flex-col gap-3 p-3.5"
                   >
                     {userResult.isBlockedByMe ? (
                       <div className="flex items-center gap-3">
@@ -214,7 +214,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                         </div>
                       </Link>
                     )}
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="mt-auto flex flex-wrap items-center gap-2">
                       {userResult.isBlockedByMe ? (
                         <form action={unblockUserAction}>
                           <input type="hidden" name="targetUserId" value={userResult.id} />

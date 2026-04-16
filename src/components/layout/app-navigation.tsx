@@ -33,8 +33,8 @@ export function AppNavigation({ mobile = false }: AppNavigationProps) {
       className={cn(
         "flex",
         mobile
-          ? "no-scrollbar -mx-1 overflow-x-auto px-1"
-          : "flex-col gap-2",
+          ? "grid w-full grid-cols-5 gap-1"
+          : "flex-col gap-1.5",
       )}
     >
       {items.map((item) => {
@@ -66,7 +66,7 @@ export function AppNavigation({ mobile = false }: AppNavigationProps) {
                 ? "border-primary/40 bg-gradient-to-r from-primary/22 to-accent/12 text-foreground shadow-[0_18px_38px_-24px_oklch(0.73_0.16_294_/_0.82)]"
                 : "border-transparent bg-transparent text-muted-foreground hover:border-border/80 hover:bg-surface-1 hover:text-foreground",
               mobile
-                ? "mr-2 min-w-[4.8rem] flex-col justify-center gap-1 rounded-[1.4rem] px-2.5 py-2.5 text-[11px]"
+                ? "min-w-0 flex-1 flex-col justify-center gap-1 rounded-[1.35rem] px-1.5 py-2 text-[10.5px]"
                 : "w-full justify-start px-3.5 py-3",
             )}
           >
@@ -76,12 +76,12 @@ export function AppNavigation({ mobile = false }: AppNavigationProps) {
                 isActive
                   ? "bg-primary/18 text-primary shadow-[0_10px_22px_-16px_oklch(0.73_0.16_294_/_0.9)]"
                   : "bg-surface-1/40 text-muted-foreground group-hover/nav-item:bg-surface-2 group-hover/nav-item:text-foreground",
-                mobile ? "size-8" : "size-9",
+                mobile ? "size-[1.875rem]" : "size-9",
               )}
             >
               <Icon className={cn("size-4", mobile && "size-3.5")} />
             </span>
-            {mobile ? item.shortLabel : item.label}
+            <span className={cn(mobile && "truncate")}>{mobile ? item.shortLabel : item.label}</span>
           </Link>
         );
       })}

@@ -61,7 +61,7 @@ export default async function SavedPage({ searchParams }: SavedPageProps) {
         description="Una raccolta piu compatta e premium, coerente con il feed e con gli stati privacy."
       />
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="stats-grid">
         <div className="app-grid-stat">
           <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
             Salvati totali

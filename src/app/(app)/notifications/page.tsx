@@ -135,7 +135,7 @@ export default async function NotificationsPage() {
         description="Timeline piu ordinata, densa e leggibile per follower, like, commenti e chat."
       />
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="stats-grid">
         <div className="app-grid-stat">
           <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
             Attivita recenti
@@ -202,7 +202,7 @@ export default async function NotificationsPage() {
                             {typeLabel(notification.type)}
                           </Badge>
                         </div>
-                        <p className="mt-1 text-sm leading-relaxed break-words text-muted-foreground">
+                        <p className="mt-1 line-clamp-3 text-sm leading-relaxed break-words text-muted-foreground [overflow-wrap:anywhere]">
                           {notification.content}
                         </p>
                         <p className="mt-2 text-xs text-muted-foreground/90">
