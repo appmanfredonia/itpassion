@@ -17,29 +17,31 @@ export function AppShell({ children, userEmail, userName, logoutAction }: AppShe
 
   return (
     <div className="min-h-screen px-2 py-2 md:px-4 md:py-4">
-      <div className="mx-auto grid w-full max-w-[1320px] grid-cols-1 gap-2.5 lg:grid-cols-[272px_minmax(0,1fr)] lg:gap-4">
-        <aside className="surface-elevated no-scrollbar relative sticky top-4 hidden h-[calc(100vh-2rem)] flex-col gap-5 overflow-x-hidden overflow-y-auto p-3.5 lg:flex">
-          <div className="absolute inset-x-8 top-0 h-20 rounded-full bg-primary/10 blur-3xl" />
+      <div className="mx-auto grid w-full max-w-[1320px] grid-cols-1 gap-2.5 lg:grid-cols-[256px_minmax(0,1fr)] lg:gap-4">
+        <aside className="surface-elevated relative sticky top-4 hidden h-[calc(100vh-2rem)] min-h-0 flex-col gap-3 overflow-hidden p-3 lg:flex">
+          <div className="absolute inset-x-8 top-0 h-16 rounded-full bg-primary/10 blur-3xl" />
 
-          <div className="relative flex items-center justify-between gap-2">
-            <BrandMark />
-            <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-semibold tracking-[0.16em] text-primary uppercase">
+          <div className="relative flex shrink-0 items-center justify-between gap-1.5">
+            <BrandMark metaMode="none" className="gap-2" />
+            <span className="rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[9px] font-semibold tracking-[0.16em] text-primary uppercase">
               App
             </span>
           </div>
 
-          <div className="relative rounded-[1.4rem] border border-border/80 bg-black/12 p-1.5">
-            <AppNavigation />
+          <div className="relative min-h-0 flex-1 overflow-y-auto pr-1 no-scrollbar">
+            <div className="rounded-[1.25rem] border border-border/80 bg-black/12 p-1">
+              <AppNavigation />
+            </div>
           </div>
 
-          <div className="relative mt-auto flex flex-col gap-3 rounded-[1.5rem] border border-border/80 bg-surface-1/95 p-4 shadow-[0_22px_44px_-30px_oklch(0_0_0_/_0.92)]">
-            <div className="flex flex-col gap-1">
+          <div className="relative mt-auto flex shrink-0 flex-col gap-2 rounded-[1.35rem] border border-border/80 bg-surface-1/95 p-3 shadow-[0_22px_44px_-30px_oklch(0_0_0_/_0.92)]">
+            <div className="flex flex-col gap-0.5">
               <p className="text-[11px] font-semibold tracking-[0.16em] text-primary uppercase">Profilo attivo</p>
               <p className="text-sm font-semibold tracking-tight">{resolvedUserName}</p>
-              <p className="text-xs text-muted-foreground">{userEmail}</p>
+              <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
             </div>
             <form action={logoutAction}>
-              <Button type="submit" variant="outline" size="sm" className="w-full">
+              <Button type="submit" variant="outline" size="xs" className="w-full">
                 Esci
               </Button>
             </form>
@@ -86,12 +88,12 @@ export function AppShell({ children, userEmail, userName, logoutAction }: AppShe
             </div>
           </header>
 
-          <main className="min-h-0 flex-1 overflow-y-auto px-3 py-4 pb-[calc(6rem+env(safe-area-inset-bottom))] md:px-5 md:py-5 lg:pb-6">
+          <main className="min-h-0 flex-1 overflow-y-auto px-3 py-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:px-5 md:py-5 lg:pb-6">
             {children}
           </main>
 
-          <footer className="sticky bottom-0 z-20 border-t border-border/80 bg-surface-1/95 px-2 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] lg:hidden">
-            <div className="rounded-[1.7rem] border border-border/80 bg-black/16 p-1.5 shadow-[0_18px_40px_-24px_oklch(0_0_0_/_0.92)]">
+          <footer className="sticky bottom-0 z-20 border-t border-border/80 bg-surface-1/95 px-2 py-1.5 pb-[calc(0.35rem+env(safe-area-inset-bottom))] lg:hidden">
+            <div className="rounded-[1.45rem] border border-border/80 bg-black/16 p-1 shadow-[0_18px_40px_-24px_oklch(0_0_0_/_0.92)]">
               <AppNavigation mobile />
             </div>
           </footer>
