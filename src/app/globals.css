@@ -238,3 +238,241 @@
     box-shadow: inset 0 1px 0 oklch(0.95 0.02 255 / 0.06);
   }
 }
+
+.maplibre-shell .maplibregl-map {
+  background:
+    radial-gradient(circle at top, oklch(0.73 0.16 294 / 0.09), transparent 34%),
+    linear-gradient(180deg, rgba(6, 10, 19, 0.92), rgba(4, 6, 12, 0.98));
+}
+
+.maplibre-shell .maplibregl-canvas {
+  outline: none;
+}
+
+.maplibre-shell .maplibregl-ctrl-top-right {
+  top: 0.85rem;
+  right: 0.85rem;
+}
+
+.maplibre-shell .maplibregl-ctrl-bottom-right {
+  right: 0.85rem;
+  bottom: 0.85rem;
+}
+
+.maplibre-shell .maplibregl-ctrl-group,
+.maplibre-shell .maplibregl-ctrl-attrib {
+  border: 1px solid oklch(0.33 0.03 275 / 0.8);
+  background: oklch(0.17 0.025 270 / 0.78);
+  color: oklch(0.92 0.006 255);
+  box-shadow: 0 16px 32px -20px oklch(0 0 0 / 0.86);
+  backdrop-filter: blur(20px);
+}
+
+.maplibre-shell .maplibregl-ctrl button {
+  width: 2rem;
+  height: 2rem;
+  color: oklch(0.92 0.006 255);
+}
+
+.maplibre-shell .maplibregl-ctrl button:hover {
+  background: oklch(0.24 0.028 272 / 0.82);
+}
+
+.maplibre-shell .maplibregl-ctrl button span {
+  filter: brightness(1.08);
+}
+
+.maplibre-shell .maplibregl-ctrl-attrib.maplibregl-compact-show,
+.maplibre-shell .maplibregl-ctrl-attrib a {
+  color: oklch(0.8 0.02 262);
+}
+
+.maplibre-shell .maplibregl-popup {
+  z-index: 18;
+}
+
+.maplibre-shell .maplibregl-popup-content {
+  padding: 0;
+  overflow: hidden;
+  border-radius: 1.15rem;
+  background: transparent;
+  box-shadow: none;
+}
+
+.maplibre-shell .maplibregl-popup-tip {
+  border-top-color: oklch(0.18 0.024 270 / 0.96);
+}
+
+.maplibre-shell .maplibregl-popup-close-button {
+  display: none;
+}
+
+.itpassion-map-marker {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.itpassion-map-marker-pulse {
+  position: absolute;
+  inset: 0.1rem;
+  border-radius: 999px;
+  background: oklch(0.73 0.165 294 / 0.18);
+  filter: blur(10px);
+}
+
+.itpassion-map-marker-core {
+  position: relative;
+  z-index: 1;
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 999px;
+  border: 2px solid oklch(0.98 0.004 260 / 0.92);
+  background: linear-gradient(160deg, oklch(0.76 0.17 294), oklch(0.69 0.15 243));
+  box-shadow:
+    0 0 0 4px oklch(0.73 0.165 294 / 0.18),
+    0 12px 26px -14px oklch(0.73 0.165 294 / 0.88);
+}
+
+.itpassion-map-marker-count {
+  position: absolute;
+  top: -0.45rem;
+  right: -0.55rem;
+  z-index: 2;
+  min-width: 1rem;
+  height: 1rem;
+  padding-inline: 0.24rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid oklch(0.98 0.004 260 / 0.24);
+  background: oklch(0.17 0.025 270 / 0.94);
+  color: oklch(0.96 0.004 255);
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 10px 18px -12px oklch(0 0 0 / 0.92);
+}
+
+.itpassion-map-popup-card {
+  width: min(18rem, calc(100vw - 3rem));
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.95rem;
+  border: 1px solid oklch(0.33 0.03 275 / 0.8);
+  border-radius: 1.15rem;
+  background:
+    radial-gradient(circle at top, oklch(0.73 0.16 294 / 0.08), transparent 42%),
+    linear-gradient(180deg, oklch(0.19 0.025 270 / 0.97), oklch(0.16 0.022 272 / 0.98));
+  color: oklch(0.965 0.004 255);
+  box-shadow: 0 24px 48px -28px oklch(0 0 0 / 0.92);
+}
+
+.itpassion-map-popup-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.itpassion-map-popup-avatar {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1px solid oklch(0.33 0.03 275 / 0.8);
+  background: oklch(0.23 0.024 268 / 0.92);
+  color: oklch(0.78 0.018 262);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.itpassion-map-popup-avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.itpassion-map-popup-identity {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.itpassion-map-popup-name,
+.itpassion-map-popup-username,
+.itpassion-map-popup-location {
+  margin: 0;
+}
+
+.itpassion-map-popup-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.itpassion-map-popup-username,
+.itpassion-map-popup-location {
+  color: oklch(0.8 0.02 262);
+  font-size: 0.77rem;
+  line-height: 1.35;
+}
+
+.itpassion-map-popup-meta,
+.itpassion-map-popup-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.itpassion-map-popup-badge,
+.itpassion-map-popup-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.55rem;
+  padding-inline: 0.65rem;
+  border-radius: 999px;
+  border: 1px solid oklch(0.33 0.03 275 / 0.76);
+  background: oklch(0.17 0.023 270 / 0.78);
+  color: oklch(0.8 0.02 262);
+  font-size: 0.68rem;
+  font-weight: 500;
+}
+
+.itpassion-map-popup-badge-primary,
+.itpassion-map-popup-chip {
+  border-color: oklch(0.73 0.165 294 / 0.18);
+  background: oklch(0.73 0.165 294 / 0.09);
+  color: oklch(0.88 0.045 290);
+}
+
+.itpassion-map-popup-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.15rem;
+  border-radius: 0.9rem;
+  border: 1px solid oklch(0.33 0.03 275 / 0.76);
+  background: linear-gradient(135deg, oklch(0.73 0.165 294 / 0.2), oklch(0.7 0.15 243 / 0.18));
+  color: oklch(0.965 0.004 255);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.itpassion-map-popup-link:hover {
+  background: linear-gradient(135deg, oklch(0.73 0.165 294 / 0.28), oklch(0.7 0.15 243 / 0.24));
+}

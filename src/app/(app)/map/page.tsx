@@ -39,6 +39,10 @@ export default async function MapPage() {
     );
   }
 
+  const mappedResultsCount = mapData.results.filter(
+    (result) => result.latitude !== null && result.longitude !== null,
+  ).length;
+
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <SectionHeader
@@ -140,12 +144,12 @@ export default async function MapPage() {
                       Provincia: {mapData.viewerProvince ?? "n.d."}
                     </span>
                     <span className="rounded-full border border-border/80 bg-black/14 px-2.5 py-1 text-[11px] text-muted-foreground">
-                      {mapData.clusters.length} aree attive
+                      {mappedResultsCount} marker attivi
                     </span>
                   </div>
                 </div>
                 <div className="pt-3">
-                  <AreaMap clusters={mapData.clusters} />
+                  <AreaMap results={mapData.results} viewerProvince={mapData.viewerProvince} />
                 </div>
               </div>
               <p className="px-1 text-xs leading-relaxed text-muted-foreground">
