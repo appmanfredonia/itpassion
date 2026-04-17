@@ -1,6 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getProfileById } from "@/lib/auth";
-import { formatLocationLabel, resolveItalianLocation } from "@/lib/location";
+import {
+  formatLocationLabel,
+  normalizeProvinceMatchKey,
+  resolveItalianLocation,
+} from "@/lib/location";
 import {
   getBlockVisibilitySets,
   getHiddenPrivateProfileIds,
@@ -48,6 +52,10 @@ function unique(values: string[]): string[] {
   return Array.from(new Set(values));
 }
 
+function normalizePassionMatchKey(value: string): string {
+  return value.trim().toLowerCase();
+}
+
 export async function getPassionMapData(
   supabase: SupabaseClient<Database>,
   currentUserId: string,
@@ -80,6 +88,7 @@ export async function getPassionMapData(
   });
 
   const viewerProvince = viewerProfile?.province ?? viewerResolvedLocation.location.province;
+  const viewerProvinceMatchKey = normalizeProvinceMatchKey(viewerProvince);
   const viewerLocationLabel = viewerProfile
     ? formatLocationLabel({
         city: viewerProfile.city ?? viewerResolvedLocation.location.city,
@@ -89,7 +98,7 @@ export async function getPassionMapData(
 
   const locationStatus: PassionMapData["locationStatus"] = !viewerProfile?.city
     ? "missing-city"
-    : viewerProvince
+    : viewerProvinceMatchKey
       ? "ready"
       : "missing-province";
 
@@ -104,6 +113,9 @@ export async function getPassionMapData(
 
   const passionNameBySlug = new Map(
     (passionRowsResponse.data ?? []).map((row) => [row.slug, row.name]),
+  );
+  const viewerPassionKeySet = new Set(
+    viewerPassionSlugs.map((slug) => normalizePassionMatchKey(slug)),
   );
   const passions = viewerPassionSlugs.map((slug) => ({
     slug,
@@ -121,28 +133,44 @@ export async function getPassionMapData(
     };
   }
 
-  const { data: sharedPassionRows, error: sharedPassionError } = await supabase
-    .from("user_passions")
-    .select("user_id, passion_slug")
-    .in("passion_slug", viewerPassionSlugs)
-    .neq("user_id", currentUserId);
+  const { data: userRows, error: usersError } = await supabase
+    .from("users")
+    .select("id, username, display_name, avatar_url, city, province, region, latitude, longitude")
+    .neq("id", currentUserId);
 
-  if (sharedPassionError) {
-    throw sharedPassionError;
+  if (usersError) {
+    throw usersError;
   }
 
-  const overlapByUserId = new Map<string, string[]>();
-  (sharedPassionRows ?? []).forEach((row) => {
-    if (hiddenUserIds.has(row.user_id)) {
-      return;
-    }
+  const sameProvinceUsers = (userRows ?? [])
+    .map((userRow) => {
+      const resolvedLocation = resolveItalianLocation({
+        city: userRow.city,
+        province: userRow.province,
+      });
+      const province = userRow.province ?? resolvedLocation.location.province;
+      const region = userRow.region ?? resolvedLocation.location.region;
+      const latitude = userRow.latitude ?? resolvedLocation.location.latitude;
+      const longitude = userRow.longitude ?? resolvedLocation.location.longitude;
 
-    const currentPassions = overlapByUserId.get(row.user_id) ?? [];
-    currentPassions.push(row.passion_slug);
-    overlapByUserId.set(row.user_id, currentPassions);
-  });
+      return {
+        ...userRow,
+        city: userRow.city ?? resolvedLocation.location.city,
+        province,
+        provinceMatchKey: normalizeProvinceMatchKey(province),
+        region,
+        latitude,
+        longitude,
+      };
+    })
+    .filter(
+      (userRow) =>
+        !hiddenUserIds.has(userRow.id) &&
+        userRow.provinceMatchKey !== null &&
+        userRow.provinceMatchKey === viewerProvinceMatchKey,
+    );
 
-  const candidateIds = Array.from(overlapByUserId.keys());
+  const candidateIds = sameProvinceUsers.map((userRow) => userRow.id);
   if (candidateIds.length === 0) {
     return {
       locationStatus,
@@ -154,37 +182,41 @@ export async function getPassionMapData(
     };
   }
 
-  const { data: userRows, error: usersError } = await supabase
-    .from("users")
-    .select("id, username, display_name, avatar_url, city, province, region, latitude, longitude")
-    .in("id", candidateIds);
+  const { data: candidatePassionRows, error: candidatePassionsError } = await supabase
+    .from("user_passions")
+    .select("user_id, passion_slug")
+    .in("user_id", candidateIds);
 
-  if (usersError) {
-    throw usersError;
+  if (candidatePassionsError) {
+    throw candidatePassionsError;
   }
 
-  const mapResults: MapUserMatch[] = (userRows ?? [])
+  const overlapByUserId = new Map<string, string[]>();
+  (candidatePassionRows ?? []).forEach((row) => {
+    const normalizedPassionKey = normalizePassionMatchKey(row.passion_slug);
+    if (!viewerPassionKeySet.has(normalizedPassionKey)) {
+      return;
+    }
+
+    const currentPassions = overlapByUserId.get(row.user_id) ?? [];
+    currentPassions.push(row.passion_slug.trim());
+    overlapByUserId.set(row.user_id, currentPassions);
+  });
+
+  const mapResults: MapUserMatch[] = sameProvinceUsers
     .map((userRow) => {
       const overlapSlugs = unique(overlapByUserId.get(userRow.id) ?? []);
-      const resolvedLocation = resolveItalianLocation({
-        city: userRow.city,
-        province: userRow.province,
-      });
-      const province = userRow.province ?? resolvedLocation.location.province;
-      const region = userRow.region ?? resolvedLocation.location.region;
-      const latitude = userRow.latitude ?? resolvedLocation.location.latitude;
-      const longitude = userRow.longitude ?? resolvedLocation.location.longitude;
 
       return {
         userId: userRow.id,
         username: userRow.username,
         displayName: userRow.display_name,
         avatarUrl: userRow.avatar_url,
-        city: userRow.city ?? resolvedLocation.location.city,
-        province,
-        region,
-        latitude,
-        longitude,
+        city: userRow.city,
+        province: userRow.province,
+        region: userRow.region,
+        latitude: userRow.latitude,
+        longitude: userRow.longitude,
         commonPassions: overlapSlugs.map((slug) => ({
           slug,
           name: passionNameBySlug.get(slug) ?? slug,
@@ -192,9 +224,7 @@ export async function getPassionMapData(
         overlapCount: overlapSlugs.length,
       };
     })
-    .filter(
-      (result) => result.userId !== currentUserId && result.province === viewerProvince && result.commonPassions.length > 0,
-    )
+    .filter((result) => result.commonPassions.length > 0)
     .sort((firstResult, secondResult) => {
       if (firstResult.overlapCount !== secondResult.overlapCount) {
         return secondResult.overlapCount - firstResult.overlapCount;

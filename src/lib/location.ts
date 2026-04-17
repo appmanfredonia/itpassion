@@ -67,6 +67,22 @@ function normalizeLocationKey(value: string): string {
     .trim();
 }
 
+export function normalizeProvinceMatchKey(value: string | null | undefined): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalizedDisplay = normalizeDisplayValue(value);
+  if (!normalizedDisplay) {
+    return null;
+  }
+
+  const provinceMatch = provinceByKey.get(normalizeLocationKey(normalizedDisplay)) ?? null;
+  return normalizeLocationKey(
+    provinceMatch?.provinceCode ?? provinceMatch?.province ?? normalizedDisplay,
+  );
+}
+
 function normalizeDisplayValue(value: string | null | undefined): string | null {
   if (typeof value !== "string") {
     return null;
