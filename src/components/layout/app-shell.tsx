@@ -100,13 +100,15 @@ export function AppShell({ children, userEmail, userName, logoutAction }: AppShe
             </div>
           </header>
 
-          <main className="min-h-0 flex-1 overflow-y-auto px-3 py-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:px-5 md:py-5 lg:pb-6">
+          <main className="min-h-0 flex-1 overflow-y-auto px-3 py-4 pb-[calc(6.8rem+env(safe-area-inset-bottom))] md:px-5 md:py-5 lg:pb-6">
             {children}
           </main>
 
-          <footer className="sticky bottom-0 z-20 border-t border-border/80 bg-surface-1/95 px-2 py-1.5 pb-[calc(0.35rem+env(safe-area-inset-bottom))] lg:hidden">
-            <div className="rounded-[1.45rem] border border-border/80 bg-black/16 p-1 shadow-[0_18px_40px_-24px_oklch(0_0_0_/_0.92)]">
-              <AppNavigation mobile />
+          <footer className="pointer-events-none fixed inset-x-0 bottom-0 z-30 lg:hidden">
+            <div className="mx-auto w-full max-w-[1320px] px-2 pb-[calc(0.45rem+env(safe-area-inset-bottom))]">
+              <div className="pointer-events-auto rounded-[1.55rem] border border-border/80 bg-surface-1/92 p-1 shadow-[0_22px_44px_-24px_oklch(0_0_0_/_0.96)] backdrop-blur-xl">
+                <AppNavigation mobile />
+              </div>
             </div>
           </footer>
         </div>
