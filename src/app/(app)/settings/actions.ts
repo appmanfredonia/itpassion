@@ -9,6 +9,7 @@ import {
   normalizeUsername,
   saveUserPassions,
 } from "@/lib/auth";
+import { resolveItalianLocation } from "@/lib/location";
 import {
   blockUserById,
   ensurePrivacySettings,
@@ -79,6 +80,8 @@ export async function updateProfileDetailsAction(formData: FormData): Promise<ne
   const usernameRaw = formData.get("username");
   const displayNameRaw = formData.get("displayName");
   const bioRaw = formData.get("bio");
+  const cityRaw = formData.get("city");
+  const provinceRaw = formData.get("province");
 
   const normalizedUsername =
     typeof usernameRaw === "string" ? normalizeUsername(usernameRaw) : "";
@@ -100,6 +103,20 @@ export async function updateProfileDetailsAction(formData: FormData): Promise<ne
     redirectProfileError("La bio non puo superare 280 caratteri.");
   }
   const bio = trimmedBio.length > 0 ? trimmedBio : null;
+  const cityValue = typeof cityRaw === "string" ? cityRaw.trim() : "";
+  const provinceValue = typeof provinceRaw === "string" ? provinceRaw.trim() : "";
+
+  if (cityValue.length > 80) {
+    redirectProfileError("La citta non puo superare 80 caratteri.");
+  }
+  if (provinceValue.length > 60) {
+    redirectProfileError("La provincia non puo superare 60 caratteri.");
+  }
+
+  const resolvedLocation = resolveItalianLocation({
+    city: cityValue.length > 0 ? cityValue : null,
+    province: provinceValue.length > 0 ? provinceValue : null,
+  });
 
   const { supabase, user, profile } = await getAuthenticatedContext();
   let result: ActionResult;
@@ -125,6 +142,11 @@ export async function updateProfileDetailsAction(formData: FormData): Promise<ne
           username: normalizedUsername,
           display_name: displayName,
           bio,
+          city: resolvedLocation.location.city,
+          province: resolvedLocation.location.province,
+          region: resolvedLocation.location.region,
+          latitude: resolvedLocation.location.latitude,
+          longitude: resolvedLocation.location.longitude,
           updated_at: new Date().toISOString(),
         })
         .eq("id", user.id);
@@ -138,6 +160,11 @@ export async function updateProfileDetailsAction(formData: FormData): Promise<ne
           username: normalizedUsername,
           display_name: displayName,
           bio,
+          city: resolvedLocation.location.city,
+          province: resolvedLocation.location.province,
+          region: resolvedLocation.location.region,
+          latitude: resolvedLocation.location.latitude,
+          longitude: resolvedLocation.location.longitude,
         },
       });
 
@@ -152,11 +179,18 @@ export async function updateProfileDetailsAction(formData: FormData): Promise<ne
       revalidatePath("/settings");
       revalidatePath("/profile");
       revalidatePath("/feed");
+      revalidatePath("/map");
       if (profile?.username) {
         revalidatePath(`/profile/${profile.username}`);
       }
       revalidatePath(`/profile/${normalizedUsername}`);
-      result = { ok: true, message: "Profilo aggiornato con successo." };
+      result = {
+        ok: true,
+        message:
+          resolvedLocation.location.city && !resolvedLocation.matchedProvince
+            ? "Profilo aggiornato. Aggiungi o controlla la provincia per comparire meglio nella mappa."
+            : "Profilo aggiornato con successo.",
+      };
     }
   } catch (error) {
     console.error("[settings][updateProfileDetailsAction] failed", {

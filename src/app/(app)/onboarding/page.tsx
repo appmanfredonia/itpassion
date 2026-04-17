@@ -42,16 +42,16 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-col gap-6">
       <SectionHeader
-        badge="Milestone 2"
+        badge="Onboarding"
         title="Scegli le tue passioni"
-        description="Personalizza il feed iniziale con una selezione piu vicina al frame onboarding del mockup."
+        description="Personalizza il feed iniziale con una selezione semplice, chiara e facile da aggiornare."
         className="hidden md:flex"
       />
 
       <div className="flex justify-center">
         <MockPhone
           header={
-            <div className="flex items-center justify-between border-b border-border/70 px-4 py-3 text-[11px] text-muted-foreground">
+            <div className="flex items-center justify-between border-b border-border/70 px-4 py-2.5 text-[11px] text-muted-foreground">
               <span className="inline-flex size-7 items-center justify-center rounded-full border border-border/80 bg-surface-1 text-muted-foreground">
                 <ChevronLeft className="size-3.5" />
               </span>
@@ -71,9 +71,10 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
             </div>
           }
           className="max-w-[24rem]"
+          bodyClassName="p-4 sm:p-[1.05rem]"
         >
-          <div className="flex flex-col gap-5">
-            <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-[1.125rem]">
+            <div className="flex flex-col gap-1.5">
               <h1 className="max-w-[12ch] text-3xl font-semibold tracking-[-0.04em]">
                 Quali sono le tue passioni?
               </h1>
@@ -101,8 +102,8 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
                 description="Aggiungi passioni nel database per completare l'onboarding."
               />
             ) : (
-              <form className="flex flex-col gap-5" action={saveOnboardingPassionsAction}>
-                <div className="flex flex-wrap gap-2.5">
+              <form className="flex flex-col gap-[1.125rem]" action={saveOnboardingPassionsAction}>
+                <div className="flex flex-wrap gap-2">
                   {passions.map((passion) => (
                     <label key={passion.slug} className="cursor-pointer">
                       <input
@@ -112,16 +113,16 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
                         defaultChecked={selectedSet.has(passion.slug)}
                         className="peer sr-only"
                       />
-                      <span className="inline-flex rounded-full border border-border/80 bg-surface-1 px-3.5 py-2 text-sm font-medium text-foreground transition-[border-color,background-color,color,box-shadow] peer-checked:border-primary/35 peer-checked:bg-primary/12 peer-checked:text-primary peer-checked:shadow-[0_12px_24px_-20px_oklch(0.73_0.16_294_/_0.72)]">
+                      <span className="inline-flex min-h-10 items-center rounded-full border border-border/80 bg-surface-1 px-3.5 py-2 text-sm font-medium text-foreground transition-[border-color,background-color,color,box-shadow] peer-checked:border-primary/35 peer-checked:bg-primary/12 peer-checked:text-primary peer-checked:shadow-[0_12px_24px_-20px_oklch(0.73_0.16_294_/_0.72)]">
                         {passion.name}
                       </span>
                     </label>
                   ))}
                 </div>
 
-                <div className="flex items-center justify-between gap-4 text-sm text-muted-foreground">
+                <div className="flex flex-col gap-3 pt-1 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
                   <span>Selezione multipla attiva</span>
-                  <Button type="submit" className="h-11 min-w-32 rounded-2xl">
+                  <Button type="submit" className="h-11 w-full rounded-2xl sm:min-w-32 sm:w-auto">
                     Continua
                   </Button>
                 </div>

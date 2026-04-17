@@ -9,6 +9,11 @@ export type AppProfile = {
   displayName: string;
   bio: string | null;
   avatarUrl: string | null;
+  city: string | null;
+  province: string | null;
+  region: string | null;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 function isRelationMissingError(error: PostgrestError | null): boolean {
@@ -23,6 +28,22 @@ function getMetadataString(user: User, key: string): string | null {
 
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+function getMetadataNumber(user: User, key: string): number | null {
+  const value = user.user_metadata?.[key];
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const parsedValue = Number.parseFloat(value);
+    if (Number.isFinite(parsedValue)) {
+      return parsedValue;
+    }
+  }
+
+  return null;
 }
 
 function sanitizeUsername(rawValue: string): string {
@@ -75,7 +96,16 @@ function buildDisplayName(user: User, username: string): string {
 
 type UserProfileSelection = Pick<
   Database["public"]["Tables"]["users"]["Row"],
-  "id" | "username" | "display_name" | "bio" | "avatar_url"
+  | "id"
+  | "username"
+  | "display_name"
+  | "bio"
+  | "avatar_url"
+  | "city"
+  | "province"
+  | "region"
+  | "latitude"
+  | "longitude"
 >;
 
 function mapProfileRow(row: UserProfileSelection): AppProfile {
@@ -85,6 +115,11 @@ function mapProfileRow(row: UserProfileSelection): AppProfile {
     displayName: row.display_name,
     bio: row.bio,
     avatarUrl: row.avatar_url,
+    city: row.city,
+    province: row.province,
+    region: row.region,
+    latitude: row.latitude,
+    longitude: row.longitude,
   };
 }
 
@@ -96,6 +131,11 @@ export function buildFallbackProfileFromAuthUser(user: User): AppProfile {
     displayName: buildDisplayName(user, username),
     bio: getMetadataString(user, "bio"),
     avatarUrl: getMetadataString(user, "avatar_url"),
+    city: getMetadataString(user, "city"),
+    province: getMetadataString(user, "province"),
+    region: getMetadataString(user, "region"),
+    latitude: getMetadataNumber(user, "latitude"),
+    longitude: getMetadataNumber(user, "longitude"),
   };
 }
 
@@ -105,7 +145,7 @@ export async function ensureUserProfile(
 ): Promise<AppProfile | null> {
   const { data: existingProfile, error: existingProfileError } = await supabase
     .from("users")
-    .select("id, username, display_name, bio, avatar_url")
+    .select("id, username, display_name, bio, avatar_url, city, province, region, latitude, longitude")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -130,13 +170,18 @@ export async function ensureUserProfile(
     display_name: buildDisplayName(user, preferredUsername),
     bio: getMetadataString(user, "bio"),
     avatar_url: getMetadataString(user, "avatar_url"),
+    city: getMetadataString(user, "city"),
+    province: getMetadataString(user, "province"),
+    region: getMetadataString(user, "region"),
+    latitude: getMetadataNumber(user, "latitude"),
+    longitude: getMetadataNumber(user, "longitude"),
     updated_at: new Date().toISOString(),
   };
 
   const { data, error } = await supabase
     .from("users")
     .upsert(basePayload, { onConflict: "id" })
-    .select("id, username, display_name, bio, avatar_url")
+    .select("id, username, display_name, bio, avatar_url, city, province, region, latitude, longitude")
     .single();
 
   if (!error && data) {
@@ -159,7 +204,7 @@ export async function ensureUserProfile(
         },
         { onConflict: "id" },
       )
-      .select("id, username, display_name, bio, avatar_url")
+      .select("id, username, display_name, bio, avatar_url, city, province, region, latitude, longitude")
       .single();
 
     if (!retryError && retryData) {
@@ -182,7 +227,7 @@ export async function getProfileById(
 ): Promise<AppProfile | null> {
   const { data, error } = await supabase
     .from("users")
-    .select("id, username, display_name, bio, avatar_url")
+    .select("id, username, display_name, bio, avatar_url, city, province, region, latitude, longitude")
     .eq("id", userId)
     .maybeSingle();
 
@@ -203,7 +248,7 @@ export async function getProfileByUsername(
   const normalized = normalizeUsername(username);
   const { data, error } = await supabase
     .from("users")
-    .select("id, username, display_name, bio, avatar_url")
+    .select("id, username, display_name, bio, avatar_url, city, province, region, latitude, longitude")
     .eq("username", normalized)
     .maybeSingle();
 

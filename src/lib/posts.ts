@@ -15,6 +15,7 @@ export type FeedComment = {
   authorDisplayName: string;
   content: string;
   createdAt: string;
+  canEdit: boolean;
   canDelete: boolean;
 };
 
@@ -30,6 +31,7 @@ export type FeedPost = {
   contentType: "text" | "image" | "video";
   textContent: string | null;
   createdAt: string;
+  updatedAt: string;
   media: {
     kind: "image" | "video";
     url: string;
@@ -39,6 +41,7 @@ export type FeedPost = {
   commentsCount: number;
   comments: FeedComment[];
   savedByMe: boolean;
+  canManage: boolean;
 };
 
 export type FeedQueryResult = {
@@ -133,7 +136,7 @@ async function fetchUsersByIds(
 
   const { data, error } = await supabase
     .from("users")
-    .select("id, username, display_name, bio, avatar_url, created_at, updated_at")
+    .select("id, username, display_name, bio, avatar_url, city, province, region, latitude, longitude, created_at, updated_at")
     .in("id", userIds);
 
   if (error) {
@@ -244,6 +247,7 @@ async function hydratePosts(
       authorDisplayName: author?.display_name ?? `@${fallbackUsername(row.user_id)}`,
       content: row.content,
       createdAt: row.created_at,
+      canEdit: row.user_id === viewerUserId,
       canDelete: row.user_id === viewerUserId,
     });
 
@@ -267,12 +271,14 @@ async function hydratePosts(
       contentType: normalizeContentType(row.content_type),
       textContent: row.text_content,
       createdAt: row.created_at,
+      updatedAt: row.updated_at,
       media: mediaByPostId.get(row.id) ?? [],
       likesCount: likesCountByPostId.get(row.id) ?? 0,
       likedByMe: likedByMeSet.has(row.id),
       commentsCount: comments.length,
       comments,
       savedByMe: savedPostSet.has(row.id),
+      canManage: row.user_id === viewerUserId,
     };
   });
 }
@@ -570,5 +576,62 @@ export async function searchPosts(
     hiddenUserIds,
   );
   return dedupePostsById(hydrated);
+}
+
+export type EditablePost = {
+  id: string;
+  userId: string;
+  passionSlug: string;
+  contentType: "text" | "image" | "video";
+  textContent: string | null;
+  media: {
+    id: string;
+    kind: "image" | "video";
+    url: string;
+  }[];
+};
+
+export async function getEditablePostById(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  postId: string,
+): Promise<EditablePost | null> {
+  const { data: postRow, error: postError } = await supabase
+    .from("posts")
+    .select("id, user_id, passion_slug, content_type, text_content")
+    .eq("id", postId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (postError) {
+    throw postError;
+  }
+
+  if (!postRow) {
+    return null;
+  }
+
+  const { data: mediaRows, error: mediaError } = await supabase
+    .from("post_media")
+    .select("id, media_kind, media_url")
+    .eq("post_id", postRow.id)
+    .order("created_at", { ascending: true });
+
+  if (mediaError) {
+    throw mediaError;
+  }
+
+  return {
+    id: postRow.id,
+    userId: postRow.user_id,
+    passionSlug: postRow.passion_slug,
+    contentType: normalizeContentType(postRow.content_type),
+    textContent: postRow.text_content,
+    media: (mediaRows ?? []).map((mediaRow) => ({
+      id: mediaRow.id,
+      kind: mediaRow.media_kind,
+      url: mediaRow.media_url,
+    })),
+  };
 }
 

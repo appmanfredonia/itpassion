@@ -81,9 +81,9 @@ export function PostMediaGallery({ contentType, media }: PostMediaGalleryProps) 
           return (
             <figure
               key={`${mediaItem.kind}-${mediaItem.url}-${index}`}
-              className="group/media overflow-hidden rounded-[1.5rem] border border-border/80 bg-surface-2 shadow-[0_26px_52px_-34px_oklch(0_0_0_/_0.92)]"
+              className="group/media overflow-hidden rounded-[1.35rem] border border-border/80 bg-surface-2 shadow-[0_24px_46px_-34px_oklch(0_0_0_/_0.92)]"
             >
-              <div className="relative aspect-[4/4.7] w-full bg-muted/20 sm:aspect-[4/4.2]">
+              <div className="relative aspect-[4/4.05] w-full bg-muted/20 sm:aspect-[4/3.75]">
                 {mediaItem.kind === "image" ? (
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -107,7 +107,7 @@ export function PostMediaGallery({ contentType, media }: PostMediaGalleryProps) 
                 )}
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/55 via-black/8 to-transparent" />
               </div>
-              <figcaption className="flex min-h-11 items-center justify-between gap-2 border-t border-border/70 bg-black/16 px-3 py-2">
+              <figcaption className="flex min-h-10 items-center justify-between gap-2 border-t border-border/70 bg-black/16 px-3 py-1.5">
                 <span className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                   {mediaLabel}
                 </span>

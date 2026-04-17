@@ -57,11 +57,11 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
   }
 
   return (
-    <section className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+    <section className="mx-auto flex w-full max-w-5xl flex-col gap-5 md:gap-6">
       <SectionHeader
-        badge="Milestone 4"
+        badge="Profilo"
         title="Il tuo profilo"
-        description="Header piu editoriale, metriche forti e gallery contenuti piu vicina al mockup."
+        description="Un profilo leggibile, forte e coerente con i tuoi contenuti."
       />
 
       {params.commentError && (
@@ -89,7 +89,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
         }
       />
 
-      <div className="app-page-shell flex flex-wrap items-center justify-between gap-3">
+      <div className="app-page-shell flex flex-wrap items-center justify-between gap-2.5 rounded-[1.75rem] px-4 py-3.5 md:px-5 md:py-4">
         <div className="flex flex-col">
           <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
             Contenuti pubblicati

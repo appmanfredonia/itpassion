@@ -440,6 +440,11 @@ export type Database = {
           display_name: string;
           bio: string | null;
           avatar_url: string | null;
+          city: string | null;
+          province: string | null;
+          region: string | null;
+          latitude: number | null;
+          longitude: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -449,6 +454,11 @@ export type Database = {
           display_name: string;
           bio?: string | null;
           avatar_url?: string | null;
+          city?: string | null;
+          province?: string | null;
+          region?: string | null;
+          latitude?: number | null;
+          longitude?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -458,6 +468,11 @@ export type Database = {
           display_name?: string;
           bio?: string | null;
           avatar_url?: string | null;
+          city?: string | null;
+          province?: string | null;
+          region?: string | null;
+          latitude?: number | null;
+          longitude?: number | null;
           created_at?: string;
           updated_at?: string;
         };

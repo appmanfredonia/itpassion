@@ -26,6 +26,15 @@ export function PostVisualGrid({
   columns = 3,
   dense = false,
 }: PostVisualGridProps) {
+  const denseAspectClass =
+    columns === 2
+      ? "aspect-[0.9] sm:aspect-[1.08] xl:aspect-[1.16]"
+      : "aspect-[0.9] sm:aspect-[0.98]";
+  const denseTextAspectClass =
+    columns === 2
+      ? "aspect-[1.08] sm:aspect-[1.26] xl:aspect-[1.42]"
+      : "aspect-[1.1] sm:aspect-[1.2]";
+
   return (
     <div
       className={cn(
@@ -43,7 +52,7 @@ export function PostVisualGrid({
             href={href}
             className={cn(
               "group relative overflow-hidden rounded-[1.35rem] border border-border/80 bg-surface-1 shadow-[0_18px_34px_-24px_oklch(0_0_0_/_0.92)] transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_24px_44px_-26px_oklch(0.73_0.16_294_/_0.7)]",
-              dense ? "aspect-[0.84] sm:aspect-[0.9]" : "aspect-square",
+              dense ? (media ? denseAspectClass : denseTextAspectClass) : "aspect-square",
             )}
           >
             {media ? (

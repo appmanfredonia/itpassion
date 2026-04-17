@@ -130,7 +130,7 @@ export default async function NotificationsPage() {
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-col gap-7">
       <SectionHeader
-        badge="Milestone 6"
+        badge="Notifiche"
         title="Notifiche"
         description="Timeline piu ordinata, densa e leggibile per follower, like, commenti e chat."
       />

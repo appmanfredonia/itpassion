@@ -2,11 +2,23 @@
 
 import { redirect } from "next/navigation";
 import { ensureUserProfile, getPassionCatalog } from "@/lib/auth";
+import {
+  buildMediaStoragePath,
+  errorDetailFromUnknown,
+  mapStorageUploadErrorToMessage,
+  MAX_MEDIA_FILE_SIZE_BYTES,
+  POST_MEDIA_BUCKET,
+  removePostMediaFromStorage,
+} from "@/lib/post-media";
 import { createServerSupabaseClient } from "@/lib/supabase";
 
 type ContentType = "text" | "image" | "video";
-const POST_MEDIA_BUCKET = "post-media";
-const MAX_MEDIA_FILE_SIZE_BYTES = 40 * 1024 * 1024;
+
+type ExistingMediaRow = {
+  id: string;
+  media_url: string;
+  media_kind: "image" | "video";
+};
 
 function isValidContentType(value: string): value is ContentType {
   return value === "text" || value === "image" || value === "video";
@@ -32,63 +44,85 @@ function isCompatibleMediaFile(contentType: ContentType, file: File): boolean {
   return false;
 }
 
-function buildSafeFileName(fileName: string): string {
-  const sanitized = fileName
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9._-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80);
-
-  return sanitized.length > 0 ? sanitized : "media-file";
-}
-
-function buildMediaStoragePath(userId: string, postId: string, originalFileName: string): string {
-  const dayKey = new Date().toISOString().slice(0, 10);
-  const safeFileName = buildSafeFileName(originalFileName);
-  return `${userId}/${dayKey}/${postId}-${crypto.randomUUID()}-${safeFileName}`;
-}
-
-function redirectCreateError(message: string): never {
+function redirectCreateError(message: string, editingPostId?: string | null): never {
   const params = new URLSearchParams({ error: message });
+  if (editingPostId) {
+    params.set("edit", editingPostId);
+  }
   redirect(`/create?${params.toString()}`);
 }
 
-function errorDetailFromUnknown(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
+async function getOwnedEditablePost(
+  userId: string,
+  postId: string,
+) {
+  const supabase = await createServerSupabaseClient();
+  const { data: postRow, error: postError } = await supabase
+    .from("posts")
+    .select("id, user_id, passion_slug, content_type, text_content")
+    .eq("id", postId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (postError) {
+    throw postError;
   }
 
-  if (typeof error === "object" && error !== null) {
-    const maybeCode = "code" in error ? String(error.code) : null;
-    const maybeMessage = "message" in error ? String(error.message) : null;
-    const maybeDetails = "details" in error ? String(error.details) : null;
-    const maybeHint = "hint" in error ? String(error.hint) : null;
-
-    return [maybeCode, maybeMessage, maybeDetails, maybeHint]
-      .filter((value): value is string => Boolean(value))
-      .join(" | ");
+  if (!postRow) {
+    return null;
   }
 
-  return "Errore sconosciuto";
+  const { data: mediaRows, error: mediaError } = await supabase
+    .from("post_media")
+    .select("id, media_url, media_kind")
+    .eq("post_id", postId)
+    .order("created_at", { ascending: true });
+
+  if (mediaError) {
+    throw mediaError;
+  }
+
+  return {
+    post: postRow,
+    media: (mediaRows ?? []) as ExistingMediaRow[],
+  };
 }
 
-function mapStorageUploadErrorToMessage(error: unknown): string {
-  const detail = errorDetailFromUnknown(error).toLowerCase();
+async function uploadReplacementMedia(
+  userId: string,
+  postId: string,
+  mediaFile: File,
+) {
+  const supabase = await createServerSupabaseClient();
+  const mediaStoragePath = buildMediaStoragePath(userId, postId, mediaFile.name);
+  const { error: mediaUploadError } = await supabase.storage.from(POST_MEDIA_BUCKET).upload(
+    mediaStoragePath,
+    mediaFile,
+    {
+      cacheControl: "3600",
+      upsert: false,
+      contentType: mediaFile.type || undefined,
+    },
+  );
 
-  if (detail.includes("bucket") && detail.includes("not found")) {
-    return "Bucket media non trovato. Applica le migrazioni Storage e riprova.";
+  if (mediaUploadError) {
+    throw mediaUploadError;
   }
 
-  if (detail.includes("mime") || detail.includes("invalid mime")) {
-    return "Formato file non supportato dal bucket media. Verifica configurazione Storage.";
+  const {
+    data: { publicUrl: mediaPublicUrl },
+  } = supabase.storage.from(POST_MEDIA_BUCKET).getPublicUrl(mediaStoragePath);
+
+  if (!mediaPublicUrl) {
+    await supabase.storage.from(POST_MEDIA_BUCKET).remove([mediaStoragePath]);
+    throw new Error("Generazione URL media non riuscita.");
   }
 
-  if (detail.includes("row-level security") || detail.includes("policy")) {
-    return "Upload bloccato dalle policy Storage. Verifica RLS del bucket post-media.";
-  }
-
-  return "Upload media non riuscito. Verifica bucket Storage e policy.";
+  return {
+    supabase,
+    mediaStoragePath,
+    mediaPublicUrl,
+  };
 }
 
 export async function createPostAction(formData: FormData): Promise<never> {
@@ -108,6 +142,11 @@ export async function createPostAction(formData: FormData): Promise<never> {
     redirectCreateError("Profilo utente non sincronizzato. Ricarica e riprova.");
   }
 
+  const editingPostIdRaw = formData.get("editingPostId");
+  const editingPostId =
+    typeof editingPostIdRaw === "string" && editingPostIdRaw.trim().length > 0
+      ? editingPostIdRaw.trim()
+      : null;
   const contentTypeRaw = formData.get("contentType");
   const textContentRaw = formData.get("textContent");
   const mediaFileRaw = formData.get("mediaFile");
@@ -119,23 +158,20 @@ export async function createPostAction(formData: FormData): Promise<never> {
     typeof passionSlugRaw !== "string" ||
     !passionSlugRaw
   ) {
-    redirectCreateError("Compila i campi obbligatori prima di pubblicare.");
+    redirectCreateError("Compila i campi obbligatori prima di pubblicare.", editingPostId);
   }
 
   const textContent = typeof textContentRaw === "string" ? textContentRaw.trim() : "";
   const mediaFile = toUploadedFile(mediaFileRaw);
+  const wantsMedia = contentTypeRaw === "image" || contentTypeRaw === "video";
 
   if (contentTypeRaw === "text" && textContent.length === 0) {
-    redirectCreateError("Per un post testuale inserisci un contenuto.");
+    redirectCreateError("Per un post testuale inserisci un contenuto.", editingPostId);
   }
 
-  if (contentTypeRaw === "image" || contentTypeRaw === "video") {
-    if (!mediaFile) {
-      redirectCreateError("Per contenuti image/video carica un file media.");
-    }
-
+  if (mediaFile) {
     if (mediaFile.size > MAX_MEDIA_FILE_SIZE_BYTES) {
-      redirectCreateError("File troppo grande. Limite massimo 40MB.");
+      redirectCreateError("File troppo grande. Limite massimo 40MB.", editingPostId);
     }
 
     if (!isCompatibleMediaFile(contentTypeRaw, mediaFile)) {
@@ -143,6 +179,7 @@ export async function createPostAction(formData: FormData): Promise<never> {
         contentTypeRaw === "image"
           ? "Il file selezionato non e un'immagine valida."
           : "Il file selezionato non e un video valido.",
+        editingPostId,
       );
     }
   }
@@ -156,83 +193,219 @@ export async function createPostAction(formData: FormData): Promise<never> {
       detail: errorDetailFromUnknown(error),
       rawError: error,
     });
-    redirectCreateError("Catalogo passioni non disponibile. Riprova tra poco.");
+    redirectCreateError("Catalogo passioni non disponibile. Riprova tra poco.", editingPostId);
   }
 
   if (passions.length === 0) {
-    redirectCreateError("Nessuna passione disponibile nel database. Impossibile pubblicare.");
+    redirectCreateError("Nessuna passione disponibile nel database. Impossibile pubblicare.", editingPostId);
   }
 
   const allowedPassions = new Set(passions.map((passion) => passion.slug));
   if (!allowedPassions.has(passionSlugRaw)) {
-    redirectCreateError("Passione selezionata non valida.");
+    redirectCreateError("Passione selezionata non valida.", editingPostId);
   }
 
-  const { data: createdPost, error: createPostError } = await supabase
-    .from("posts")
-    .insert({
-      user_id: user.id,
-      passion_slug: passionSlugRaw,
-      content_type: contentTypeRaw,
-      text_content: textContent.length > 0 ? textContent : null,
-    })
-    .select("id")
-    .single();
+  let existingEditTarget:
+    | {
+        post: {
+          id: string;
+          user_id: string;
+          passion_slug: string;
+          content_type: string;
+          text_content: string | null;
+        };
+        media: ExistingMediaRow[];
+      }
+    | null = null;
 
-  if (createPostError || !createdPost) {
-    redirectCreateError("Creazione post non riuscita. Verifica migrazioni e policy.");
-  }
-
-  if ((contentTypeRaw === "image" || contentTypeRaw === "video") && mediaFile) {
-    const mediaStoragePath = buildMediaStoragePath(user.id, createdPost.id, mediaFile.name);
-    const { error: mediaUploadError } = await supabase.storage.from(POST_MEDIA_BUCKET).upload(
-      mediaStoragePath,
-      mediaFile,
-      {
-        cacheControl: "3600",
-        upsert: false,
-        contentType: mediaFile.type || undefined,
-      },
-    );
-
-    if (mediaUploadError) {
-      console.error("[create] media upload failed", {
+  if (editingPostId) {
+    try {
+      existingEditTarget = await getOwnedEditablePost(user.id, editingPostId);
+    } catch (error) {
+      console.error("[create] editable post lookup failed", {
         userId: user.id,
-        postId: createdPost.id,
-        bucket: POST_MEDIA_BUCKET,
-        path: mediaStoragePath,
-        fileName: mediaFile.name,
-        fileType: mediaFile.type,
-        fileSize: mediaFile.size,
-        detail: errorDetailFromUnknown(mediaUploadError),
-        rawError: mediaUploadError,
+        postId: editingPostId,
+        detail: errorDetailFromUnknown(error),
+        rawError: error,
       });
-      await supabase.from("posts").delete().eq("id", createdPost.id).eq("user_id", user.id);
-      redirectCreateError(mapStorageUploadErrorToMessage(mediaUploadError));
+      redirectCreateError("Post non disponibile per la modifica.", editingPostId);
     }
 
-    const {
-      data: { publicUrl: mediaPublicUrl },
-    } = supabase.storage.from(POST_MEDIA_BUCKET).getPublicUrl(mediaStoragePath);
-
-    if (!mediaPublicUrl) {
-      await supabase.storage.from(POST_MEDIA_BUCKET).remove([mediaStoragePath]);
-      await supabase.from("posts").delete().eq("id", createdPost.id).eq("user_id", user.id);
-      redirectCreateError("Generazione URL media non riuscita. Post annullato, riprova.");
+    if (!existingEditTarget) {
+      redirectCreateError("Post non trovato o non modificabile.", editingPostId);
     }
 
+    if (wantsMedia && !mediaFile) {
+      const existingMedia = existingEditTarget.media;
+      if (existingMedia.length === 0) {
+        redirectCreateError("Carica un file media per questo contenuto.", editingPostId);
+      }
+
+      const hasDifferentMediaKind = existingMedia.some(
+        (mediaRow) => mediaRow.media_kind !== contentTypeRaw,
+      );
+      if (hasDifferentMediaKind) {
+        redirectCreateError(
+          "Carica un nuovo file per passare da foto a video o viceversa.",
+          editingPostId,
+        );
+      }
+    }
+  } else if (wantsMedia && !mediaFile) {
+    redirectCreateError("Per contenuti foto o video carica un file media.", null);
+  }
+
+  let postId = editingPostId;
+  let uploadedMedia:
+    | {
+        supabase: typeof supabase;
+        mediaStoragePath: string;
+        mediaPublicUrl: string;
+      }
+    | null = null;
+
+  if (!postId) {
+    const { data: createdPost, error: createPostError } = await supabase
+      .from("posts")
+      .insert({
+        user_id: user.id,
+        passion_slug: passionSlugRaw,
+        content_type: contentTypeRaw,
+        text_content: textContent.length > 0 ? textContent : null,
+      })
+      .select("id")
+      .single();
+
+    if (createPostError || !createdPost) {
+      redirectCreateError("Creazione post non riuscita. Verifica migrazioni e policy.", null);
+    }
+
+    postId = createdPost.id;
+  }
+
+  try {
+    if (wantsMedia && mediaFile && postId) {
+      uploadedMedia = await uploadReplacementMedia(user.id, postId, mediaFile);
+    }
+  } catch (error) {
+    console.error("[create] media upload failed", {
+      userId: user.id,
+      postId,
+      bucket: POST_MEDIA_BUCKET,
+      fileName: mediaFile?.name,
+      fileType: mediaFile?.type,
+      fileSize: mediaFile?.size,
+      detail: errorDetailFromUnknown(error),
+      rawError: error,
+    });
+
+    if (!editingPostId && postId) {
+      await supabase.from("posts").delete().eq("id", postId).eq("user_id", user.id);
+    }
+
+    redirectCreateError(mapStorageUploadErrorToMessage(error), editingPostId);
+  }
+
+  const { error: upsertPostError } = editingPostId
+    ? await supabase
+        .from("posts")
+        .update({
+          passion_slug: passionSlugRaw,
+          content_type: contentTypeRaw,
+          text_content: textContent.length > 0 ? textContent : null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", postId)
+        .eq("user_id", user.id)
+    : { error: null };
+
+  if (upsertPostError) {
+    if (uploadedMedia) {
+      await uploadedMedia.supabase.storage
+        .from(POST_MEDIA_BUCKET)
+        .remove([uploadedMedia.mediaStoragePath]);
+    }
+
+    redirectCreateError("Salvataggio post non riuscito. Riprova.", editingPostId);
+  }
+
+  if (editingPostId && existingEditTarget && postId) {
+    const existingMediaUrls = existingEditTarget.media.map((mediaRow) => mediaRow.media_url);
+
+    if (!wantsMedia) {
+      if (existingEditTarget.media.length > 0) {
+        const { error: deleteMediaRowsError } = await supabase
+          .from("post_media")
+          .delete()
+          .eq("post_id", postId);
+
+        if (deleteMediaRowsError) {
+          redirectCreateError("Aggiornamento media non riuscito. Riprova.", editingPostId);
+        }
+
+        try {
+          await removePostMediaFromStorage(supabase, existingMediaUrls);
+        } catch (error) {
+          console.error("[create] remove old media after text switch failed", {
+            userId: user.id,
+            postId,
+            detail: errorDetailFromUnknown(error),
+            rawError: error,
+          });
+        }
+      }
+    } else if (uploadedMedia) {
+      const { data: insertedMediaRow, error: insertMediaError } = await supabase
+        .from("post_media")
+        .insert({
+          post_id: postId,
+          media_url: uploadedMedia.mediaPublicUrl,
+          media_kind: contentTypeRaw,
+        })
+        .select("id")
+        .single();
+
+      if (insertMediaError || !insertedMediaRow) {
+        await uploadedMedia.supabase.storage
+          .from(POST_MEDIA_BUCKET)
+          .remove([uploadedMedia.mediaStoragePath]);
+        redirectCreateError("Salvataggio media non riuscito. Riprova.", editingPostId);
+      }
+
+      if (existingEditTarget.media.length > 0) {
+        await supabase
+          .from("post_media")
+          .delete()
+          .eq("post_id", postId)
+          .neq("id", insertedMediaRow.id);
+
+        try {
+          await removePostMediaFromStorage(supabase, existingMediaUrls);
+        } catch (error) {
+          console.error("[create] remove replaced media failed", {
+            userId: user.id,
+            postId,
+            detail: errorDetailFromUnknown(error),
+            rawError: error,
+          });
+        }
+      }
+    }
+  } else if (!editingPostId && wantsMedia && uploadedMedia && postId) {
     const { error: mediaInsertError } = await supabase.from("post_media").insert({
-      post_id: createdPost.id,
-      media_url: mediaPublicUrl,
+      post_id: postId,
+      media_url: uploadedMedia.mediaPublicUrl,
       media_kind: contentTypeRaw,
     });
 
     if (mediaInsertError) {
-      await supabase.storage.from(POST_MEDIA_BUCKET).remove([mediaStoragePath]);
-      await supabase.from("posts").delete().eq("id", createdPost.id).eq("user_id", user.id);
-      redirectCreateError("Salvataggio media non riuscito. Post annullato, riprova.");
+      await uploadedMedia.supabase.storage
+        .from(POST_MEDIA_BUCKET)
+        .remove([uploadedMedia.mediaStoragePath]);
+      await supabase.from("posts").delete().eq("id", postId).eq("user_id", user.id);
+      redirectCreateError("Salvataggio media non riuscito. Post annullato, riprova.", null);
     }
   }
 
-  redirect("/feed");
+  redirect(`/feed?post=${postId}`);
 }

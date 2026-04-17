@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { EyeOff } from "lucide-react";
-import { loginAction } from "@/app/(auth)/actions";
+import { loginAction, signInWithGoogleAction } from "@/app/(auth)/actions";
+import { GoogleIcon } from "@/components/auth/google-icon";
+import { PasswordInput } from "@/components/auth/password-input";
 import { MockPhone } from "@/components/marketing/mock-phone";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
   return (
     <MockPhone
+      className="max-w-[22.75rem]"
+      bodyClassName="p-4 sm:p-[1.05rem]"
       chrome={
         <div className="flex items-center gap-1.5">
           <span className="size-1.5 rounded-full bg-primary" />
@@ -38,15 +41,18 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         </div>
       }
     >
-      <div className="flex flex-col gap-5">
-        <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-[1.125rem]">
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[10px] font-semibold tracking-[0.16em] text-primary uppercase">
+            Login
+          </span>
           <h1 className="text-3xl font-semibold tracking-[-0.04em]">Bentornato!</h1>
           <p className="text-sm text-muted-foreground">
             Accedi al tuo account e rientra nel tuo spazio ItPassion.
           </p>
         </div>
 
-        <form className="flex flex-col gap-4" action={loginAction}>
+        <form className="flex flex-col gap-3.5" action={loginAction}>
           {params.error ? (
             <p className="rounded-2xl border border-destructive/40 bg-destructive/12 px-3 py-2 text-sm text-destructive">
               {params.error}
@@ -58,7 +64,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             </p>
           ) : null}
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1.5">
             <Label htmlFor="login-email">Email</Label>
             <Input
               id="login-email"
@@ -71,32 +77,29 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             />
           </div>
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="login-password">Password</Label>
-            <div className="relative">
-              <Input
-                id="login-password"
-                name="password"
-                type="password"
-                placeholder="********"
-                autoComplete="current-password"
-                required
-                className="h-11 rounded-2xl pr-10"
-              />
-              <span className="pointer-events-none absolute inset-y-0 right-3 inline-flex items-center text-muted-foreground">
-                <EyeOff className="size-4" />
-              </span>
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between gap-3">
+              <Label htmlFor="login-password">Password</Label>
+              <Link href="/forgot-password" className="text-[11px] font-medium text-primary hover:underline">
+                Password dimenticata?
+              </Link>
             </div>
-            <span className="text-[11px] text-primary">Password dimenticata?</span>
+            <PasswordInput
+              id="login-password"
+              name="password"
+              placeholder="********"
+              autoComplete="current-password"
+              required
+            />
           </div>
 
-          <Button type="submit" className="mt-1 h-11 rounded-2xl">
+          <Button type="submit" className="mt-0.5 h-11 rounded-2xl">
             Accedi
           </Button>
         </form>
 
-        <div className="flex flex-col items-center gap-3 text-sm text-muted-foreground">
-          <p>
+        <div className="flex flex-col items-center gap-2.5 pt-1 text-sm text-muted-foreground">
+          <p className="text-center">
             Non hai un account?{" "}
             <Link href="/register" className="text-primary hover:underline">
               Registrati
@@ -107,9 +110,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             Oppure
             <span className="h-px flex-1 bg-border/70" />
           </div>
-          <div className="w-full rounded-2xl border border-border/80 bg-surface-1 px-4 py-3 text-center text-foreground/88">
-            Continua con Google
-          </div>
+          <form action={signInWithGoogleAction} className="w-full">
+            <input type="hidden" name="mode" value="login" />
+            <Button type="submit" variant="outline" className="h-11 w-full rounded-2xl">
+              <GoogleIcon />
+              Continua con Google
+            </Button>
+          </form>
         </div>
       </div>
     </MockPhone>

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { ensureUserProfile } from "@/lib/auth";
+import { removePostMediaFromStorage } from "@/lib/post-media";
 import { createServerSupabaseClient } from "@/lib/supabase";
 
 const DEFAULT_RETURN_PATH = "/feed";
@@ -20,15 +21,33 @@ function getPathname(path: string): string {
   return pathname || DEFAULT_RETURN_PATH;
 }
 
-function revalidateSocialPaths(returnPath: string) {
+function revalidateSocialPaths(returnPath: string, profileUsername?: string | null) {
   const pathname = getPathname(returnPath);
-  const paths = new Set(["/feed", "/saved", "/profile", pathname]);
+  const paths = new Set(["/feed", "/saved", "/profile", "/explore", "/create", pathname]);
+
+  if (profileUsername) {
+    paths.add(`/profile/${profileUsername}`);
+  }
+
   paths.forEach((path) => revalidatePath(path));
 }
 
-function redirectWithCommentError(returnPath: string, message: string): never {
+function redirectWithMessage(
+  returnPath: string,
+  key: "commentError" | "postError",
+  message: string,
+): never {
   const url = new URL(returnPath, "http://localhost");
-  url.searchParams.set("commentError", message);
+  url.searchParams.set(key, message);
+  redirect(`${url.pathname}${url.search}`);
+}
+
+function cleanPostReturnPath(returnPath: string, postId: string): never {
+  const url = new URL(returnPath, "http://localhost");
+  if (url.searchParams.get("post") === postId) {
+    url.searchParams.delete("post");
+  }
+  url.searchParams.delete("editComment");
   redirect(`${url.pathname}${url.search}`);
 }
 
@@ -42,8 +61,8 @@ async function getActionContext() {
     redirect("/login");
   }
 
-  await ensureUserProfile(supabase, user);
-  return { supabase, user };
+  const profile = await ensureUserProfile(supabase, user);
+  return { supabase, user, profile };
 }
 
 export async function toggleLikeAction(formData: FormData): Promise<void> {
@@ -55,7 +74,7 @@ export async function toggleLikeAction(formData: FormData): Promise<void> {
     return;
   }
 
-  const { supabase, user } = await getActionContext();
+  const { supabase, user, profile } = await getActionContext();
 
   const { data: existingLikes, error: existingLikesError } = await supabase
     .from("likes")
@@ -65,7 +84,7 @@ export async function toggleLikeAction(formData: FormData): Promise<void> {
     .limit(1);
 
   if (existingLikesError) {
-    revalidateSocialPaths(returnPath);
+    revalidateSocialPaths(returnPath, profile?.username);
     return;
   }
 
@@ -82,7 +101,7 @@ export async function toggleLikeAction(formData: FormData): Promise<void> {
     });
   }
 
-  revalidateSocialPaths(returnPath);
+  revalidateSocialPaths(returnPath, profile?.username);
 }
 
 export async function toggleSavePostAction(formData: FormData): Promise<void> {
@@ -94,7 +113,7 @@ export async function toggleSavePostAction(formData: FormData): Promise<void> {
     return;
   }
 
-  const { supabase, user } = await getActionContext();
+  const { supabase, user, profile } = await getActionContext();
 
   const { data: existingSavedRows, error: existingSavedError } = await supabase
     .from("saved_posts")
@@ -104,7 +123,7 @@ export async function toggleSavePostAction(formData: FormData): Promise<void> {
     .limit(1);
 
   if (existingSavedError) {
-    revalidateSocialPaths(returnPath);
+    revalidateSocialPaths(returnPath, profile?.username);
     return;
   }
 
@@ -121,7 +140,7 @@ export async function toggleSavePostAction(formData: FormData): Promise<void> {
     });
   }
 
-  revalidateSocialPaths(returnPath);
+  revalidateSocialPaths(returnPath, profile?.username);
 }
 
 export async function addCommentAction(formData: FormData): Promise<void> {
@@ -130,22 +149,22 @@ export async function addCommentAction(formData: FormData): Promise<void> {
   const contentRaw = formData.get("commentContent");
 
   if (typeof postId !== "string" || postId.length === 0) {
-    redirectWithCommentError(returnPath, "Post non valido.");
+    redirectWithMessage(returnPath, "commentError", "Post non valido.");
   }
 
   if (typeof contentRaw !== "string") {
-    redirectWithCommentError(returnPath, "Commento non valido.");
+    redirectWithMessage(returnPath, "commentError", "Commento non valido.");
   }
 
   const content = contentRaw.trim();
   if (content.length === 0) {
-    redirectWithCommentError(returnPath, "Scrivi un commento prima di inviare.");
+    redirectWithMessage(returnPath, "commentError", "Scrivi un commento prima di inviare.");
   }
   if (content.length > 500) {
-    redirectWithCommentError(returnPath, "Commento troppo lungo (max 500 caratteri).");
+    redirectWithMessage(returnPath, "commentError", "Commento troppo lungo (max 500 caratteri).");
   }
 
-  const { supabase, user } = await getActionContext();
+  const { supabase, user, profile } = await getActionContext();
   const { error } = await supabase.from("comments").insert({
     post_id: postId,
     user_id: user.id,
@@ -153,10 +172,48 @@ export async function addCommentAction(formData: FormData): Promise<void> {
   });
 
   if (error) {
-    redirectWithCommentError(returnPath, "Salvataggio commento non riuscito.");
+    redirectWithMessage(returnPath, "commentError", "Salvataggio commento non riuscito.");
   }
 
-  revalidateSocialPaths(returnPath);
+  revalidateSocialPaths(returnPath, profile?.username);
+}
+
+export async function updateCommentAction(formData: FormData): Promise<void> {
+  const commentId = formData.get("commentId");
+  const returnPath = getSafeReturnPath(formData.get("returnPath"));
+  const contentRaw = formData.get("commentContent");
+
+  if (typeof commentId !== "string" || commentId.length === 0) {
+    redirectWithMessage(returnPath, "commentError", "Commento non valido.");
+  }
+
+  if (typeof contentRaw !== "string") {
+    redirectWithMessage(returnPath, "commentError", "Testo commento non valido.");
+  }
+
+  const content = contentRaw.trim();
+  if (content.length === 0) {
+    redirectWithMessage(returnPath, "commentError", "Scrivi un commento prima di salvare.");
+  }
+  if (content.length > 500) {
+    redirectWithMessage(returnPath, "commentError", "Commento troppo lungo (max 500 caratteri).");
+  }
+
+  const { supabase, user, profile } = await getActionContext();
+  const { error } = await supabase
+    .from("comments")
+    .update({
+      content,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", commentId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    redirectWithMessage(returnPath, "commentError", "Modifica commento non riuscita.");
+  }
+
+  revalidateSocialPaths(returnPath, profile?.username);
 }
 
 export async function deleteCommentAction(formData: FormData): Promise<void> {
@@ -168,12 +225,53 @@ export async function deleteCommentAction(formData: FormData): Promise<void> {
     return;
   }
 
-  const { supabase, user } = await getActionContext();
+  const { supabase, user, profile } = await getActionContext();
   await supabase
     .from("comments")
     .delete()
     .eq("id", commentId)
     .eq("user_id", user.id);
 
-  revalidateSocialPaths(returnPath);
+  revalidateSocialPaths(returnPath, profile?.username);
+}
+
+export async function deletePostAction(formData: FormData): Promise<never> {
+  const postId = formData.get("postId");
+  const returnPath = getSafeReturnPath(formData.get("returnPath"));
+
+  if (typeof postId !== "string" || postId.length === 0) {
+    redirectWithMessage(returnPath, "postError", "Post non valido.");
+  }
+
+  const { supabase, user, profile } = await getActionContext();
+  const { data: mediaRows, error: mediaRowsError } = await supabase
+    .from("post_media")
+    .select("media_url")
+    .eq("post_id", postId);
+
+  if (mediaRowsError) {
+    redirectWithMessage(returnPath, "postError", "Media del post non disponibili.");
+  }
+
+  const { error: deletePostError } = await supabase
+    .from("posts")
+    .delete()
+    .eq("id", postId)
+    .eq("user_id", user.id);
+
+  if (deletePostError) {
+    redirectWithMessage(returnPath, "postError", "Eliminazione post non riuscita.");
+  }
+
+  try {
+    await removePostMediaFromStorage(
+      supabase,
+      (mediaRows ?? []).map((mediaRow) => mediaRow.media_url),
+    );
+  } catch (error) {
+    console.error("[feed][deletePostAction] media storage cleanup failed", error);
+  }
+
+  revalidateSocialPaths(returnPath, profile?.username);
+  cleanPostReturnPath(returnPath, postId);
 }

@@ -75,7 +75,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-col gap-7">
       <SectionHeader
-        badge="Milestone 5"
+        badge="Ricerca"
         title="Ricerca"
         description="Cerca utenti, passioni e contenuti in modo semplice e immediato."
       />

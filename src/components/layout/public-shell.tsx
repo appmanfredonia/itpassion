@@ -10,15 +10,15 @@ type PublicShellProps = {
 
 export function PublicShell({ children }: PublicShellProps) {
   return (
-    <div className="min-h-screen px-4 py-4 md:px-7 md:py-6">
+    <div className="min-h-screen px-4 py-3 md:px-7 md:py-5">
       <div className="mx-auto flex w-full max-w-[1360px] flex-col">
-        <header className="flex items-center justify-between gap-4 border-b border-border/70 pb-5">
+        <header className="flex items-center justify-between gap-4 border-b border-border/70 pb-4 md:pb-5">
           <BrandMark className="shrink-0" metaMode="tagline" />
           <div className="hidden items-center gap-2 md:flex">
             {["Facebook", "Instagram", "TikTok"].map((item) => (
               <span
                 key={item}
-                className="rounded-full border border-border/80 bg-surface-1 px-4 py-2 text-sm font-medium text-muted-foreground"
+                className="rounded-full border border-border/80 bg-surface-1 px-3.5 py-1.5 text-sm font-medium text-muted-foreground"
               >
                 {item}
               </span>
@@ -31,10 +31,10 @@ export function PublicShell({ children }: PublicShellProps) {
           </div>
         </header>
 
-        <main className="flex-1 py-8 md:py-12">{children}</main>
+        <main className="flex-1 py-6 md:py-10">{children}</main>
 
-        <footer className="mt-8 hidden flex-wrap items-center justify-between gap-3 border-t border-border/70 py-4 text-sm text-muted-foreground md:flex">
-          <span>ItPassion MVP</span>
+        <footer className="mt-6 hidden flex-wrap items-center justify-between gap-3 border-t border-border/70 py-3.5 text-sm text-muted-foreground md:flex">
+          <span>ItPassion</span>
           <div className="flex items-center gap-2">
             <Link href="/login" className={buttonVariants({ variant: "ghost", size: "sm" })}>
               Accedi

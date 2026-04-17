@@ -70,7 +70,7 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-col gap-6">
       <SectionHeader
-        badge="Milestone 5"
+        badge="Esplora"
         title="Esplora"
         description="Ricerca visuale, persone da scoprire e contenuti popolari in una struttura molto piu editoriale."
       />

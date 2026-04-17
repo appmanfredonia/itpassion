@@ -56,7 +56,7 @@ export default async function SavedPage({ searchParams }: SavedPageProps) {
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-col gap-7">
       <SectionHeader
-        badge="Milestone 4"
+        badge="Salvati"
         title="Contenuti salvati"
         description="Una raccolta piu compatta e premium, coerente con il feed e con gli stati privacy."
       />

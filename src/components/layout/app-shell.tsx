@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { Bell, Bookmark } from "lucide-react";
+import { Bell, MessageCircle } from "lucide-react";
 import { BrandMark } from "@/components/brand-mark";
 import { AppNavigation } from "@/components/layout/app-navigation";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ export function AppShell({ children, userEmail, userName, logoutAction }: AppShe
   return (
     <div className="min-h-screen px-2 py-2 md:px-4 md:py-4">
       <div className="mx-auto grid w-full max-w-[1320px] grid-cols-1 gap-2.5 lg:grid-cols-[272px_minmax(0,1fr)] lg:gap-4">
-        <aside className="surface-elevated relative sticky top-4 hidden h-[calc(100vh-2rem)] flex-col gap-5 overflow-hidden p-3.5 lg:flex">
+        <aside className="surface-elevated no-scrollbar relative sticky top-4 hidden h-[calc(100vh-2rem)] flex-col gap-5 overflow-x-hidden overflow-y-auto p-3.5 lg:flex">
           <div className="absolute inset-x-8 top-0 h-20 rounded-full bg-primary/10 blur-3xl" />
 
           <div className="relative flex items-center justify-between gap-2">
@@ -62,16 +62,16 @@ export function AppShell({ children, userEmail, userName, logoutAction }: AppShe
             <div className="relative flex items-center gap-2">
               <div className="flex items-center gap-1 md:hidden">
                 <Link
+                  href="/messages"
+                  className="inline-flex size-8 items-center justify-center rounded-full border border-border/80 bg-black/16 text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <MessageCircle className="size-3.5" />
+                </Link>
+                <Link
                   href="/notifications"
                   className="inline-flex size-8 items-center justify-center rounded-full border border-border/80 bg-black/16 text-muted-foreground transition-colors hover:text-foreground"
                 >
                   <Bell className="size-3.5" />
-                </Link>
-                <Link
-                  href="/saved"
-                  className="inline-flex size-8 items-center justify-center rounded-full border border-border/80 bg-black/16 text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  <Bookmark className="size-3.5" />
                 </Link>
               </div>
               <div className="hidden rounded-full border border-border/80 bg-black/16 px-3 py-1.5 text-right md:flex md:flex-col">

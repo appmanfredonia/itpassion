@@ -151,9 +151,9 @@ export default async function PublicProfilePage({
   }
 
   return (
-    <section className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+    <section className="mx-auto flex w-full max-w-5xl flex-col gap-5 md:gap-6">
       <SectionHeader
-        badge="Milestone 4"
+        badge="Profilo pubblico"
         title={`Profilo di @${profileData.profile.username}`}
         description="Profilo pubblico piu forte e visivo, con CTA e contenuti immersivi."
       />
@@ -215,7 +215,7 @@ export default async function PublicProfilePage({
         }
       />
 
-      <div className="app-page-shell flex flex-wrap items-center justify-between gap-3">
+      <div className="app-page-shell flex flex-wrap items-center justify-between gap-2.5 rounded-[1.75rem] px-4 py-3.5 md:px-5 md:py-4">
         <div className="flex flex-col">
           <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
             Contenuti visibili

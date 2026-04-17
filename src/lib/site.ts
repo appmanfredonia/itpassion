@@ -7,8 +7,9 @@ export const siteConfig = {
 
 export const appNavigation: NavItem[] = [
   { href: "/feed", label: "Feed", shortLabel: "Feed" },
-  { href: "/create", label: "Crea", shortLabel: "Crea" },
   { href: "/explore", label: "Esplora", shortLabel: "Esplora" },
+  { href: "/map", label: "Mappa", shortLabel: "Mappa" },
+  { href: "/create", label: "Crea", shortLabel: "Crea" },
   { href: "/search", label: "Cerca", shortLabel: "Cerca" },
   { href: "/messages", label: "Messaggi", shortLabel: "Chat" },
   { href: "/notifications", label: "Notifiche", shortLabel: "Notif" },

@@ -16,6 +16,8 @@ type FeedPageProps = {
     tab?: string;
     post?: string;
     commentError?: string;
+    postError?: string;
+    editComment?: string;
   }>;
 };
 
@@ -122,7 +124,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-col gap-6">
       <SectionHeader
-        badge="Milestone 3"
+        badge="Feed"
         title="Feed"
         description="Per te e Seguiti in una superficie piu mobile-first, con storie visuali e media dominanti."
         action={
@@ -181,6 +183,11 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
           {params.commentError}
         </p>
       )}
+      {params.postError && (
+        <p className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-sm text-destructive">
+          {params.postError}
+        </p>
+      )}
 
       {warning && (
         <p className="rounded-md border border-border/70 bg-secondary/30 p-2 text-xs text-muted-foreground">
@@ -211,6 +218,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
               post={post}
               returnPath={returnPath}
               commentPreviewLimit={1}
+              editingCommentId={typeof params.editComment === "string" ? params.editComment : null}
             />
           ))}
         </div>

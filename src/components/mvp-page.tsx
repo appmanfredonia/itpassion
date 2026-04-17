@@ -23,7 +23,7 @@ export function MvpPage({ title, description, milestone, children }: MvpPageProp
         <CardContent className="flex flex-col gap-4">
           {children ?? (
             <p className="text-sm text-muted-foreground">
-              Struttura pronta. In milestone successive verranno collegati dati reali, azioni e redirect.
+              Struttura pronta. Qui possono essere collegati dati reali, azioni e stati della pagina.
             </p>
           )}
         </CardContent>

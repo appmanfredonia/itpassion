@@ -29,7 +29,7 @@ export function BrandMark({
               variant="secondary"
               className="w-fit text-[10px] tracking-[0.18em] uppercase"
             >
-              MVP
+              Social network
             </Badge>
           ) : null}
           {metaMode === "tagline" ? (

@@ -7,6 +7,7 @@ import {
   Bookmark,
   Compass,
   House,
+  Map,
   MessageCircle,
   PlusSquare,
   Search,
@@ -24,7 +25,7 @@ export function AppNavigation({ mobile = false }: AppNavigationProps) {
   const pathname = usePathname();
   const items = mobile
     ? appNavigation.filter((item) =>
-        ["/feed", "/explore", "/create", "/messages", "/profile"].includes(item.href),
+        ["/feed", "/explore", "/map", "/create", "/profile"].includes(item.href),
       )
     : appNavigation;
 
@@ -45,8 +46,9 @@ export function AppNavigation({ mobile = false }: AppNavigationProps) {
 
         const icon = (() => {
           if (item.href === "/feed") return House;
-          if (item.href === "/create") return PlusSquare;
           if (item.href === "/explore") return Compass;
+          if (item.href === "/map") return Map;
+          if (item.href === "/create") return PlusSquare;
           if (item.href === "/search") return Search;
           if (item.href === "/messages") return MessageCircle;
           if (item.href === "/notifications") return Bell;

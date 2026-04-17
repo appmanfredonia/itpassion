@@ -81,3 +81,31 @@ Se compare `Internal Server Error` subito dopo deploy:
 1. controlla che le env richieste siano presenti in Vercel su tutti gli ambienti;
 2. riesegui `npm run env:pull` in locale;
 3. verifica con `npm run env:check`.
+
+## OAuth Google
+
+Il bottone `Continua con Google` e il callback `/auth/callback` sono gia collegati lato applicazione.
+
+Per attivarli davvero su Supabase:
+
+1. apri `Authentication > Providers > Google`;
+2. abilita Google;
+3. inserisci `Client ID` e `Client Secret` creati in Google Cloud;
+4. aggiungi tra gli URL autorizzati almeno:
+   - `http://localhost:3000/auth/callback`
+   - `https://<tuo-dominio>/auth/callback`
+   - eventuale dominio preview Vercel
+
+Se il provider non e configurato, l'app mostra un errore gestito senza rompere il flusso di login o registrazione.
+
+## Citta, provincia e mappa
+
+Registrazione e impostazioni salvano `citta`, `provincia`, `regione`, `latitude` e `longitude` nel profilo pubblico.
+
+La derivazione geografica usa un dataset locale dei comuni italiani:
+
+- `src/data/italy-municipalities.json`
+
+Non serve un servizio esterno di geocoding per l'uso base dell'app. La mappa usa coordinate approssimate per area, non posizioni precise.
+
+Prima di usare la sezione `/map` su un ambiente nuovo, applica le migrazioni Supabase piu recenti.

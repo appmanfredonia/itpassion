@@ -187,9 +187,9 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-7">
       <SectionHeader
-        badge="Milestone 6"
+        badge="Messaggi"
         title="Messaggi privati"
-        description="Lista chat piu densa, conversazione piu reale e composizione piu vicina al mockup mobile."
+        description="Lista chat piu densa, conversazioni chiare e composizione pensata per mobile e desktop."
       />
 
       <div className="stats-grid">

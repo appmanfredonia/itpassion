@@ -14,6 +14,7 @@ const PROTECTED_ROUTE_PREFIXES = [
   "/create",
   "/profile",
   "/explore",
+  "/map",
   "/search",
   "/messages",
   "/notifications",
