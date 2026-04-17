@@ -1,4 +1,5 @@
 import type { PostgrestError, SupabaseClient, User } from "@supabase/supabase-js";
+import { resolveItalianLocation } from "@/lib/location";
 import type { Database } from "@/types/database";
 
 const USERNAME_REGEX = /^[a-z0-9_.]{3,24}$/;
@@ -123,19 +124,56 @@ function mapProfileRow(row: UserProfileSelection): AppProfile {
   };
 }
 
+function deriveLocationFromValues(values: {
+  city: string | null;
+  province: string | null;
+  region: string | null;
+  latitude: number | null;
+  longitude: number | null;
+}) {
+  if (!values.city) {
+    return values;
+  }
+
+  const resolvedLocation = resolveItalianLocation({
+    city: values.city,
+    province: values.province,
+  });
+
+  if (!resolvedLocation.matchedCity) {
+    return values;
+  }
+
+  return {
+    city: resolvedLocation.location.city,
+    province: resolvedLocation.location.province,
+    region: resolvedLocation.location.region,
+    latitude: resolvedLocation.location.latitude,
+    longitude: resolvedLocation.location.longitude,
+  };
+}
+
 export function buildFallbackProfileFromAuthUser(user: User): AppProfile {
   const username = buildFallbackUsername(user);
+  const derivedLocation = deriveLocationFromValues({
+    city: getMetadataString(user, "city"),
+    province: getMetadataString(user, "province"),
+    region: getMetadataString(user, "region"),
+    latitude: getMetadataNumber(user, "latitude"),
+    longitude: getMetadataNumber(user, "longitude"),
+  });
+
   return {
     id: user.id,
     username,
     displayName: buildDisplayName(user, username),
     bio: getMetadataString(user, "bio"),
     avatarUrl: getMetadataString(user, "avatar_url"),
-    city: getMetadataString(user, "city"),
-    province: getMetadataString(user, "province"),
-    region: getMetadataString(user, "region"),
-    latitude: getMetadataNumber(user, "latitude"),
-    longitude: getMetadataNumber(user, "longitude"),
+    city: derivedLocation.city,
+    province: derivedLocation.province,
+    region: derivedLocation.region,
+    latitude: derivedLocation.latitude,
+    longitude: derivedLocation.longitude,
   };
 }
 
@@ -157,12 +195,70 @@ export async function ensureUserProfile(
   }
 
   if (existingProfile) {
+    const shouldBackfillLocation =
+      Boolean(existingProfile.city) &&
+      (!existingProfile.province ||
+        !existingProfile.region ||
+        existingProfile.latitude === null ||
+        existingProfile.longitude === null);
+
+    if (shouldBackfillLocation) {
+      const derivedLocation = deriveLocationFromValues({
+        city: existingProfile.city,
+        province: existingProfile.province,
+        region: existingProfile.region,
+        latitude: existingProfile.latitude,
+        longitude: existingProfile.longitude,
+      });
+
+      const locationChanged =
+        derivedLocation.city !== existingProfile.city ||
+        derivedLocation.province !== existingProfile.province ||
+        derivedLocation.region !== existingProfile.region ||
+        derivedLocation.latitude !== existingProfile.latitude ||
+        derivedLocation.longitude !== existingProfile.longitude;
+
+      if (locationChanged) {
+        const { data: syncedProfile, error: syncError } = await supabase
+          .from("users")
+          .update({
+            city: derivedLocation.city,
+            province: derivedLocation.province,
+            region: derivedLocation.region,
+            latitude: derivedLocation.latitude,
+            longitude: derivedLocation.longitude,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", user.id)
+          .select("id, username, display_name, bio, avatar_url, city, province, region, latitude, longitude")
+          .maybeSingle();
+
+        if (!syncError && syncedProfile) {
+          return mapProfileRow(syncedProfile);
+        }
+
+        if (syncError) {
+          console.error("[auth][ensureUserProfile] location backfill failed", {
+            userId: user.id,
+            error: syncError,
+          });
+        }
+      }
+    }
+
     return mapProfileRow(existingProfile);
   }
 
   const baseProfile = buildFallbackProfileFromAuthUser(user);
   const usernameFromMetadata = toValidUsernameOrNull(getMetadataString(user, "username"));
   const preferredUsername = usernameFromMetadata ?? baseProfile.username;
+  const derivedBaseLocation = deriveLocationFromValues({
+    city: getMetadataString(user, "city"),
+    province: getMetadataString(user, "province"),
+    region: getMetadataString(user, "region"),
+    latitude: getMetadataNumber(user, "latitude"),
+    longitude: getMetadataNumber(user, "longitude"),
+  });
 
   const basePayload = {
     id: user.id,
@@ -170,11 +266,11 @@ export async function ensureUserProfile(
     display_name: buildDisplayName(user, preferredUsername),
     bio: getMetadataString(user, "bio"),
     avatar_url: getMetadataString(user, "avatar_url"),
-    city: getMetadataString(user, "city"),
-    province: getMetadataString(user, "province"),
-    region: getMetadataString(user, "region"),
-    latitude: getMetadataNumber(user, "latitude"),
-    longitude: getMetadataNumber(user, "longitude"),
+    city: derivedBaseLocation.city,
+    province: derivedBaseLocation.province,
+    region: derivedBaseLocation.region,
+    latitude: derivedBaseLocation.latitude,
+    longitude: derivedBaseLocation.longitude,
     updated_at: new Date().toISOString(),
   };
 

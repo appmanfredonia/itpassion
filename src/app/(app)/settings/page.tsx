@@ -31,7 +31,6 @@ import {
   getBlockedUsersList,
   type UserPrivacySettings,
 } from "@/lib/privacy";
-import { italianProvinceOptions } from "@/lib/location";
 import { createServerSupabaseClient } from "@/lib/supabase";
 
 type SettingsPageProps = {
@@ -250,45 +249,20 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
                   />
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_11rem]">
-                  <div className="surface-soft flex flex-col gap-2 p-3">
-                    <Label htmlFor="settings-city">Citta</Label>
-                    <Input
-                      id="settings-city"
-                      name="city"
-                      defaultValue={profile.city ?? ""}
-                      autoComplete="address-level2"
-                      placeholder="Bari"
-                    />
-                  </div>
-
-                  <div className="surface-soft flex flex-col gap-2 p-3">
-                    <Label htmlFor="settings-province">Provincia</Label>
-                    <Input
-                      id="settings-province"
-                      name="province"
-                      defaultValue={profile.province ?? ""}
-                      autoComplete="address-level1"
-                      list="settings-province-options"
-                      placeholder="BA"
-                    />
-                  </div>
+                <div className="surface-soft flex flex-col gap-2 p-3">
+                  <Label htmlFor="settings-city">Citta</Label>
+                  <Input
+                    id="settings-city"
+                    name="city"
+                    defaultValue={profile.city ?? ""}
+                    autoComplete="address-level2"
+                    placeholder="Bari"
+                  />
                 </div>
 
-                <datalist id="settings-province-options">
-                  {italianProvinceOptions.map((provinceOption) => (
-                    <option
-                      key={provinceOption.provinceCode}
-                      value={provinceOption.provinceCode}
-                    >
-                      {provinceOption.province}
-                    </option>
-                  ))}
-                </datalist>
-
                 <p className="text-xs leading-relaxed text-muted-foreground">
-                  La mappa mostra solo un&apos;area approssimata. Se la tua citta non viene
-                  riconosciuta subito, aggiungi anche la provincia.
+                  La mappa mostra solo un&apos;area approssimata. Provincia e regione vengono
+                  ricavate automaticamente a partire dalla citta.
                 </p>
 
                 <Button type="submit" size="sm" className="w-fit">

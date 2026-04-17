@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getAuthenticatedRedirectPath, getUserPassionStatus } from "@/lib/auth";
-import { italianProvinceOptions } from "@/lib/location";
 import { createServerSupabaseClient } from "@/lib/supabase";
 
 type RegisterPageProps = {
@@ -96,30 +95,19 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
             />
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_10rem]">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="register-city">Citta</Label>
-              <Input
-                id="register-city"
-                name="city"
-                placeholder="Bari"
-                autoComplete="address-level2"
-                required
-                className="h-11 rounded-2xl"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="register-province">Provincia</Label>
-              <Input
-                id="register-province"
-                name="province"
-                placeholder="BA"
-                autoComplete="address-level1"
-                list="register-province-options"
-                className="h-11 rounded-2xl"
-              />
-            </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="register-city">Citta</Label>
+            <Input
+              id="register-city"
+              name="city"
+              placeholder="Bari"
+              autoComplete="address-level2"
+              required
+              className="h-11 rounded-2xl"
+            />
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Inserisci il tuo comune. Provincia e area vengono ricavate in automatico.
+            </p>
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -133,17 +121,6 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
               required
             />
           </div>
-
-          <datalist id="register-province-options">
-            {italianProvinceOptions.map((provinceOption) => (
-              <option
-                key={provinceOption.provinceCode}
-                value={provinceOption.provinceCode}
-              >
-                {provinceOption.province}
-              </option>
-            ))}
-          </datalist>
 
           <Button type="submit" className="mt-0.5 h-11 rounded-2xl">
             Registrati
@@ -173,8 +150,7 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
             Se la conferma email e attiva, riceverai il link prima del primo accesso.
           </p>
           <p className="text-center text-[11px] leading-relaxed">
-            Se la citta non viene riconosciuta al volo, puoi rifinire la provincia dalle
-            impostazioni.
+            Se la citta non viene riconosciuta, usa il nome ufficiale completo del comune.
           </p>
         </div>
       </div>

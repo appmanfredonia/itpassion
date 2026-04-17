@@ -17,7 +17,6 @@ type FeedPageProps = {
     post?: string;
     commentError?: string;
     postError?: string;
-    editComment?: string;
   }>;
 };
 
@@ -218,7 +217,6 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
               post={post}
               returnPath={returnPath}
               commentPreviewLimit={1}
-              editingCommentId={typeof params.editComment === "string" ? params.editComment : null}
             />
           ))}
         </div>

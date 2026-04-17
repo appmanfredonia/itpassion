@@ -4,22 +4,10 @@ import { AreaMap } from "@/components/map/area-map";
 import { SectionHeader } from "@/components/section-header";
 import { StateCard } from "@/components/state-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { buttonVariants } from "@/components/ui/button";
 import { ensureUserProfile } from "@/lib/auth";
 import { formatLocationLabel } from "@/lib/location";
-import {
-  getPassionMapData,
-  normalizeMapAreaFilter,
-  type MapAreaFilter,
-} from "@/lib/map";
+import { getPassionMapData } from "@/lib/map";
 import { createServerSupabaseClient } from "@/lib/supabase";
-import { cn } from "@/lib/utils";
-
-type MapPageProps = {
-  searchParams: Promise<{
-    area?: string;
-  }>;
-};
 
 function avatarFallback(username: string): string {
   const normalized = username.trim();
@@ -30,13 +18,7 @@ function avatarFallback(username: string): string {
   return normalized.slice(0, 2).toUpperCase();
 }
 
-function filterHref(area: MapAreaFilter) {
-  return area === "all" ? "/map" : `/map?area=${area}`;
-}
-
-export default async function MapPage({ searchParams }: MapPageProps) {
-  const params = await searchParams;
-  const selectedArea = normalizeMapAreaFilter(params.area);
+export default async function MapPage() {
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },
@@ -51,7 +33,7 @@ export default async function MapPage({ searchParams }: MapPageProps) {
 
   try {
     await ensureUserProfile(supabase, user);
-    mapData = await getPassionMapData(supabase, user.id, selectedArea);
+    mapData = await getPassionMapData(supabase, user.id);
   } catch {
     hasError = true;
   }
@@ -62,7 +44,7 @@ export default async function MapPage({ searchParams }: MapPageProps) {
         <StateCard
           variant="error"
           title="Mappa non disponibile"
-          description="Non siamo riusciti a caricare le persone vicine alle tue passioni."
+          description="Non siamo riusciti a caricare le persone con le tue passioni nella tua provincia."
         />
       </section>
     );
@@ -72,14 +54,14 @@ export default async function MapPage({ searchParams }: MapPageProps) {
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <SectionHeader
         badge="Mappa"
-        title="Persone vicine alle tue passioni"
-        description="Un punto d'incontro per trovare profili con interessi in comune nella tua zona, senza mostrare posizioni precise."
+        title="Persone con le tue passioni nella tua provincia"
+        description="Trova utenti che condividono almeno una passione con te e vivono nella tua stessa provincia, senza mostrare posizioni precise."
       />
 
       <div className="stats-grid">
         <div className="app-grid-stat">
           <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-            La tua area
+            La tua zona
           </p>
           <p className="mt-1 text-sm font-semibold tracking-tight">
             {mapData.viewerLocationLabel ?? "Completa il profilo"}
@@ -93,7 +75,7 @@ export default async function MapPage({ searchParams }: MapPageProps) {
         </div>
         <div className="app-grid-stat">
           <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-            Profili trovati
+            Persone compatibili
           </p>
           <p className="mt-1 text-sm font-semibold tracking-tight">{mapData.results.length}</p>
         </div>
@@ -105,27 +87,28 @@ export default async function MapPage({ searchParams }: MapPageProps) {
           title="Aggiungi prima le tue passioni"
           description="Completa onboarding o aggiorna il profilo per trovare persone affini nella mappa."
         />
+      ) : mapData.locationStatus === "missing-city" ? (
+        <StateCard
+          variant="empty"
+          title="Aggiungi la tua citta"
+          description="Inserisci un comune italiano nelle impostazioni per trovare persone con le tue passioni nella tua provincia."
+        />
+      ) : mapData.locationStatus === "missing-province" ? (
+        <StateCard
+          variant="empty"
+          title="Citta da verificare"
+          description="La tua citta non e stata riconosciuta correttamente. Controlla il nome del comune nelle impostazioni per attivare la mappa."
+        />
       ) : (
         <>
           <div className="app-page-shell flex flex-wrap items-center gap-2.5">
-            {[
-              { label: "Stessa provincia", value: "province" as const },
-              { label: "Stessa regione", value: "region" as const },
-              { label: "Ovunque", value: "all" as const },
-            ].map((filterOption) => (
-              <Link
-                key={filterOption.value}
-                href={filterHref(filterOption.value)}
-                className={cn(
-                  buttonVariants({
-                    size: "sm",
-                    variant: selectedArea === filterOption.value ? "secondary" : "outline",
-                  }),
-                )}
-              >
-                {filterOption.label}
-              </Link>
-            ))}
+            <p className="text-sm text-muted-foreground">
+              Ti mostriamo solo profili con almeno una passione in comune nella provincia di{" "}
+              <span className="font-semibold text-foreground">
+                {mapData.viewerProvince ?? "riferimento"}
+              </span>
+              .
+            </p>
             <div className="ml-auto flex flex-wrap gap-2">
               {mapData.passions.map((passion) => (
                 <span
@@ -144,7 +127,7 @@ export default async function MapPage({ searchParams }: MapPageProps) {
                 <StateCard
                   variant="empty"
                   title="Nessun profilo compatibile"
-                  description="Completa citta e provincia nel profilo o allarga il filtro geografico."
+                  description="Al momento non ci sono utenti con passioni in comune nella tua stessa provincia."
                 />
               ) : (
                 mapData.results.map((result) => (
@@ -187,7 +170,7 @@ export default async function MapPage({ searchParams }: MapPageProps) {
               <AreaMap clusters={mapData.clusters} />
               <p className="px-1 text-xs leading-relaxed text-muted-foreground">
                 Le posizioni sono sempre approssimate per area e servono solo a favorire incontri
-                tra passioni comuni nella stessa provincia o regione.
+                tra persone con passioni in comune nella stessa provincia.
               </p>
             </div>
           </div>

@@ -42,7 +42,7 @@ export function AreaMap({ clusters }: AreaMapProps) {
         <div className="text-center">
           <p className="text-sm font-semibold tracking-tight">Nessun punto da mostrare</p>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Completa citta e provincia per comparire nella mappa con altri utenti compatibili.
+            Completa la tua citta per trovare persone con passioni simili nella tua provincia.
           </p>
         </div>
       </div>
@@ -69,7 +69,7 @@ export function AreaMap({ clusters }: AreaMapProps) {
             <div className="flex flex-col items-center gap-1.5">
               <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/16 px-2.5 py-1 text-[11px] font-semibold text-primary shadow-[0_18px_38px_-26px_oklch(0.73_0.16_294_/_0.82)] backdrop-blur-sm">
                 <MapPin className="size-3" />
-                {cluster.count > 1 ? `${cluster.label} · ${cluster.count}` : cluster.label}
+                {cluster.count > 1 ? `${cluster.label} - ${cluster.count}` : cluster.label}
               </span>
               <span
                 className={cn(
@@ -84,4 +84,3 @@ export function AreaMap({ clusters }: AreaMapProps) {
     </div>
   );
 }
-

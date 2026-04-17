@@ -188,6 +188,20 @@ export function resolveItalianLocation(input: {
   };
 }
 
+export function getItalianCityValidationError(
+  resolvedLocation: ResolvedItalianLocation,
+): string | null {
+  if (resolvedLocation.matchedCity) {
+    return null;
+  }
+
+  if (resolvedLocation.ambiguousCity) {
+    return "La citta inserita corrisponde a piu province. Usa il nome ufficiale completo del comune.";
+  }
+
+  return "Citta non riconosciuta. Inserisci un comune italiano valido.";
+}
+
 export function formatLocationLabel(location: Pick<UserLocationFields, "city" | "province">): string | null {
   if (location.city && location.province) {
     return `${location.city}, ${location.province}`;

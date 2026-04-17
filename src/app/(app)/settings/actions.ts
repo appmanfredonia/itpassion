@@ -9,7 +9,7 @@ import {
   normalizeUsername,
   saveUserPassions,
 } from "@/lib/auth";
-import { resolveItalianLocation } from "@/lib/location";
+import { getItalianCityValidationError, resolveItalianLocation } from "@/lib/location";
 import {
   blockUserById,
   ensurePrivacySettings,
@@ -81,7 +81,6 @@ export async function updateProfileDetailsAction(formData: FormData): Promise<ne
   const displayNameRaw = formData.get("displayName");
   const bioRaw = formData.get("bio");
   const cityRaw = formData.get("city");
-  const provinceRaw = formData.get("province");
 
   const normalizedUsername =
     typeof usernameRaw === "string" ? normalizeUsername(usernameRaw) : "";
@@ -104,19 +103,36 @@ export async function updateProfileDetailsAction(formData: FormData): Promise<ne
   }
   const bio = trimmedBio.length > 0 ? trimmedBio : null;
   const cityValue = typeof cityRaw === "string" ? cityRaw.trim() : "";
-  const provinceValue = typeof provinceRaw === "string" ? provinceRaw.trim() : "";
 
   if (cityValue.length > 80) {
     redirectProfileError("La citta non puo superare 80 caratteri.");
   }
-  if (provinceValue.length > 60) {
-    redirectProfileError("La provincia non puo superare 60 caratteri.");
-  }
 
-  const resolvedLocation = resolveItalianLocation({
-    city: cityValue.length > 0 ? cityValue : null,
-    province: provinceValue.length > 0 ? provinceValue : null,
-  });
+  const resolvedLocation =
+    cityValue.length > 0
+      ? resolveItalianLocation({
+          city: cityValue,
+          province: null,
+        })
+      : {
+          location: {
+            city: null,
+            province: null,
+            region: null,
+            latitude: null,
+            longitude: null,
+          },
+          matchedCity: false,
+          matchedProvince: false,
+          ambiguousCity: false,
+        };
+
+  if (cityValue.length > 0) {
+    const locationError = getItalianCityValidationError(resolvedLocation);
+    if (locationError) {
+      redirectProfileError(locationError);
+    }
+  }
 
   const { supabase, user, profile } = await getAuthenticatedContext();
   let result: ActionResult;
@@ -187,8 +203,8 @@ export async function updateProfileDetailsAction(formData: FormData): Promise<ne
       result = {
         ok: true,
         message:
-          resolvedLocation.location.city && !resolvedLocation.matchedProvince
-            ? "Profilo aggiornato. Aggiungi o controlla la provincia per comparire meglio nella mappa."
+          resolvedLocation.location.city === null
+            ? "Profilo aggiornato. Aggiungi la tua citta per comparire nella mappa."
             : "Profilo aggiornato con successo.",
       };
     }

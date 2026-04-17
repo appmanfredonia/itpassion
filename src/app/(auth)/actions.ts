@@ -10,7 +10,7 @@ import {
   normalizeUsername,
 } from "@/lib/auth";
 import { getAppSiteUrl, toAbsoluteAppUrl } from "@/lib/app-url";
-import { resolveItalianLocation } from "@/lib/location";
+import { getItalianCityValidationError, resolveItalianLocation } from "@/lib/location";
 import { actionErrorDetail } from "@/lib/server-actions";
 import { createServerSupabaseClient } from "@/lib/supabase";
 
@@ -86,7 +86,6 @@ export async function registerAction(formData: FormData): Promise<never> {
   const email = formData.get("email");
   const password = formData.get("password");
   const city = formData.get("city");
-  const province = formData.get("province");
 
   const normalizedUsername =
     typeof username === "string" ? normalizeUsername(username) : "";
@@ -104,14 +103,24 @@ export async function registerAction(formData: FormData): Promise<never> {
     );
   }
 
-  if (typeof city !== "string" || city.trim().length < 2) {
+  const cityValue = typeof city === "string" ? city.trim() : "";
+
+  if (cityValue.length < 2) {
     buildErrorRedirect("/register", "Inserisci la tua citta per completare la registrazione.");
   }
 
+  if (cityValue.length > 80) {
+    buildErrorRedirect("/register", "La citta non puo superare 80 caratteri.");
+  }
+
   const resolvedLocation = resolveItalianLocation({
-    city,
-    province: typeof province === "string" ? province : null,
+    city: cityValue,
+    province: null,
   });
+  const locationError = getItalianCityValidationError(resolvedLocation);
+  if (locationError) {
+    buildErrorRedirect("/register", locationError);
+  }
 
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase.auth.signUp({

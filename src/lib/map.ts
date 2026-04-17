@@ -7,8 +7,6 @@ import {
 } from "@/lib/privacy";
 import type { Database } from "@/types/database";
 
-export type MapAreaFilter = "province" | "region" | "all";
-
 export type MapUserMatch = {
   userId: string;
   username: string;
@@ -24,7 +22,6 @@ export type MapUserMatch = {
     name: string;
   }[];
   overlapCount: number;
-  areaRank: 1 | 2 | 3;
 };
 
 export type MapCluster = {
@@ -36,10 +33,9 @@ export type MapCluster = {
 };
 
 export type PassionMapData = {
+  locationStatus: "ready" | "missing-city" | "missing-province";
   viewerLocationLabel: string | null;
   viewerProvince: string | null;
-  viewerRegion: string | null;
-  selectedArea: MapAreaFilter;
   passions: {
     slug: string;
     name: string;
@@ -52,34 +48,25 @@ function unique(values: string[]): string[] {
   return Array.from(new Set(values));
 }
 
-export function normalizeMapAreaFilter(value: string | undefined): MapAreaFilter {
-  if (value === "province" || value === "region") {
-    return value;
-  }
-
-  return "all";
-}
-
 export async function getPassionMapData(
   supabase: SupabaseClient<Database>,
   currentUserId: string,
-  area: MapAreaFilter,
 ): Promise<PassionMapData> {
-  const [viewerProfile, viewerPassionRowsResponse, blockVisibility, hiddenPrivateProfileIds] = await Promise.all([
-    getProfileById(supabase, currentUserId),
-    supabase
-      .from("user_passions")
-      .select("passion_slug")
-      .eq("user_id", currentUserId),
-    getBlockVisibilitySets(supabase, currentUserId),
-    getHiddenPrivateProfileIds(supabase, currentUserId),
-  ]);
+  const [viewerProfile, viewerPassionRowsResponse, blockVisibility, hiddenPrivateProfileIds] =
+    await Promise.all([
+      getProfileById(supabase, currentUserId),
+      supabase.from("user_passions").select("passion_slug").eq("user_id", currentUserId),
+      getBlockVisibilitySets(supabase, currentUserId),
+      getHiddenPrivateProfileIds(supabase, currentUserId),
+    ]);
 
   if (viewerPassionRowsResponse.error) {
     throw viewerPassionRowsResponse.error;
   }
 
-  const viewerPassionSlugs = (viewerPassionRowsResponse.data ?? []).map((row) => row.passion_slug);
+  const viewerPassionSlugs = unique(
+    (viewerPassionRowsResponse.data ?? []).map((row) => row.passion_slug),
+  );
 
   const hiddenUserIds = new Set([
     ...blockVisibility.blockedByMeIds,
@@ -87,24 +74,52 @@ export async function getPassionMapData(
     ...hiddenPrivateProfileIds,
   ]);
 
-  if (!viewerProfile || viewerPassionSlugs.length === 0) {
+  const viewerResolvedLocation = resolveItalianLocation({
+    city: viewerProfile?.city ?? null,
+    province: viewerProfile?.province ?? null,
+  });
+
+  const viewerProvince = viewerProfile?.province ?? viewerResolvedLocation.location.province;
+  const viewerLocationLabel = viewerProfile
+    ? formatLocationLabel({
+        city: viewerProfile.city ?? viewerResolvedLocation.location.city,
+        province: viewerProvince,
+      })
+    : null;
+
+  const locationStatus: PassionMapData["locationStatus"] = !viewerProfile?.city
+    ? "missing-city"
+    : viewerProvince
+      ? "ready"
+      : "missing-province";
+
+  const passionRowsResponse =
+    viewerPassionSlugs.length > 0
+      ? await supabase.from("passions").select("slug, name").in("slug", viewerPassionSlugs)
+      : { data: [], error: null };
+
+  if (passionRowsResponse.error) {
+    throw passionRowsResponse.error;
+  }
+
+  const passionNameBySlug = new Map(
+    (passionRowsResponse.data ?? []).map((row) => [row.slug, row.name]),
+  );
+  const passions = viewerPassionSlugs.map((slug) => ({
+    slug,
+    name: passionNameBySlug.get(slug) ?? slug,
+  }));
+
+  if (!viewerProfile || viewerPassionSlugs.length === 0 || locationStatus !== "ready") {
     return {
-      viewerLocationLabel: viewerProfile ? formatLocationLabel(viewerProfile) : null,
-      viewerProvince: viewerProfile?.province ?? null,
-      viewerRegion: viewerProfile?.region ?? null,
-      selectedArea: area,
-      passions: [],
+      locationStatus,
+      viewerLocationLabel,
+      viewerProvince,
+      passions,
       results: [],
       clusters: [],
     };
   }
-
-  const viewerResolvedLocation = resolveItalianLocation({
-    city: viewerProfile.city,
-    province: viewerProfile.province,
-  });
-  const viewerProvince = viewerProfile.province ?? viewerResolvedLocation.location.province;
-  const viewerRegion = viewerProfile.region ?? viewerResolvedLocation.location.region;
 
   const { data: sharedPassionRows, error: sharedPassionError } = await supabase
     .from("user_passions")
@@ -130,36 +145,24 @@ export async function getPassionMapData(
   const candidateIds = Array.from(overlapByUserId.keys());
   if (candidateIds.length === 0) {
     return {
-      viewerLocationLabel: formatLocationLabel(viewerProfile),
+      locationStatus,
+      viewerLocationLabel,
       viewerProvince,
-      viewerRegion,
-      selectedArea: area,
-      passions: [],
+      passions,
       results: [],
       clusters: [],
     };
   }
 
-  const [{ data: userRows, error: usersError }, { data: passionRows, error: passionsError }] =
-    await Promise.all([
-      supabase
-        .from("users")
-        .select("id, username, display_name, avatar_url, city, province, region, latitude, longitude")
-        .in("id", candidateIds),
-      supabase
-        .from("passions")
-        .select("slug, name")
-        .in("slug", viewerPassionSlugs),
-    ]);
+  const { data: userRows, error: usersError } = await supabase
+    .from("users")
+    .select("id, username, display_name, avatar_url, city, province, region, latitude, longitude")
+    .in("id", candidateIds);
 
   if (usersError) {
     throw usersError;
   }
-  if (passionsError) {
-    throw passionsError;
-  }
 
-  const passionNameBySlug = new Map((passionRows ?? []).map((row) => [row.slug, row.name]));
   const mapResults: MapUserMatch[] = (userRows ?? [])
     .map((userRow) => {
       const overlapSlugs = unique(overlapByUserId.get(userRow.id) ?? []);
@@ -171,10 +174,6 @@ export async function getPassionMapData(
       const region = userRow.region ?? resolvedLocation.location.region;
       const latitude = userRow.latitude ?? resolvedLocation.location.latitude;
       const longitude = userRow.longitude ?? resolvedLocation.location.longitude;
-
-      const sameProvince = Boolean(viewerProvince && province && viewerProvince === province);
-      const sameRegion = Boolean(viewerRegion && region && viewerRegion === region);
-      const areaRank: 1 | 2 | 3 = sameProvince ? 1 : sameRegion ? 2 : 3;
 
       return {
         userId: userRow.id,
@@ -191,25 +190,16 @@ export async function getPassionMapData(
           name: passionNameBySlug.get(slug) ?? slug,
         })),
         overlapCount: overlapSlugs.length,
-        areaRank,
       };
     })
-    .filter((result) => {
-      if (area === "province") {
-        return result.areaRank === 1;
-      }
-      if (area === "region") {
-        return result.areaRank <= 2;
-      }
-      return true;
-    })
+    .filter(
+      (result) => result.userId !== currentUserId && result.province === viewerProvince && result.commonPassions.length > 0,
+    )
     .sort((firstResult, secondResult) => {
-      if (firstResult.areaRank !== secondResult.areaRank) {
-        return firstResult.areaRank - secondResult.areaRank;
-      }
       if (firstResult.overlapCount !== secondResult.overlapCount) {
         return secondResult.overlapCount - firstResult.overlapCount;
       }
+
       return firstResult.displayName.localeCompare(secondResult.displayName, "it");
     });
 
@@ -238,14 +228,10 @@ export async function getPassionMapData(
   });
 
   return {
-    viewerLocationLabel: formatLocationLabel(viewerProfile),
+    locationStatus,
+    viewerLocationLabel,
     viewerProvince,
-    viewerRegion,
-    selectedArea: area,
-    passions: viewerPassionSlugs.map((slug) => ({
-      slug,
-      name: passionNameBySlug.get(slug) ?? slug,
-    })),
+    passions,
     results: mapResults,
     clusters: Array.from(clustersMap.values()),
   };
