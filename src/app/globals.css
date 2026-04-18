@@ -240,9 +240,16 @@
 }
 
 .maplibre-shell .maplibregl-map {
+  width: 100%;
+  height: 100%;
   background:
     radial-gradient(circle at top, oklch(0.73 0.16 294 / 0.09), transparent 34%),
     linear-gradient(180deg, rgba(6, 10, 19, 0.92), rgba(4, 6, 12, 0.98));
+}
+
+.maplibre-shell .maplibregl-canvas-container {
+  width: 100%;
+  height: 100%;
 }
 
 .maplibre-shell .maplibregl-canvas {

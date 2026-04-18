@@ -326,7 +326,9 @@ export function AreaMap({ results, viewerProvince }: AreaMapProps) {
 
   return (
     <div className="maplibre-shell relative isolate h-[18.5rem] overflow-hidden rounded-[1.75rem] border border-border/80 bg-[linear-gradient(180deg,rgba(8,11,20,1),rgba(5,8,15,1))] sm:h-[21.5rem] xl:h-[27rem]">
-      <div ref={containerRef} className="absolute inset-0 z-0" />
+      <div className="absolute inset-0 z-0">
+        <div ref={containerRef} className="h-full w-full" />
+      </div>
       <div className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-24 bg-[linear-gradient(180deg,rgba(6,9,17,0.34),rgba(6,9,17,0.12),transparent)]" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-24 bg-[linear-gradient(0deg,rgba(4,6,12,0.34),rgba(4,6,12,0.12),transparent)]" />
 

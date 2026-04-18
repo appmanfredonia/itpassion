@@ -50,6 +50,11 @@ export function PostCard({
   returnPath,
   commentPreviewLimit = 1,
 }: PostCardProps) {
+  const postActionClass = cn(
+    buttonVariants({ variant: "outline", size: "xs" }),
+    "h-7 min-w-0 justify-center gap-1 rounded-full border-border/80 bg-black/12 px-2 text-[11px] text-muted-foreground shadow-none hover:bg-black/18 hover:text-foreground [&_svg]:size-3",
+  );
+
   return (
     <Card
       id={`post-${post.id}`}
@@ -89,15 +94,12 @@ export function PostCard({
             <div
               className={cn(
                 "grid w-full gap-1.5 sm:w-auto",
-                post.canManage ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-1",
+                post.canManage ? "grid-cols-3" : "grid-cols-1",
               )}
             >
               <Link
                 href={`/feed?post=${post.id}`}
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "xs" }),
-                  "min-w-0 justify-center rounded-full border-border/80 bg-black/16 px-3 text-muted-foreground hover:text-foreground",
-                )}
+                className={postActionClass}
               >
                 Apri
                 <ArrowUpRight className="size-3" />
@@ -107,23 +109,20 @@ export function PostCard({
                 <>
                   <Link
                     href={`/create?edit=${post.id}`}
-                    className={cn(
-                      buttonVariants({ variant: "outline", size: "xs" }),
-                      "min-w-0 justify-center rounded-full border-border/80 bg-black/16 px-3 text-muted-foreground hover:text-foreground",
-                    )}
+                    className={postActionClass}
                   >
                     <Pencil className="size-3" />
                     Modifica
                   </Link>
 
-                  <form action={deletePostAction} className="col-span-2 sm:col-span-1">
+                  <form action={deletePostAction} className="min-w-0">
                     <input type="hidden" name="postId" value={post.id} />
                     <input type="hidden" name="returnPath" value={returnPath} />
                     <ConfirmSubmitButton
                       type="submit"
                       variant="destructive"
                       size="xs"
-                      className="w-full justify-center rounded-full"
+                      className="h-7 w-full justify-center gap-1 rounded-full px-2 text-[11px] shadow-none [&_svg]:size-3"
                       confirmMessage="Vuoi davvero eliminare questo post? L'azione non si puo annullare."
                     >
                       <Trash2 />
