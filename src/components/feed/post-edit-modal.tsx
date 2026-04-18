@@ -219,7 +219,7 @@ export function PostEditModal({
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[110] flex items-center justify-center px-4 py-6 md:px-6">
+    <div className="fixed inset-0 z-[130] flex items-center justify-center px-4 py-6 md:px-6">
       <div
         className="absolute inset-0 bg-black/76 backdrop-blur-[2px]"
         onClick={() => {

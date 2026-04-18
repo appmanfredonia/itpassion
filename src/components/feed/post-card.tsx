@@ -94,7 +94,7 @@ export function PostCard({
         className="surface-panel overflow-hidden rounded-[1.35rem] border-border/80 bg-card/92 shadow-[0_24px_44px_-32px_oklch(0_0_0_/_0.95)]"
       >
         <CardHeader className="gap-2.5 px-3.5 pb-2.5 pt-3.5 sm:gap-3 sm:px-5 sm:pb-3 sm:pt-4">
-          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex flex-col gap-2.25 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
               <Avatar className="size-7 sm:size-8">
                 {postState.authorAvatarUrl && (
@@ -119,10 +119,10 @@ export function PostCard({
               </div>
             </div>
 
-            <div className="inline-grid max-w-full shrink-0 gap-1.5 self-start sm:w-auto sm:min-w-[11.5rem] md:min-w-[12.5rem] sm:justify-items-end">
+            <div className="flex max-w-full shrink-0 items-center gap-1.25 self-start pr-1 sm:ml-3 sm:justify-end sm:gap-1.5">
               <Link
                 href={`/explore?passion=${postState.passionSlug}`}
-                className="min-w-0 max-w-full justify-self-start sm:justify-self-end"
+                className="min-w-0 max-w-[7.5rem] shrink min-[430px]:max-w-[8.5rem] sm:max-w-[8rem] md:max-w-[9rem]"
               >
                 <Badge
                   variant="secondary"
@@ -133,31 +133,31 @@ export function PostCard({
               </Link>
 
               {postState.canManage ? (
-                <div className="inline-grid grid-cols-2 gap-1.25 sm:gap-1.5">
+                <>
                   <button
                     type="button"
-                    className={cn(postActionClass, "min-w-0 whitespace-nowrap")}
+                    className={cn(postActionClass, "shrink-0 whitespace-nowrap")}
                     onClick={() => setShowEditModal(true)}
                   >
                     <Pencil className="size-3" />
                     Modifica
                   </button>
 
-                  <form action={deletePostAction} className="min-w-0">
+                  <form action={deletePostAction} className="shrink-0">
                     <input type="hidden" name="postId" value={postState.id} />
                     <input type="hidden" name="returnPath" value={returnPath} />
                     <ConfirmSubmitButton
                       type="submit"
                       variant="destructive"
                       size="xs"
-                      className="h-[18px] min-w-0 justify-center gap-0.5 rounded-full px-1.5 text-[9px] font-medium whitespace-nowrap shadow-none sm:h-5 sm:gap-0.75 sm:px-1.25 sm:text-[9.5px] [&_svg]:size-[9px]"
+                      className="h-[18px] shrink-0 justify-center gap-0.5 rounded-full px-1.5 text-[9px] font-medium whitespace-nowrap shadow-none sm:h-5 sm:gap-0.75 sm:px-1.25 sm:text-[9.5px] [&_svg]:size-[9px]"
                       confirmMessage="Vuoi davvero eliminare questo post? L'azione non si puo annullare."
                     >
                       <Trash2 />
                       Elimina
                     </ConfirmSubmitButton>
                   </form>
-                </div>
+                </>
               ) : null}
             </div>
           </div>
