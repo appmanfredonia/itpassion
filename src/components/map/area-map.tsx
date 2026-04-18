@@ -339,12 +339,10 @@ export function AreaMap({ results, viewerProvince }: AreaMapProps) {
         </span>
         <span className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[11px] text-primary backdrop-blur-md">
           <Sparkles className="size-3" />
-          {markerPoints.length} marker reali
+          {markerPoints.length === 1
+            ? "1 simile a te"
+            : `${markerPoints.length} simili a te`}
         </span>
-      </div>
-
-      <div className="pointer-events-none absolute bottom-3 left-3 z-[3] max-w-[17rem] rounded-2xl border border-border/70 bg-black/34 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground backdrop-blur-md sm:bottom-4 sm:left-4">
-        Le posizioni sono mostrate in modo approssimato per proteggere la privacy.
       </div>
 
       {!isLoaded && !hasMapError ? (

@@ -1,12 +1,5 @@
 import Link from "next/link";
-import {
-  ArrowUpRight,
-  Bookmark,
-  Heart,
-  MessageCircle,
-  Pencil,
-  Trash2,
-} from "lucide-react";
+import { Bookmark, Heart, MessageCircle, Pencil, Trash2 } from "lucide-react";
 import {
   deletePostAction,
   toggleLikeAction,
@@ -82,56 +75,47 @@ export function PostCard({
           </div>
 
           <div className="flex w-full min-w-0 flex-col gap-1.5 sm:w-auto sm:max-w-[24rem] sm:items-end">
-            <Link href={`/explore?passion=${post.passionSlug}`}>
-              <Badge
-                variant="secondary"
-                className="max-w-full self-start border-primary/20 bg-primary/10 text-primary sm:self-auto"
-              >
-                {post.passionName}
-              </Badge>
-            </Link>
-
-            <div
-              className={cn(
-                "grid w-full gap-1.5 sm:w-auto",
-                post.canManage ? "grid-cols-3" : "grid-cols-1",
-              )}
-            >
-              <Link
-                href={`/feed?post=${post.id}`}
-                className={postActionClass}
-              >
-                Apri
-                <ArrowUpRight className="size-3" />
-              </Link>
-
-              {post.canManage ? (
-                <>
-                  <Link
-                    href={`/create?edit=${post.id}`}
-                    className={postActionClass}
+            {post.canManage ? (
+              <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-1.5 sm:w-auto sm:min-w-[18rem]">
+                <Link href={`/explore?passion=${post.passionSlug}`} className="min-w-0">
+                  <Badge
+                    variant="secondary"
+                    className="w-full justify-center truncate border-primary/20 bg-primary/10 text-primary sm:justify-start"
                   >
-                    <Pencil className="size-3" />
-                    Modifica
-                  </Link>
+                    {post.passionName}
+                  </Badge>
+                </Link>
 
-                  <form action={deletePostAction} className="min-w-0">
-                    <input type="hidden" name="postId" value={post.id} />
-                    <input type="hidden" name="returnPath" value={returnPath} />
-                    <ConfirmSubmitButton
-                      type="submit"
-                      variant="destructive"
-                      size="xs"
-                      className="h-7 w-full justify-center gap-1 rounded-full px-2 text-[11px] shadow-none [&_svg]:size-3"
-                      confirmMessage="Vuoi davvero eliminare questo post? L'azione non si puo annullare."
-                    >
-                      <Trash2 />
-                      Elimina
-                    </ConfirmSubmitButton>
-                  </form>
-                </>
-              ) : null}
-            </div>
+                <Link href={`/create?edit=${post.id}`} className={postActionClass}>
+                  <Pencil className="size-3" />
+                  Modifica
+                </Link>
+
+                <form action={deletePostAction} className="min-w-0">
+                  <input type="hidden" name="postId" value={post.id} />
+                  <input type="hidden" name="returnPath" value={returnPath} />
+                  <ConfirmSubmitButton
+                    type="submit"
+                    variant="destructive"
+                    size="xs"
+                    className="h-7 w-full justify-center gap-1 rounded-full px-2 text-[11px] shadow-none [&_svg]:size-3"
+                    confirmMessage="Vuoi davvero eliminare questo post? L'azione non si puo annullare."
+                  >
+                    <Trash2 />
+                    Elimina
+                  </ConfirmSubmitButton>
+                </form>
+              </div>
+            ) : (
+              <Link href={`/explore?passion=${post.passionSlug}`} className="self-start sm:self-auto">
+                <Badge
+                  variant="secondary"
+                  className="max-w-full border-primary/20 bg-primary/10 text-primary"
+                >
+                  {post.passionName}
+                </Badge>
+              </Link>
+            )}
           </div>
         </div>
       </CardHeader>
