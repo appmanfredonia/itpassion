@@ -139,12 +139,12 @@ export function PostComments({
         : `Mostra ${comments.length} commenti`;
 
   return (
-    <div className="surface-soft flex flex-col gap-2 rounded-[1.25rem] border-border/80 bg-surface-1/95 p-2.5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <div className="surface-soft flex flex-col gap-1.5 rounded-[1.05rem] border-border/80 bg-surface-1/95 p-1.75">
+      <div className="flex flex-wrap items-center justify-between gap-1.5">
         <button
           type="button"
           onClick={() => setIsExpanded((current) => !current)}
-          className="inline-flex items-center gap-1 rounded-full border border-border/80 bg-black/12 px-2.5 py-1 text-[11px] font-semibold tracking-[0.08em] text-muted-foreground uppercase transition-colors hover:text-foreground"
+          className="inline-flex items-center gap-1 rounded-full border border-border/80 bg-black/12 px-2 py-0.75 text-[10px] font-semibold tracking-[0.08em] text-muted-foreground uppercase transition-colors hover:text-foreground"
         >
           {isExpanded ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
           {isExpanded ? "Nascondi commenti" : commentsButtonLabel}
@@ -160,7 +160,7 @@ export function PostComments({
             {feedback.message}
           </p>
         ) : comments.length > 0 ? (
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-[10px] text-muted-foreground">
             {comments.length === 1 ? "1 commento" : `${comments.length} commenti`}
           </p>
         ) : null}
@@ -170,7 +170,7 @@ export function PostComments({
         comments.length === 0 ? (
           <p className="text-xs text-muted-foreground">Nessun commento al momento.</p>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1.5">
             {comments.map((comment) => {
               const isEditing = comment.canEdit && editingCommentId === comment.id;
 
@@ -178,14 +178,14 @@ export function PostComments({
                 <div
                   key={comment.id}
                   className={cn(
-                    "flex flex-col gap-2 rounded-2xl border border-border/80 bg-black/12 px-3 py-2 sm:flex-row sm:items-start sm:justify-between",
+                    "flex flex-col gap-1.5 rounded-[1rem] border border-border/80 bg-black/12 px-2.5 py-1.75 sm:flex-row sm:items-start sm:justify-between",
                     isEditing && "border-primary/20 bg-primary/[0.04]",
                   )}
                 >
-                  <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <Link
                       href={`/profile/${comment.authorUsername}`}
-                      className="truncate text-xs font-semibold tracking-tight hover:text-primary"
+                      className="truncate text-[11px] font-semibold tracking-tight hover:text-primary"
                     >
                       @{comment.authorUsername}
                     </Link>
@@ -216,16 +216,22 @@ export function PostComments({
                         </div>
                       </form>
                     ) : (
-                      <p className="text-sm leading-relaxed break-words text-foreground/90 [overflow-wrap:anywhere]">
+                      <p className="text-[12px] leading-relaxed break-words text-foreground/90 [overflow-wrap:anywhere]">
                         {comment.content}
                       </p>
                     )}
                   </div>
 
                   {!isEditing && (comment.canEdit || comment.canDelete) ? (
-                    <div className="flex items-center gap-1.5 self-start">
+                    <div className="flex items-center gap-1 self-start">
                       {comment.canEdit ? (
-                        <Button type="button" variant="ghost" size="xs" onClick={() => startEditing(comment)}>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="xs"
+                          className="h-6.5 px-1.75 text-[10px] [&_svg]:size-[11px]"
+                          onClick={() => startEditing(comment)}
+                        >
                           <Pencil className="size-3" />
                           Modifica
                         </Button>
@@ -234,7 +240,12 @@ export function PostComments({
                         <form action={deleteCommentAction} className="self-start">
                           <input type="hidden" name="commentId" value={comment.id} />
                           <input type="hidden" name="returnPath" value={returnPath} />
-                          <Button type="submit" variant="ghost" size="xs">
+                          <Button
+                            type="submit"
+                            variant="ghost"
+                            size="xs"
+                            className="h-6.5 px-1.75 text-[10px] [&_svg]:size-[11px]"
+                          >
                             <Trash2 />
                             Elimina
                           </Button>
@@ -253,8 +264,7 @@ export function PostComments({
         </p>
       )}
 
-      {isExpanded ? (
-        <form action={addCommentAction} className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <form action={addCommentAction} className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
           <input type="hidden" name="postId" value={postId} />
           <input type="hidden" name="returnPath" value={returnPath} />
           <Input
@@ -262,13 +272,17 @@ export function PostComments({
             placeholder="Aggiungi un commento..."
             maxLength={MAX_COMMENT_LENGTH}
             autoComplete="off"
-            className="h-9 flex-1"
+            className="h-8 flex-1 text-[12px]"
           />
-          <Button type="submit" size="sm" variant="secondary" className="sm:shrink-0">
+          <Button
+            type="submit"
+            size="xs"
+            variant="secondary"
+            className="h-8 px-2.5 text-[10.5px] sm:shrink-0"
+          >
             Invia
           </Button>
         </form>
-      ) : null}
     </div>
   );
 }

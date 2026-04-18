@@ -66,12 +66,12 @@ export function PostMediaGallery({ contentType, media }: PostMediaGalleryProps) 
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-1.5">
       <div
         className={
           renderableMedia.length > 1
-            ? "grid grid-cols-1 gap-2 sm:grid-cols-2"
-            : "grid grid-cols-1 gap-2"
+            ? "grid grid-cols-1 gap-1.5 sm:grid-cols-2"
+            : "grid grid-cols-1 gap-1.5"
         }
       >
         {renderableMedia.map((mediaItem, index) => {
@@ -81,9 +81,9 @@ export function PostMediaGallery({ contentType, media }: PostMediaGalleryProps) 
           return (
             <figure
               key={`${mediaItem.kind}-${mediaItem.url}-${index}`}
-              className="group/media overflow-hidden rounded-[1.2rem] border border-border/80 bg-surface-2 shadow-[0_18px_36px_-30px_oklch(0_0_0_/_0.9)]"
+              className="group/media overflow-hidden rounded-[1rem] border border-border/80 bg-surface-2 shadow-[0_14px_28px_-26px_oklch(0_0_0_/_0.88)]"
             >
-              <div className="relative aspect-[4/3.05] w-full bg-muted/20 sm:aspect-[16/10.5]">
+              <div className="relative aspect-[16/8.6] w-full max-h-[13rem] bg-muted/20 sm:aspect-[16/8.2] sm:max-h-[15rem]">
                 {mediaItem.kind === "image" ? (
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -105,17 +105,17 @@ export function PostMediaGallery({ contentType, media }: PostMediaGalleryProps) 
                     Il tuo browser non supporta la riproduzione video.
                   </video>
                 )}
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/42 via-black/6 to-transparent" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-black/28 via-black/5 to-transparent" />
               </div>
-              <figcaption className="flex min-h-8 items-center justify-between gap-2 border-t border-border/70 bg-black/16 px-2.5 py-1">
-                <span className="text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+              <figcaption className="flex min-h-7 items-center justify-between gap-2 border-t border-border/70 bg-black/16 px-2 py-0.75">
+                <span className="text-[9.5px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                   {mediaLabel}
                 </span>
                 <a
                   href={mediaItem.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-[11px] font-medium text-primary hover:underline"
+                  className="text-[10px] font-medium text-primary hover:underline"
                 >
                   Apri
                 </a>
