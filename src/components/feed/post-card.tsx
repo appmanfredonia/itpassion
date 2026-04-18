@@ -18,7 +18,6 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { FeedPost } from "@/lib/feed";
 import { cn } from "@/lib/utils";
- 
 
 type PostCardProps = {
   post: FeedPost;
@@ -94,9 +93,9 @@ export function PostCard({
         id={`post-${post.id}`}
         className="surface-panel overflow-hidden rounded-[1.35rem] border-border/80 bg-card/92 shadow-[0_24px_44px_-32px_oklch(0_0_0_/_0.95)]"
       >
-        <CardHeader className="gap-3 px-4 pb-3 pt-4">
+        <CardHeader className="gap-3 px-4 pb-3 pt-4 sm:px-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex min-w-0 items-center gap-3">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
               <Avatar>
                 {postState.authorAvatarUrl && (
                   <AvatarImage src={postState.authorAvatarUrl} alt={`Avatar di @${postState.authorUsername}`} />
@@ -120,35 +119,38 @@ export function PostCard({
               </div>
             </div>
 
-            <div className="flex w-full min-w-0 flex-col gap-2 sm:w-auto sm:max-w-[14rem] sm:items-end">
-              <Link href={`/explore?passion=${postState.passionSlug}`} className="min-w-0 self-start sm:self-auto">
+            <div className="grid w-full shrink-0 gap-2 sm:w-auto sm:min-w-[11.5rem] md:min-w-[12.5rem] sm:justify-items-end">
+              <Link
+                href={`/explore?passion=${postState.passionSlug}`}
+                className="min-w-0 max-w-full justify-self-start sm:justify-self-end"
+              >
                 <Badge
                   variant="secondary"
-                  className="max-w-[9rem] border-primary/20 bg-primary/10 text-primary"
+                  className="max-w-full border-primary/20 bg-primary/10 text-primary"
                 >
                   {postState.passionName}
                 </Badge>
               </Link>
 
               {postState.canManage ? (
-                <div className="grid w-full grid-cols-2 gap-1.5 sm:flex sm:w-auto sm:justify-end">
+                <div className="grid w-full grid-cols-2 gap-1.5">
                   <button
                     type="button"
-                    className={cn(postActionClass, "w-full")}
+                    className={cn(postActionClass, "w-full min-w-0 whitespace-nowrap")}
                     onClick={() => setShowEditModal(true)}
                   >
                     <Pencil className="size-3" />
                     Modifica
                   </button>
 
-                  <form action={deletePostAction} className="min-w-0">
+                  <form action={deletePostAction} className="min-w-0 w-full">
                     <input type="hidden" name="postId" value={postState.id} />
                     <input type="hidden" name="returnPath" value={returnPath} />
                     <ConfirmSubmitButton
                       type="submit"
                       variant="destructive"
                       size="xs"
-                      className="h-5 w-full justify-center gap-0.75 rounded-full px-1.25 text-[9.5px] font-medium shadow-none sm:w-auto [&_svg]:size-[9px]"
+                      className="h-5 w-full min-w-0 justify-center gap-0.75 rounded-full px-1.25 text-[9.5px] font-medium whitespace-nowrap shadow-none [&_svg]:size-[9px]"
                       confirmMessage="Vuoi davvero eliminare questo post? L'azione non si puo annullare."
                     >
                       <Trash2 />
