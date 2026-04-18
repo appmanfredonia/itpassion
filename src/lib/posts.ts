@@ -39,6 +39,7 @@ export type FeedPost = {
   likesCount: number;
   likedByMe: boolean;
   commentsCount: number;
+  commentedByMe: boolean;
   comments: FeedComment[];
   savedByMe: boolean;
   canManage: boolean;
@@ -276,6 +277,7 @@ async function hydratePosts(
       likesCount: likesCountByPostId.get(row.id) ?? 0,
       likedByMe: likedByMeSet.has(row.id),
       commentsCount: comments.length,
+      commentedByMe: comments.some((comment) => comment.userId === viewerUserId),
       comments,
       savedByMe: savedPostSet.has(row.id),
       canManage: row.user_id === viewerUserId,

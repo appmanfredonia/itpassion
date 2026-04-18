@@ -154,11 +154,14 @@ export function PostCard({
           <Button
             type="button"
             size="xs"
-            variant="ghost"
+            variant={post.commentedByMe ? "secondary" : "ghost"}
             aria-expanded={showComments}
             aria-controls={commentsRegionId}
             onClick={() => setShowComments((current) => !current)}
-            className="h-6 min-w-[3.4rem] gap-1 px-1.5 text-[10px] text-muted-foreground [&_svg]:size-[10px]"
+            className={cn(
+              "h-6 min-w-[3.4rem] gap-1 px-1.5 text-[10px] [&_svg]:size-[10px]",
+              post.commentedByMe ? "text-foreground" : "text-muted-foreground",
+            )}
           >
             <MessageCircle className="size-[10px]" />
             {post.commentsCount}
