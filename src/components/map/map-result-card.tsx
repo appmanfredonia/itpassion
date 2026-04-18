@@ -40,11 +40,11 @@ export function MapResultCard({ result }: MapResultCardProps) {
             <p className="truncate text-xs text-muted-foreground">@{result.username}</p>
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-black/16 px-2 py-1 text-[11px] text-muted-foreground">
+            <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-black/16 px-1.75 py-0.75 text-[10.5px] text-muted-foreground">
               <MapPin className="size-3" />
               {locationLabel}
             </span>
-            <span className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary">
+            <span className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-1.75 py-0.75 text-[10.5px] font-medium text-primary">
               <Sparkles className="size-3" />
               {sharedPassionsLabel}
             </span>
@@ -56,7 +56,7 @@ export function MapResultCard({ result }: MapResultCardProps) {
         {result.commonPassions.map((passion) => (
           <span
             key={`${result.userId}-${passion.slug}`}
-            className="rounded-full border border-primary/18 bg-primary/8 px-2.5 py-1 text-[11px] font-medium text-primary"
+            className="rounded-full border border-primary/18 bg-primary/8 px-2 py-0.75 text-[10.5px] font-medium text-primary"
           >
             {passion.name}
           </span>

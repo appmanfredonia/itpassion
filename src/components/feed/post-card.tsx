@@ -41,7 +41,7 @@ function avatarFallback(username: string): string {
 export function PostCard({
   post,
   returnPath,
-  commentPreviewLimit = 1,
+  commentPreviewLimit = 0,
 }: PostCardProps) {
   const postActionClass = cn(
     buttonVariants({ variant: "outline", size: "xs" }),
@@ -51,11 +51,11 @@ export function PostCard({
   return (
     <Card
       id={`post-${post.id}`}
-      className="surface-panel rounded-[1.6rem] border-border/80 bg-card/88 py-1.5"
+      className="surface-panel rounded-[1.45rem] border-border/80 bg-card/88 py-1"
     >
-      <CardHeader className="pb-1.5">
-        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex min-w-0 items-center gap-2.5">
+      <CardHeader className="pb-1">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 items-center gap-2">
             <Avatar>
               {post.authorAvatarUrl && (
                 <AvatarImage src={post.authorAvatarUrl} alt={`Avatar di @${post.authorUsername}`} />
@@ -63,24 +63,24 @@ export function PostCard({
               <AvatarFallback>{avatarFallback(post.authorUsername)}</AvatarFallback>
             </Avatar>
             <div className="flex min-w-0 flex-col">
-              <p className="truncate text-sm font-semibold tracking-tight">{post.authorDisplayName}</p>
+              <p className="truncate text-[13px] font-semibold tracking-tight">{post.authorDisplayName}</p>
               <Link
                 href={`/profile/${post.authorUsername}`}
-                className="truncate text-xs text-muted-foreground hover:text-primary"
+                className="truncate text-[11px] text-muted-foreground hover:text-primary"
               >
                 @{post.authorUsername}
               </Link>
-              <p className="text-[11px] text-muted-foreground/90">{formatCreatedAt(post.createdAt)}</p>
+              <p className="text-[10px] text-muted-foreground/90">{formatCreatedAt(post.createdAt)}</p>
             </div>
           </div>
 
-          <div className="flex w-full min-w-0 flex-col gap-1.5 sm:w-auto sm:max-w-[24rem] sm:items-end">
+          <div className="flex w-full min-w-0 flex-col gap-1 sm:w-auto sm:max-w-[24rem] sm:items-end">
             {post.canManage ? (
-              <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-1.5 sm:w-auto sm:min-w-[18rem]">
+              <div className="grid w-full min-w-0 grid-cols-[minmax(0,max-content)_auto_auto] items-center gap-1 sm:w-auto">
                 <Link href={`/explore?passion=${post.passionSlug}`} className="min-w-0">
                   <Badge
                     variant="secondary"
-                    className="w-full justify-center truncate border-primary/20 bg-primary/10 text-primary sm:justify-start"
+                    className="max-w-[8.75rem] justify-center truncate border-primary/20 bg-primary/10 text-primary sm:justify-start"
                   >
                     {post.passionName}
                   </Badge>
@@ -110,7 +110,7 @@ export function PostCard({
               <Link href={`/explore?passion=${post.passionSlug}`} className="self-start sm:self-auto">
                 <Badge
                   variant="secondary"
-                  className="max-w-full border-primary/20 bg-primary/10 text-primary"
+                  className="max-w-[8.75rem] border-primary/20 bg-primary/10 text-primary"
                 >
                   {post.passionName}
                 </Badge>
@@ -120,9 +120,9 @@ export function PostCard({
         </div>
       </CardHeader>
 
-      <CardContent className="flex flex-col gap-2.5">
+      <CardContent className="flex flex-col gap-1.75">
         {post.textContent && (
-          <p className="px-0.5 text-sm leading-relaxed whitespace-pre-wrap break-words text-foreground/95 [overflow-wrap:anywhere]">
+          <p className="px-0.5 text-[13px] leading-relaxed whitespace-pre-wrap break-words text-foreground/95 [overflow-wrap:anywhere]">
             {post.textContent}
           </p>
         )}
@@ -131,7 +131,7 @@ export function PostCard({
           <PostMediaGallery contentType={post.contentType} media={post.media} />
         </div>
 
-        <div className="surface-soft flex flex-wrap items-center gap-2 rounded-[1.2rem] border-border/80 bg-black/14 p-2">
+        <div className="surface-soft flex flex-wrap items-center gap-1.5 rounded-[1rem] border-border/80 bg-black/14 p-1.5">
           <form action={toggleLikeAction}>
             <input type="hidden" name="postId" value={post.id} />
             <input type="hidden" name="returnPath" value={returnPath} />
@@ -150,7 +150,7 @@ export function PostCard({
             </Button>
           </form>
 
-          <p className="ml-auto min-w-0 truncate text-right text-xs text-muted-foreground">
+          <p className="ml-auto min-w-0 truncate text-right text-[11px] text-muted-foreground">
             <span className="inline-flex items-center gap-1">
               <MessageCircle className="size-3.5" />
               {post.commentsCount} commenti
