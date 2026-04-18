@@ -16,7 +16,7 @@ export function AppShell({ children, userEmail, userName, logoutAction }: AppShe
   const resolvedUserName = userName ? `@${userName.replace(/^@+/, "")}` : "@itpassion";
 
   return (
-    <div className="min-h-screen px-2 py-2 md:px-4 md:py-4">
+    <div className="relative min-h-screen px-2 py-2 md:px-4 md:py-4">
       <div className="mx-auto grid w-full max-w-[1320px] grid-cols-1 gap-2.5 lg:grid-cols-[246px_minmax(0,1fr)] lg:gap-4">
         <aside className="surface-elevated relative sticky top-4 hidden h-[calc(100vh-2rem)] min-h-0 flex-col gap-2.5 overflow-hidden p-2.5 lg:flex">
           <div className="absolute inset-x-8 top-0 h-14 rounded-full bg-primary/10 blur-3xl" />
@@ -100,20 +100,19 @@ export function AppShell({ children, userEmail, userName, logoutAction }: AppShe
             </div>
           </header>
 
-          <main className="min-h-0 flex-1 overflow-y-auto px-3 py-4 pb-[calc(6.8rem+env(safe-area-inset-bottom))] md:px-5 md:py-5 lg:pb-6">
+          <main className="min-h-0 flex-1 overflow-y-auto px-3 py-4 pb-[calc(7.6rem+env(safe-area-inset-bottom))] md:px-5 md:py-5 lg:pb-6">
             {children}
           </main>
-
-          <footer className="pointer-events-none fixed inset-x-0 bottom-0 z-30 lg:hidden">
-            <div className="mx-auto w-full max-w-[1320px] px-2 pb-[calc(0.45rem+env(safe-area-inset-bottom))]">
-              <div className="pointer-events-auto rounded-[1.55rem] border border-border/80 bg-surface-1/92 p-1 shadow-[0_22px_44px_-24px_oklch(0_0_0_/_0.96)] backdrop-blur-xl">
-                <AppNavigation mobile />
-              </div>
-            </div>
-          </footer>
         </div>
-
       </div>
+
+      <footer className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] lg:hidden">
+        <div className="mx-auto w-full max-w-[1320px] px-2 pb-[calc(0.45rem+env(safe-area-inset-bottom))]">
+          <div className="pointer-events-auto rounded-[1.55rem] border border-border/80 bg-surface-1/94 p-1 shadow-[0_22px_44px_-24px_oklch(0_0_0_/_0.96)] backdrop-blur-xl">
+            <AppNavigation mobile />
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

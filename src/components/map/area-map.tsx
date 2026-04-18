@@ -229,11 +229,18 @@ export function AreaMap({ results, viewerProvince }: AreaMapProps) {
       }
     }, 10000);
 
+    const resizeTimeout = window.setTimeout(() => {
+      map.resize();
+    }, 220);
+
     const handleLoad = () => {
       window.clearTimeout(loadTimeout);
       setIsLoaded(true);
       setHasMapError(false);
-      map.resize();
+      window.requestAnimationFrame(() => {
+        map.resize();
+        window.setTimeout(() => map.resize(), 140);
+      });
     };
 
     const resizeObserver = new ResizeObserver(() => {
@@ -247,6 +254,7 @@ export function AreaMap({ results, viewerProvince }: AreaMapProps) {
 
     return () => {
       window.clearTimeout(loadTimeout);
+      window.clearTimeout(resizeTimeout);
       resizeObserver.disconnect();
       markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = [];
@@ -317,11 +325,12 @@ export function AreaMap({ results, viewerProvince }: AreaMapProps) {
   }, [isLoaded, markerPoints]);
 
   return (
-    <div className="maplibre-shell relative isolate min-h-[18rem] overflow-hidden rounded-[1.75rem] border border-border/80 bg-[linear-gradient(180deg,rgba(8,11,20,1),rgba(5,8,15,1))] sm:min-h-[21rem] xl:min-h-[27rem]">
-      <div ref={containerRef} className="absolute inset-0" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,oklch(0.73_0.16_294_/_0.12),transparent_32%),linear-gradient(180deg,rgba(7,10,18,0.05),rgba(4,6,12,0.22))]" />
+    <div className="maplibre-shell relative isolate h-[18.5rem] overflow-hidden rounded-[1.75rem] border border-border/80 bg-[linear-gradient(180deg,rgba(8,11,20,1),rgba(5,8,15,1))] sm:h-[21.5rem] xl:h-[27rem]">
+      <div ref={containerRef} className="absolute inset-0 z-0" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-24 bg-[linear-gradient(180deg,rgba(6,9,17,0.34),rgba(6,9,17,0.12),transparent)]" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-24 bg-[linear-gradient(0deg,rgba(4,6,12,0.34),rgba(4,6,12,0.12),transparent)]" />
 
-      <div className="pointer-events-none absolute left-3 top-3 z-10 flex max-w-[calc(100%-1.5rem)] flex-wrap gap-2 sm:left-4 sm:top-4">
+      <div className="pointer-events-none absolute left-3 top-3 z-[3] flex max-w-[calc(100%-1.5rem)] flex-wrap gap-2 sm:left-4 sm:top-4">
         <span className="inline-flex items-center gap-1 rounded-full border border-border/80 bg-black/42 px-2.5 py-1 text-[11px] text-muted-foreground backdrop-blur-md">
           <MapPin className="size-3" />
           Provincia: {viewerProvince ?? "n.d."}
@@ -332,12 +341,12 @@ export function AreaMap({ results, viewerProvince }: AreaMapProps) {
         </span>
       </div>
 
-      <div className="pointer-events-none absolute bottom-3 left-3 z-10 max-w-[17rem] rounded-2xl border border-border/70 bg-black/40 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground backdrop-blur-md sm:bottom-4 sm:left-4">
+      <div className="pointer-events-none absolute bottom-3 left-3 z-[3] max-w-[17rem] rounded-2xl border border-border/70 bg-black/34 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground backdrop-blur-md sm:bottom-4 sm:left-4">
         Le posizioni sono mostrate in modo approssimato per proteggere la privacy.
       </div>
 
       {!isLoaded && !hasMapError ? (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-[linear-gradient(180deg,rgba(8,11,20,0.7),rgba(5,8,15,0.82))] px-6">
+        <div className="absolute inset-0 z-[4] flex items-center justify-center bg-[linear-gradient(180deg,rgba(8,11,20,0.52),rgba(5,8,15,0.62))] px-6">
           <div className="rounded-[1.4rem] border border-border/80 bg-black/34 px-5 py-4 text-center backdrop-blur-md">
             <p className="text-sm font-semibold tracking-tight">Stiamo caricando la mappa reale</p>
             <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
@@ -348,7 +357,7 @@ export function AreaMap({ results, viewerProvince }: AreaMapProps) {
       ) : null}
 
       {hasMapError ? (
-        <div className="absolute inset-0 z-10 flex items-center justify-center px-6">
+        <div className="absolute inset-0 z-[4] flex items-center justify-center px-6">
           <div className="max-w-sm rounded-[1.4rem] border border-border/80 bg-black/50 px-5 py-4 text-center backdrop-blur-md">
             <p className="text-sm font-semibold tracking-tight">Mappa momentaneamente non disponibile</p>
             <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
@@ -359,7 +368,7 @@ export function AreaMap({ results, viewerProvince }: AreaMapProps) {
       ) : null}
 
       {isLoaded && !hasMapError && markerPoints.length === 0 ? (
-        <div className="absolute inset-x-4 bottom-16 z-10 sm:bottom-20 sm:left-4 sm:right-auto sm:max-w-sm">
+        <div className="absolute inset-x-4 bottom-16 z-[4] sm:bottom-20 sm:left-4 sm:right-auto sm:max-w-sm">
           <div className="rounded-[1.35rem] border border-border/80 bg-black/48 px-4 py-3 text-sm text-muted-foreground backdrop-blur-md">
             Nessun profilo geolocalizzato da mostrare in questo momento nella tua provincia.
           </div>

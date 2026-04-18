@@ -17,9 +17,10 @@ import { PostComments } from "@/components/feed/post-comments";
 import { PostMediaGallery } from "@/components/feed/post-media-gallery";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { FeedPost } from "@/lib/feed";
+import { cn } from "@/lib/utils";
  
 
 type PostCardProps = {
@@ -55,7 +56,7 @@ export function PostCard({
       className="surface-panel rounded-[1.6rem] border-border/80 bg-card/88 py-1.5"
     >
       <CardHeader className="pb-1.5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 items-center gap-2.5">
             <Avatar>
               {post.authorAvatarUrl && (
@@ -75,43 +76,63 @@ export function PostCard({
             </div>
           </div>
 
-          <div className="flex max-w-full shrink-0 flex-wrap items-center justify-end gap-1.5">
+          <div className="flex w-full min-w-0 flex-col gap-1.5 sm:w-auto sm:max-w-[24rem] sm:items-end">
             <Link href={`/explore?passion=${post.passionSlug}`}>
-              <Badge variant="secondary" className="max-w-full border-primary/20 bg-primary/10 text-primary">
+              <Badge
+                variant="secondary"
+                className="max-w-full self-start border-primary/20 bg-primary/10 text-primary sm:self-auto"
+              >
                 {post.passionName}
               </Badge>
             </Link>
-            <Link
-              href={`/feed?post=${post.id}`}
-              className="inline-flex items-center gap-1 rounded-full border border-border/80 bg-black/16 px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+
+            <div
+              className={cn(
+                "grid w-full gap-1.5 sm:w-auto",
+                post.canManage ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-1",
+              )}
             >
-              Apri
-              <ArrowUpRight className="size-3" />
-            </Link>
-            {post.canManage ? (
-              <>
-                <Link
-                  href={`/create?edit=${post.id}`}
-                  className="inline-flex items-center gap-1 rounded-full border border-border/80 bg-black/16 px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-                >
-                  <Pencil className="size-3" />
-                  Modifica
-                </Link>
-                <form action={deletePostAction}>
-                  <input type="hidden" name="postId" value={post.id} />
-                  <input type="hidden" name="returnPath" value={returnPath} />
-                  <ConfirmSubmitButton
-                    type="submit"
-                    variant="ghost"
-                    size="xs"
-                    confirmMessage="Vuoi davvero eliminare questo post? L'azione non si puo annullare."
+              <Link
+                href={`/feed?post=${post.id}`}
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "xs" }),
+                  "min-w-0 justify-center rounded-full border-border/80 bg-black/16 px-3 text-muted-foreground hover:text-foreground",
+                )}
+              >
+                Apri
+                <ArrowUpRight className="size-3" />
+              </Link>
+
+              {post.canManage ? (
+                <>
+                  <Link
+                    href={`/create?edit=${post.id}`}
+                    className={cn(
+                      buttonVariants({ variant: "outline", size: "xs" }),
+                      "min-w-0 justify-center rounded-full border-border/80 bg-black/16 px-3 text-muted-foreground hover:text-foreground",
+                    )}
                   >
-                    <Trash2 />
-                    Elimina
-                  </ConfirmSubmitButton>
-                </form>
-              </>
-            ) : null}
+                    <Pencil className="size-3" />
+                    Modifica
+                  </Link>
+
+                  <form action={deletePostAction} className="col-span-2 sm:col-span-1">
+                    <input type="hidden" name="postId" value={post.id} />
+                    <input type="hidden" name="returnPath" value={returnPath} />
+                    <ConfirmSubmitButton
+                      type="submit"
+                      variant="destructive"
+                      size="xs"
+                      className="w-full justify-center rounded-full"
+                      confirmMessage="Vuoi davvero eliminare questo post? L'azione non si puo annullare."
+                    >
+                      <Trash2 />
+                      Elimina
+                    </ConfirmSubmitButton>
+                  </form>
+                </>
+              ) : null}
+            </div>
           </div>
         </div>
       </CardHeader>
