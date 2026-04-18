@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { ensureUserProfile, getPassionCatalog } from "@/lib/auth";
 import {
@@ -19,6 +20,27 @@ type ExistingMediaRow = {
   media_url: string;
   media_kind: "image" | "video";
 };
+
+export type InlineUpdatePostResult =
+  | {
+      success: true;
+      post: {
+        id: string;
+        passionSlug: string;
+        passionName: string;
+        contentType: ContentType;
+        textContent: string | null;
+        updatedAt: string;
+        media: {
+          kind: "image" | "video";
+          url: string;
+        }[];
+      };
+    }
+  | {
+      success: false;
+      error: string;
+    };
 
 function isValidContentType(value: string): value is ContentType {
   return value === "text" || value === "image" || value === "video";
@@ -122,6 +144,323 @@ async function uploadReplacementMedia(
     supabase,
     mediaStoragePath,
     mediaPublicUrl,
+  };
+}
+
+async function loadAllowedPassions(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+) {
+  let passions: Awaited<ReturnType<typeof getPassionCatalog>>["passions"] = [];
+  try {
+    ({ passions } = await getPassionCatalog(supabase));
+  } catch (error) {
+    console.error("[create] load passions catalog failed", {
+      detail: errorDetailFromUnknown(error),
+      rawError: error,
+    });
+    throw new Error("Catalogo passioni non disponibile. Riprova tra poco.");
+  }
+
+  if (passions.length === 0) {
+    throw new Error("Nessuna passione disponibile nel database.");
+  }
+
+  return passions;
+}
+
+function buildUpdatedMediaPayload(
+  contentType: ContentType,
+  existingMedia: ExistingMediaRow[],
+  uploadedMediaPublicUrl: string | null,
+): {
+  kind: "image" | "video";
+  url: string;
+}[] {
+  if (contentType === "text") {
+    return [];
+  }
+
+  if (uploadedMediaPublicUrl) {
+    return [
+      {
+        kind: contentType,
+        url: uploadedMediaPublicUrl,
+      },
+    ];
+  }
+
+  return existingMedia.map((mediaRow) => ({
+    kind: mediaRow.media_kind,
+    url: mediaRow.media_url,
+  }));
+}
+
+export async function updatePostInlineAction(formData: FormData): Promise<InlineUpdatePostResult> {
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return { success: false, error: "Sessione non valida. Effettua di nuovo l'accesso." };
+  }
+
+  try {
+    await ensureUserProfile(supabase, user);
+  } catch {
+    return { success: false, error: "Profilo utente non sincronizzato. Ricarica e riprova." };
+  }
+
+  const editingPostIdRaw = formData.get("editingPostId");
+  const editingPostId =
+    typeof editingPostIdRaw === "string" && editingPostIdRaw.trim().length > 0
+      ? editingPostIdRaw.trim()
+      : null;
+
+  if (!editingPostId) {
+    return { success: false, error: "Post non valido per la modifica." };
+  }
+
+  const contentTypeRaw = formData.get("contentType");
+  const textContentRaw = formData.get("textContent");
+  const mediaFileRaw = formData.get("mediaFile");
+  const passionSlugRaw = formData.get("passionSlug");
+
+  if (
+    typeof contentTypeRaw !== "string" ||
+    !isValidContentType(contentTypeRaw) ||
+    typeof passionSlugRaw !== "string" ||
+    !passionSlugRaw
+  ) {
+    return { success: false, error: "Compila i campi obbligatori prima di salvare." };
+  }
+
+  const textContent = typeof textContentRaw === "string" ? textContentRaw.trim() : "";
+  const mediaFile = toUploadedFile(mediaFileRaw);
+  const wantsMedia = contentTypeRaw === "image" || contentTypeRaw === "video";
+
+  if (contentTypeRaw === "text" && textContent.length === 0) {
+    return { success: false, error: "Per un post testuale inserisci un contenuto." };
+  }
+
+  if (mediaFile) {
+    if (mediaFile.size > MAX_MEDIA_FILE_SIZE_BYTES) {
+      return { success: false, error: "File troppo grande. Limite massimo 40MB." };
+    }
+
+    if (!isCompatibleMediaFile(contentTypeRaw, mediaFile)) {
+      return {
+        success: false,
+        error:
+          contentTypeRaw === "image"
+            ? "Il file selezionato non e un'immagine valida."
+            : "Il file selezionato non e un video valido.",
+      };
+    }
+  }
+
+  let passions: Awaited<ReturnType<typeof getPassionCatalog>>["passions"];
+  try {
+    passions = await loadAllowedPassions(supabase);
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Catalogo passioni non disponibile.",
+    };
+  }
+
+  const allowedPassions = new Map(passions.map((passion) => [passion.slug, passion.name]));
+  const passionName = allowedPassions.get(passionSlugRaw);
+  if (!passionName) {
+    return { success: false, error: "Passione selezionata non valida." };
+  }
+
+  let existingEditTarget:
+    | {
+        post: {
+          id: string;
+          user_id: string;
+          passion_slug: string;
+          content_type: string;
+          text_content: string | null;
+        };
+        media: ExistingMediaRow[];
+      }
+    | null = null;
+
+  try {
+    existingEditTarget = await getOwnedEditablePost(user.id, editingPostId);
+  } catch (error) {
+    console.error("[create][inline-update] editable post lookup failed", {
+      userId: user.id,
+      postId: editingPostId,
+      detail: errorDetailFromUnknown(error),
+      rawError: error,
+    });
+    return { success: false, error: "Post non disponibile per la modifica." };
+  }
+
+  if (!existingEditTarget) {
+    return { success: false, error: "Post non trovato o non modificabile." };
+  }
+
+  if (wantsMedia && !mediaFile) {
+    const existingMedia = existingEditTarget.media;
+    if (existingMedia.length === 0) {
+      return { success: false, error: "Carica un file media per questo contenuto." };
+    }
+
+    const hasDifferentMediaKind = existingMedia.some(
+      (mediaRow) => mediaRow.media_kind !== contentTypeRaw,
+    );
+    if (hasDifferentMediaKind) {
+      return {
+        success: false,
+        error: "Carica un nuovo file per passare da foto a video o viceversa.",
+      };
+    }
+  }
+
+  let uploadedMedia:
+    | {
+        supabase: typeof supabase;
+        mediaStoragePath: string;
+        mediaPublicUrl: string;
+      }
+    | null = null;
+
+  try {
+    if (wantsMedia && mediaFile) {
+      uploadedMedia = await uploadReplacementMedia(user.id, editingPostId, mediaFile);
+    }
+  } catch (error) {
+    console.error("[create][inline-update] media upload failed", {
+      userId: user.id,
+      postId: editingPostId,
+      bucket: POST_MEDIA_BUCKET,
+      fileName: mediaFile?.name,
+      fileType: mediaFile?.type,
+      fileSize: mediaFile?.size,
+      detail: errorDetailFromUnknown(error),
+      rawError: error,
+    });
+
+    return {
+      success: false,
+      error: mapStorageUploadErrorToMessage(error),
+    };
+  }
+
+  const nextUpdatedAt = new Date().toISOString();
+  const { error: updatePostError } = await supabase
+    .from("posts")
+    .update({
+      passion_slug: passionSlugRaw,
+      content_type: contentTypeRaw,
+      text_content: textContent.length > 0 ? textContent : null,
+      updated_at: nextUpdatedAt,
+    })
+    .eq("id", editingPostId)
+    .eq("user_id", user.id);
+
+  if (updatePostError) {
+    if (uploadedMedia) {
+      await uploadedMedia.supabase.storage
+        .from(POST_MEDIA_BUCKET)
+        .remove([uploadedMedia.mediaStoragePath]);
+    }
+
+    return { success: false, error: "Salvataggio post non riuscito. Riprova." };
+  }
+
+  if (!wantsMedia) {
+    if (existingEditTarget.media.length > 0) {
+      const { error: deleteMediaRowsError } = await supabase
+        .from("post_media")
+        .delete()
+        .eq("post_id", editingPostId);
+
+      if (deleteMediaRowsError) {
+        return { success: false, error: "Aggiornamento media non riuscito. Riprova." };
+      }
+
+      try {
+        await removePostMediaFromStorage(
+          supabase,
+          existingEditTarget.media.map((mediaRow) => mediaRow.media_url),
+        );
+      } catch (error) {
+        console.error("[create][inline-update] remove media after text switch failed", {
+          userId: user.id,
+          postId: editingPostId,
+          detail: errorDetailFromUnknown(error),
+          rawError: error,
+        });
+      }
+    }
+  } else if (uploadedMedia) {
+    const { data: insertedMediaRow, error: insertMediaError } = await supabase
+      .from("post_media")
+      .insert({
+        post_id: editingPostId,
+        media_url: uploadedMedia.mediaPublicUrl,
+        media_kind: contentTypeRaw,
+      })
+      .select("id")
+      .single();
+
+    if (insertMediaError || !insertedMediaRow) {
+      await uploadedMedia.supabase.storage
+        .from(POST_MEDIA_BUCKET)
+        .remove([uploadedMedia.mediaStoragePath]);
+      return { success: false, error: "Salvataggio media non riuscito. Riprova." };
+    }
+
+    if (existingEditTarget.media.length > 0) {
+      await supabase
+        .from("post_media")
+        .delete()
+        .eq("post_id", editingPostId)
+        .neq("id", insertedMediaRow.id);
+
+      try {
+        await removePostMediaFromStorage(
+          supabase,
+          existingEditTarget.media.map((mediaRow) => mediaRow.media_url),
+        );
+      } catch (error) {
+        console.error("[create][inline-update] remove replaced media failed", {
+          userId: user.id,
+          postId: editingPostId,
+          detail: errorDetailFromUnknown(error),
+          rawError: error,
+        });
+      }
+    }
+  }
+
+  revalidatePath("/feed");
+  revalidatePath("/explore");
+  revalidatePath("/search");
+  revalidatePath("/saved");
+  revalidatePath("/profile");
+
+  return {
+    success: true,
+    post: {
+      id: editingPostId,
+      passionSlug: passionSlugRaw,
+      passionName,
+      contentType: contentTypeRaw,
+      textContent: textContent.length > 0 ? textContent : null,
+      updatedAt: nextUpdatedAt,
+      media: buildUpdatedMediaPayload(
+        contentTypeRaw,
+        existingEditTarget.media,
+        uploadedMedia?.mediaPublicUrl ?? null,
+      ),
+    },
   };
 }
 

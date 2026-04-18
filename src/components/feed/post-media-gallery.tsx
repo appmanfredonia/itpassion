@@ -8,6 +8,7 @@ import {
   getMediaTypeLabel,
   getRenderablePostMedia,
 } from "@/lib/media";
+import { cn } from "@/lib/utils";
 
 type PostMediaGalleryProps = {
   post: FeedPost;
@@ -18,6 +19,8 @@ export function PostMediaGallery({ post, onPostUpdate }: PostMediaGalleryProps) 
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const renderableMedia = getRenderablePostMedia(post.media);
   const invalidMediaCount = post.media.length - renderableMedia.length;
+  const visibleMedia = renderableMedia.length > 3 ? renderableMedia.slice(0, 3) : renderableMedia;
+  const hiddenMediaCount = renderableMedia.length - visibleMedia.length;
 
   if (post.media.length === 0) {
     if (post.contentType === "image" || post.contentType === "video") {
@@ -44,27 +47,40 @@ export function PostMediaGallery({ post, onPostUpdate }: PostMediaGalleryProps) 
       <div className="flex flex-col gap-1.5">
         <div
           className={
-            renderableMedia.length > 1
-              ? "grid grid-cols-1 gap-1.5 sm:grid-cols-2"
-              : "grid grid-cols-1 gap-1.5"
+            renderableMedia.length === 1
+              ? "grid grid-cols-1"
+              : renderableMedia.length === 2
+                ? "grid grid-cols-2 gap-1.5"
+                : "grid h-[16rem] grid-cols-[1.3fr_1fr] grid-rows-2 gap-1.5 sm:h-[20rem]"
           }
         >
-          {renderableMedia.map((mediaItem, index) => {
+          {visibleMedia.map((mediaItem, index) => {
             const mediaLabel = getMediaTypeLabel(mediaItem.kind);
             const mediaAlt = `${mediaLabel} ${index + 1} del post`;
+            const tileClass =
+              renderableMedia.length === 1
+                ? "aspect-[4/3] max-h-[22rem]"
+                : renderableMedia.length === 2
+                  ? "aspect-[4/4.6] sm:aspect-[4/4.1]"
+                  : index === 0
+                    ? "row-span-2 h-full"
+                    : "h-full";
 
             return (
               <figure
                 key={`${mediaItem.kind}-${mediaItem.url}-${index}`}
-                className="group/media mx-auto w-full overflow-hidden rounded-[1rem] border border-border/80 bg-surface-2 shadow-[0_10px_22px_-22px_oklch(0_0_0_/_0.84)]"
+                className={cn(
+                  "group/media relative mx-auto w-full overflow-hidden rounded-[1.1rem] border border-white/8 bg-surface-2 shadow-[0_20px_30px_-26px_oklch(0_0_0_/_0.86)]",
+                  tileClass,
+                )}
               >
                 <button
                   type="button"
                   onClick={() => setViewerIndex(index)}
-                  className="block w-full text-left"
+                  className="block h-full w-full text-left"
                   aria-label={`Apri ${mediaLabel.toLowerCase()} in fullscreen`}
                 >
-                  <div className="relative aspect-[16/7.4] w-full max-h-[10.5rem] bg-muted/20 sm:aspect-[16/7.8] sm:max-h-[11.75rem]">
+                  <div className="relative h-full w-full bg-muted/20">
                     {mediaItem.kind === "image" ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -84,28 +100,26 @@ export function PostMediaGallery({ post, onPostUpdate }: PostMediaGalleryProps) 
                         Il tuo browser non supporta la riproduzione video.
                       </video>
                     )}
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-black/24 via-black/6 to-transparent" />
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/58 via-black/12 to-transparent" />
                     {mediaItem.kind === "video" ? (
                       <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                        <span className="inline-flex size-10 items-center justify-center rounded-full border border-white/14 bg-black/42 text-white shadow-[0_18px_38px_-18px_rgba(0,0,0,0.9)] backdrop-blur-sm">
+                        <span className="inline-flex size-11 items-center justify-center rounded-full border border-white/14 bg-black/42 text-white shadow-[0_18px_38px_-18px_rgba(0,0,0,0.9)] backdrop-blur-sm">
                           <Play className="size-4 fill-current" />
                         </span>
                       </span>
                     ) : null}
+                    <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 px-3 py-2.5">
+                      <span className="inline-flex rounded-full border border-white/12 bg-black/34 px-2.5 py-1 text-[9px] font-semibold tracking-[0.16em] text-white/78 uppercase backdrop-blur-sm">
+                        {mediaLabel}
+                      </span>
+                      {hiddenMediaCount > 0 && index === visibleMedia.length - 1 ? (
+                        <span className="rounded-full border border-white/12 bg-black/38 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
+                          +{hiddenMediaCount}
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
                 </button>
-                <figcaption className="flex min-h-7 items-center justify-between gap-2 border-t border-border/70 bg-black/16 px-2 py-1">
-                  <span className="text-[9px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-                    {mediaLabel}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setViewerIndex(index)}
-                    className="text-[9.5px] font-medium text-primary hover:underline"
-                  >
-                    Apri
-                  </button>
-                </figcaption>
               </figure>
             );
           })}

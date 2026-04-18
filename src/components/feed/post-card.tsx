@@ -9,6 +9,7 @@ import {
   toggleSavePostAction,
 } from "@/app/(app)/feed/actions";
 import { ConfirmSubmitButton } from "@/components/feed/confirm-submit-button";
+import { PostEditModal } from "@/components/feed/post-edit-modal";
 import { PostComments } from "@/components/feed/post-comments";
 import { PostMediaGallery } from "@/components/feed/post-media-gallery";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -48,6 +49,7 @@ export function PostCard({
 }: PostCardProps) {
   const [postState, setPostState] = useState(post);
   const [showComments, setShowComments] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const commentsRegionId = `post-comments-${post.id}`;
   const commentButtonRef = useRef<HTMLButtonElement>(null);
   const commentsContainerRef = useRef<HTMLDivElement>(null);
@@ -87,169 +89,183 @@ export function PostCard({
   }, [showComments]);
 
   return (
-    <Card
-      id={`post-${post.id}`}
-      className="surface-panel rounded-[1.15rem] border-border/80 bg-card/88"
-    >
-      <CardHeader className="pb-1">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex min-w-0 items-center gap-2">
-            <Avatar size="sm">
+    <>
+      <Card
+        id={`post-${post.id}`}
+        className="surface-panel overflow-hidden rounded-[1.35rem] border-border/80 bg-card/92 shadow-[0_24px_44px_-32px_oklch(0_0_0_/_0.95)]"
+      >
+        <CardHeader className="gap-3 px-4 pb-3 pt-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <Avatar>
               {postState.authorAvatarUrl && (
                 <AvatarImage src={postState.authorAvatarUrl} alt={`Avatar di @${postState.authorUsername}`} />
               )}
               <AvatarFallback>{avatarFallback(postState.authorUsername)}</AvatarFallback>
             </Avatar>
-            <div className="flex min-w-0 flex-col leading-tight">
-              <p className="truncate text-[11px] font-semibold tracking-tight">{postState.authorDisplayName}</p>
-              <Link
-                href={`/profile/${postState.authorUsername}`}
-                className="truncate text-[9.5px] text-muted-foreground hover:text-primary"
-              >
-                @{postState.authorUsername}
-              </Link>
-              <p className="text-[9px] text-muted-foreground/90">{formatCreatedAt(postState.createdAt)}</p>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold tracking-tight text-foreground">
+                  {postState.authorDisplayName}
+                </p>
+                <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-muted-foreground">
+                  <Link
+                    href={`/profile/${postState.authorUsername}`}
+                    className="truncate hover:text-primary"
+                  >
+                    @{postState.authorUsername}
+                  </Link>
+                  <span className="text-white/18">/</span>
+                  <p>{formatCreatedAt(postState.createdAt)}</p>
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div className="flex w-full min-w-0 flex-col gap-1 sm:w-auto sm:max-w-[20rem] sm:items-end">
-            {postState.canManage ? (
-              <div className="grid w-full min-w-0 grid-cols-[minmax(0,max-content)_auto_auto] items-center gap-1 sm:w-auto">
-                <Link href={`/explore?passion=${postState.passionSlug}`} className="min-w-0">
+            <div className="flex shrink-0 flex-col items-end gap-2">
+              <Link href={`/explore?passion=${postState.passionSlug}`} className="min-w-0">
                   <Badge
                     variant="secondary"
-                    className="max-w-[7rem] justify-center truncate border-primary/20 bg-primary/10 text-primary sm:justify-start"
+                    className="max-w-[9rem] border-primary/20 bg-primary/10 text-primary"
                   >
                     {postState.passionName}
                   </Badge>
-                </Link>
-
-                <Link href={`/create?edit=${postState.id}`} className={postActionClass}>
-                  <Pencil className="size-3" />
-                  Modifica
-                </Link>
-
-                <form action={deletePostAction} className="min-w-0">
-                  <input type="hidden" name="postId" value={postState.id} />
-                  <input type="hidden" name="returnPath" value={returnPath} />
-                  <ConfirmSubmitButton
-                    type="submit"
-                    variant="destructive"
-                    size="xs"
-                    className="h-5 w-auto justify-center gap-0.75 rounded-full px-1.25 text-[9.5px] font-medium shadow-none [&_svg]:size-[9px]"
-                    confirmMessage="Vuoi davvero eliminare questo post? L'azione non si puo annullare."
-                  >
-                    <Trash2 />
-                    Elimina
-                  </ConfirmSubmitButton>
-                </form>
-              </div>
-            ) : (
-              <Link href={`/explore?passion=${postState.passionSlug}`} className="self-start sm:self-auto">
-                <Badge
-                  variant="secondary"
-                  className="max-w-[7rem] border-primary/20 bg-primary/10 text-primary"
-                >
-                  {postState.passionName}
-                </Badge>
               </Link>
-            )}
+
+              {postState.canManage ? (
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    className={postActionClass}
+                    onClick={() => setShowEditModal(true)}
+                  >
+                    <Pencil className="size-3" />
+                    Modifica
+                  </button>
+
+                  <form action={deletePostAction} className="min-w-0">
+                    <input type="hidden" name="postId" value={postState.id} />
+                    <input type="hidden" name="returnPath" value={returnPath} />
+                    <ConfirmSubmitButton
+                      type="submit"
+                      variant="destructive"
+                      size="xs"
+                      className="h-5 w-auto justify-center gap-0.75 rounded-full px-1.25 text-[9.5px] font-medium shadow-none [&_svg]:size-[9px]"
+                      confirmMessage="Vuoi davvero eliminare questo post? L'azione non si puo annullare."
+                    >
+                      <Trash2 />
+                      Elimina
+                    </ConfirmSubmitButton>
+                  </form>
+                </div>
+              ) : null}
+            </div>
           </div>
-        </div>
-      </CardHeader>
 
-      <CardContent className="flex flex-col gap-2">
-        {postState.textContent && (
-          <p className="px-0.5 text-[11px] leading-[1.42] whitespace-pre-wrap break-words text-foreground/95 [overflow-wrap:anywhere]">
-            {postState.textContent}
-          </p>
-        )}
+          {postState.textContent ? (
+            <p className="text-[13px] leading-[1.55] whitespace-pre-wrap break-words text-foreground/92 [overflow-wrap:anywhere]">
+              {postState.textContent}
+            </p>
+          ) : null}
+        </CardHeader>
 
-        <div className="px-0.5">
+        <CardContent className="flex flex-col gap-3 px-4 pb-4 pt-0">
           <PostMediaGallery
             post={postState}
             onPostUpdate={(nextPost) => setPostState(nextPost)}
           />
-        </div>
 
-        <div className="flex items-center justify-between gap-2 px-0.5 pt-0.5">
-          <form action={toggleLikeAction}>
-            <input type="hidden" name="postId" value={postState.id} />
-            <input type="hidden" name="returnPath" value={returnPath} />
-            <Button
-              type="submit"
-              size="xs"
-              variant={postState.likedByMe ? "secondary" : "ghost"}
-              className={cn(
-                feedActionClass,
-                "min-w-[3rem]",
-                postState.likedByMe ? activeFeedActionClass : "text-muted-foreground",
-              )}
-            >
-              <Heart className={postState.likedByMe ? "fill-current" : ""} />
-              {postState.likesCount}
-            </Button>
-          </form>
+          <div className="flex items-center justify-between gap-2 border-t border-white/6 pt-2">
+            <div className="flex min-w-0 items-center gap-2">
+              <form action={toggleLikeAction}>
+                <input type="hidden" name="postId" value={postState.id} />
+                <input type="hidden" name="returnPath" value={returnPath} />
+                <Button
+                  type="submit"
+                  size="xs"
+                  variant={postState.likedByMe ? "secondary" : "ghost"}
+                  className={cn(
+                    feedActionClass,
+                    "min-w-[3rem]",
+                    postState.likedByMe ? activeFeedActionClass : "text-muted-foreground",
+                  )}
+                >
+                  <Heart className={postState.likedByMe ? "fill-current" : ""} />
+                  {postState.likesCount}
+                </Button>
+              </form>
 
-          <Button
-            ref={commentButtonRef}
-            type="button"
-            size="xs"
-            variant={postState.commentedByMe ? "secondary" : "ghost"}
-            aria-expanded={showComments}
-            aria-controls={commentsRegionId}
-            onClick={() => setShowComments((current) => !current)}
-            className={cn(
-              feedActionClass,
-              postState.commentedByMe ? activeFeedActionClass : "text-muted-foreground",
-            )}
-          >
-            <MessageCircle className={cn("size-[10px]", postState.commentedByMe && "fill-current")} />
-            {postState.commentsCount}
-          </Button>
+              <Button
+                ref={commentButtonRef}
+                type="button"
+                size="xs"
+                variant={postState.commentedByMe ? "secondary" : "ghost"}
+                aria-expanded={showComments}
+                aria-controls={commentsRegionId}
+                onClick={() => setShowComments((current) => !current)}
+                className={cn(
+                  feedActionClass,
+                  postState.commentedByMe ? activeFeedActionClass : "text-muted-foreground",
+                )}
+              >
+                <MessageCircle className={cn("size-[10px]", postState.commentedByMe && "fill-current")} />
+                {postState.commentsCount}
+              </Button>
 
-          <form action={toggleSavePostAction}>
-            <input type="hidden" name="postId" value={postState.id} />
-            <input type="hidden" name="returnPath" value={returnPath} />
-            <Button
-              type="submit"
-              size="xs"
-              variant={postState.savedByMe ? "secondary" : "ghost"}
-              className={cn(
-                feedActionClass,
-                postState.savedByMe ? activeFeedActionClass : "text-muted-foreground",
-              )}
-            >
-              <Bookmark className={postState.savedByMe ? "fill-current" : ""} />
-              {postState.savedByMe ? "Salvato" : "Salva"}
-            </Button>
-          </form>
-        </div>
-
-        {showComments ? (
-          <div
-            id={commentsRegionId}
-            ref={commentsContainerRef}
-            className="px-0.5 pt-0.5"
-          >
-            <PostComments
-              postId={postState.id}
-              comments={postState.comments}
-              returnPath={returnPath}
-              commentPreviewLimit={commentPreviewLimit}
-              showToggle={false}
-              onCommentsChange={(nextComments) => {
-                setPostState((currentPost) => ({
-                  ...currentPost,
-                  comments: nextComments,
-                  commentsCount: nextComments.length,
-                  commentedByMe: nextComments.some((comment) => comment.canEdit),
-                }));
-              }}
-            />
+              <form action={toggleSavePostAction}>
+                <input type="hidden" name="postId" value={postState.id} />
+                <input type="hidden" name="returnPath" value={returnPath} />
+                <Button
+                  type="submit"
+                  size="xs"
+                  variant={postState.savedByMe ? "secondary" : "ghost"}
+                  className={cn(
+                    feedActionClass,
+                    postState.savedByMe ? activeFeedActionClass : "text-muted-foreground",
+                  )}
+                >
+                  <Bookmark className={postState.savedByMe ? "fill-current" : ""} />
+                  {postState.savedByMe ? "Salvato" : "Salva"}
+                </Button>
+              </form>
+            </div>
           </div>
-        ) : null}
-      </CardContent>
-    </Card>
+
+          {showComments ? (
+            <div
+              id={commentsRegionId}
+              ref={commentsContainerRef}
+              className="pt-0.5"
+            >
+              <PostComments
+                postId={postState.id}
+                comments={postState.comments}
+                returnPath={returnPath}
+                commentPreviewLimit={commentPreviewLimit}
+                showToggle={false}
+                onCommentsChange={(nextComments) => {
+                  setPostState((currentPost) => ({
+                    ...currentPost,
+                    comments: nextComments,
+                    commentsCount: nextComments.length,
+                    commentedByMe: nextComments.some((comment) => comment.canEdit),
+                  }));
+                }}
+              />
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+
+      {showEditModal ? (
+        <PostEditModal
+          open
+          onClose={() => setShowEditModal(false)}
+          post={postState}
+          onPostUpdate={(nextPost) => {
+            setPostState(nextPost);
+          }}
+        />
+      ) : null}
+    </>
   );
 }
+
