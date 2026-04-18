@@ -19,6 +19,7 @@ type PostCommentsProps = {
   comments: FeedComment[];
   returnPath: string;
   commentPreviewLimit: number;
+  showToggle?: boolean;
 };
 
 type FeedbackState =
@@ -32,6 +33,7 @@ export function PostComments({
   postId,
   comments: initialComments,
   returnPath,
+  showToggle = true,
 }: PostCommentsProps) {
   const [comments, setComments] = useState(initialComments);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
@@ -131,37 +133,45 @@ export function PostComments({
     });
   }
 
+  const isVisible = showToggle ? isExpanded : true;
+
   return (
     <div className="surface-soft flex flex-col gap-1 rounded-[0.95rem] border-border/80 bg-surface-1/95 p-1.25">
-      <div className="flex flex-wrap items-center justify-between gap-1.5">
-        <button
-          type="button"
-          onClick={() => setIsExpanded((current) => !current)}
-          aria-label={isExpanded ? "Nascondi commenti" : "Apri commenti"}
-          className="inline-flex items-center gap-1 rounded-full border border-border/80 bg-black/12 px-1.5 py-0.5 text-[10px] text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <MessageCircle className="size-[11px]" />
-          {comments.length > 0 ? (
-            <span className="inline-flex min-w-4 items-center justify-center rounded-full bg-black/18 px-1 text-[9px] leading-none">
-              {comments.length}
-            </span>
+      {showToggle || feedback ? (
+        <div className="flex flex-wrap items-center justify-between gap-1.5">
+          {showToggle ? (
+            <button
+              type="button"
+              onClick={() => setIsExpanded((current) => !current)}
+              aria-label={isExpanded ? "Nascondi commenti" : "Apri commenti"}
+              className="inline-flex items-center gap-1 rounded-full border border-border/80 bg-black/12 px-1.5 py-0.5 text-[10px] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <MessageCircle className="size-[11px]" />
+              {comments.length > 0 ? (
+                <span className="inline-flex min-w-4 items-center justify-center rounded-full bg-black/18 px-1 text-[9px] leading-none">
+                  {comments.length}
+                </span>
+              ) : null}
+              {isExpanded ? <ChevronUp className="size-[11px]" /> : <ChevronDown className="size-[11px]" />}
+            </button>
+          ) : (
+            <span />
+          )}
+          {feedback ? (
+            <p
+              aria-live="polite"
+              className={cn(
+                "text-xs",
+                feedback.type === "error" ? "text-destructive" : "text-muted-foreground",
+              )}
+            >
+              {feedback.message}
+            </p>
           ) : null}
-          {isExpanded ? <ChevronUp className="size-[11px]" /> : <ChevronDown className="size-[11px]" />}
-        </button>
-        {feedback ? (
-          <p
-            aria-live="polite"
-            className={cn(
-              "text-xs",
-              feedback.type === "error" ? "text-destructive" : "text-muted-foreground",
-            )}
-          >
-            {feedback.message}
-          </p>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
-      {isExpanded ? (
+      {isVisible ? (
         <>
           {comments.length === 0 ? (
             <p className="text-[10px] text-muted-foreground">Nessun commento al momento.</p>
