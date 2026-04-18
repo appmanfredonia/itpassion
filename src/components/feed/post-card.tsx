@@ -171,7 +171,7 @@ export function PostCard({
               post.commentedByMe ? activeFeedActionClass : "text-muted-foreground",
             )}
           >
-            <MessageCircle className="size-[10px]" />
+            <MessageCircle className={cn("size-[10px]", post.commentedByMe && "fill-current")} />
             {post.commentsCount}
           </Button>
 
