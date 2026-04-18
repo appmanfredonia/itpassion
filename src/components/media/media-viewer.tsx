@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type TouchEvent } from "react";
 import { createPortal } from "react-dom";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -8,7 +7,7 @@ import {
   Bookmark,
   ChevronLeft,
   ChevronRight,
-  ExternalLink,
+  Flag,
   Heart,
   Link2,
   MessageCircle,
@@ -236,6 +235,11 @@ export function MediaViewer({
     }
   }
 
+  function handleReport() {
+    setMenuOpen(false);
+    setShareFeedback("Segnalazione disponibile a breve");
+  }
+
   if (!open || !currentMedia || typeof document === "undefined") {
     return null;
   }
@@ -283,23 +287,6 @@ export function MediaViewer({
 
           {menuOpen ? (
             <div className="absolute right-0 top-12 flex min-w-48 flex-col gap-1 rounded-2xl border border-white/12 bg-black/76 p-2 text-sm shadow-[0_18px_42px_-20px_rgba(0,0,0,0.9)] backdrop-blur-xl">
-              <Link
-                href={effectivePostHref}
-                onClick={onClose}
-                className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-white/88 transition-colors hover:bg-white/8"
-              >
-                <ExternalLink className="size-4" />
-                Apri post
-              </Link>
-              <a
-                href={currentMedia.url}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-white/88 transition-colors hover:bg-white/8"
-              >
-                <ExternalLink className="size-4" />
-                Apri media
-              </a>
               <button
                 type="button"
                 onClick={copyMediaUrl}
@@ -307,6 +294,14 @@ export function MediaViewer({
               >
                 <Link2 className="size-4" />
                 Copia link media
+              </button>
+              <button
+                type="button"
+                onClick={handleReport}
+                className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-left text-white/88 transition-colors hover:bg-white/8"
+              >
+                <Flag className="size-4" />
+                Segnala
               </button>
             </div>
           ) : null}
@@ -413,44 +408,46 @@ export function MediaViewer({
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <span
-                className={cn(
-                  viewerActionClass,
-                  post.likedByMe && activeViewerActionClass,
-                )}
-              >
-                <Heart className={cn("size-4", post.likedByMe && "fill-current")} />
-                {post.likesCount}
-              </span>
-              <button
-                type="button"
-                onClick={() => setShowComments((value) => !value)}
-                className={cn(
-                  viewerActionClass,
-                  (post.commentedByMe || showComments) && activeViewerActionClass,
-                )}
-              >
-                <MessageCircle className={cn("size-4", post.commentedByMe && "fill-current")} />
-                {post.commentsCount}
-              </button>
+            <div className="flex items-center gap-2">
+              <div className="flex min-w-0 items-center gap-2">
+                <span
+                  className={cn(
+                    viewerActionClass,
+                    post.likedByMe && activeViewerActionClass,
+                  )}
+                >
+                  <Heart className={cn("size-4", post.likedByMe && "fill-current")} />
+                  {post.likesCount}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowComments((value) => !value)}
+                  className={cn(
+                    viewerActionClass,
+                    (post.commentedByMe || showComments) && activeViewerActionClass,
+                  )}
+                >
+                  <MessageCircle className={cn("size-4", post.commentedByMe && "fill-current")} />
+                  {post.commentsCount}
+                </button>
+                <span
+                  className={cn(
+                    viewerActionClass,
+                    post.savedByMe && activeViewerActionClass,
+                  )}
+                >
+                  <Bookmark className={cn("size-4", post.savedByMe && "fill-current")} />
+                  {post.savedByMe ? "Salvato" : "Salva"}
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={handleShare}
-                className={viewerActionClass}
+                className={cn(viewerActionClass, "ml-auto shrink-0")}
               >
                 <Share2 className="size-4" />
                 Inoltra
               </button>
-              <span
-                className={cn(
-                  viewerActionClass,
-                  post.savedByMe && activeViewerActionClass,
-                )}
-              >
-                <Bookmark className={cn("size-4", post.savedByMe && "fill-current")} />
-                {post.savedByMe ? "Salvato" : "Salva"}
-              </span>
             </div>
 
             {shareFeedback ? (
