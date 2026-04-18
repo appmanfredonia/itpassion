@@ -162,118 +162,120 @@ export function PostComments({
       </div>
 
       {isExpanded ? (
-        comments.length === 0 ? (
-          <p className="text-[10px] text-muted-foreground">Nessun commento al momento.</p>
-        ) : (
-          <div className="flex flex-col gap-1">
-            {comments.map((comment) => {
-              const isEditing = comment.canEdit && editingCommentId === comment.id;
+        <>
+          {comments.length === 0 ? (
+            <p className="text-[10px] text-muted-foreground">Nessun commento al momento.</p>
+          ) : (
+            <div className="flex flex-col gap-1">
+              {comments.map((comment) => {
+                const isEditing = comment.canEdit && editingCommentId === comment.id;
 
-              return (
-                <div
-                  key={comment.id}
-                  className={cn(
-                    "flex flex-col gap-1 rounded-[0.9rem] border border-border/80 bg-black/12 px-2 py-1.5 sm:flex-row sm:items-start sm:justify-between",
-                    isEditing && "border-primary/20 bg-primary/[0.04]",
-                  )}
-                >
-                  <div className="flex min-w-0 flex-1 flex-col gap-1">
-                    <Link
-                      href={`/profile/${comment.authorUsername}`}
-                      className="truncate text-[11px] font-semibold tracking-tight hover:text-primary"
-                    >
-                      @{comment.authorUsername}
-                    </Link>
+                return (
+                  <div
+                    key={comment.id}
+                    className={cn(
+                      "flex flex-col gap-1 rounded-[0.9rem] border border-border/80 bg-black/12 px-2 py-1.5 sm:flex-row sm:items-start sm:justify-between",
+                      isEditing && "border-primary/20 bg-primary/[0.04]",
+                    )}
+                  >
+                    <div className="flex min-w-0 flex-1 flex-col gap-1">
+                      <Link
+                        href={`/profile/${comment.authorUsername}`}
+                        className="truncate text-[11px] font-semibold tracking-tight hover:text-primary"
+                      >
+                        @{comment.authorUsername}
+                      </Link>
 
-                    {isEditing ? (
-                      <form onSubmit={handleSave} className="flex flex-col gap-2">
-                        <Textarea
-                          name="commentContent"
-                          value={draftContent}
-                          onChange={(event) => setDraftContent(event.target.value)}
-                          maxLength={MAX_COMMENT_LENGTH}
-                          className="min-h-20 rounded-xl"
-                          disabled={isSaving}
-                        />
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Button type="submit" size="xs" variant="secondary" disabled={isSaving}>
-                            {isSaving ? "Salvataggio..." : "Salva"}
-                          </Button>
+                      {isEditing ? (
+                        <form onSubmit={handleSave} className="flex flex-col gap-2">
+                          <Textarea
+                            name="commentContent"
+                            value={draftContent}
+                            onChange={(event) => setDraftContent(event.target.value)}
+                            maxLength={MAX_COMMENT_LENGTH}
+                            className="min-h-20 rounded-xl"
+                            disabled={isSaving}
+                          />
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Button type="submit" size="xs" variant="secondary" disabled={isSaving}>
+                              {isSaving ? "Salvataggio..." : "Salva"}
+                            </Button>
+                            <Button
+                              type="button"
+                              size="xs"
+                              variant="ghost"
+                              onClick={cancelEditing}
+                              disabled={isSaving}
+                            >
+                              Annulla
+                            </Button>
+                          </div>
+                        </form>
+                      ) : (
+                        <p className="text-[12px] leading-relaxed break-words text-foreground/90 [overflow-wrap:anywhere]">
+                          {comment.content}
+                        </p>
+                      )}
+                    </div>
+
+                    {!isEditing && (comment.canEdit || comment.canDelete) ? (
+                      <div className="flex items-center gap-1 self-start">
+                        {comment.canEdit ? (
                           <Button
                             type="button"
-                            size="xs"
-                            variant="ghost"
-                            onClick={cancelEditing}
-                            disabled={isSaving}
-                          >
-                            Annulla
-                          </Button>
-                        </div>
-                      </form>
-                    ) : (
-                      <p className="text-[12px] leading-relaxed break-words text-foreground/90 [overflow-wrap:anywhere]">
-                        {comment.content}
-                      </p>
-                    )}
-                  </div>
-
-                  {!isEditing && (comment.canEdit || comment.canDelete) ? (
-                    <div className="flex items-center gap-1 self-start">
-                      {comment.canEdit ? (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="xs"
-                          className="h-6.5 px-1.75 text-[10px] [&_svg]:size-[11px]"
-                          onClick={() => startEditing(comment)}
-                        >
-                          <Pencil className="size-3" />
-                          Modifica
-                        </Button>
-                      ) : null}
-                      {comment.canDelete ? (
-                        <form action={deleteCommentAction} className="self-start">
-                          <input type="hidden" name="commentId" value={comment.id} />
-                          <input type="hidden" name="returnPath" value={returnPath} />
-                          <Button
-                            type="submit"
                             variant="ghost"
                             size="xs"
                             className="h-6.5 px-1.75 text-[10px] [&_svg]:size-[11px]"
+                            onClick={() => startEditing(comment)}
                           >
-                            <Trash2 />
-                            Elimina
+                            <Pencil className="size-3" />
+                            Modifica
                           </Button>
-                        </form>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
-              );
-            })}
-          </div>
-        )
-      ) : null}
+                        ) : null}
+                        {comment.canDelete ? (
+                          <form action={deleteCommentAction} className="self-start">
+                            <input type="hidden" name="commentId" value={comment.id} />
+                            <input type="hidden" name="returnPath" value={returnPath} />
+                            <Button
+                              type="submit"
+                              variant="ghost"
+                              size="xs"
+                              className="h-6.5 px-1.75 text-[10px] [&_svg]:size-[11px]"
+                            >
+                              <Trash2 />
+                              Elimina
+                            </Button>
+                          </form>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
-      <form action={addCommentAction} className="flex flex-col gap-1 sm:flex-row sm:items-center">
-          <input type="hidden" name="postId" value={postId} />
-          <input type="hidden" name="returnPath" value={returnPath} />
-          <Input
-            name="commentContent"
-            placeholder="Aggiungi un commento..."
-            maxLength={MAX_COMMENT_LENGTH}
-            autoComplete="off"
-            className="h-7.5 flex-1 text-[11px]"
-          />
-          <Button
-            type="submit"
-            size="xs"
-            variant="secondary"
-            className="h-7.5 px-2 text-[10px] sm:shrink-0"
-          >
-            Invia
-          </Button>
-        </form>
+          <form action={addCommentAction} className="flex flex-col gap-1 sm:flex-row sm:items-center">
+            <input type="hidden" name="postId" value={postId} />
+            <input type="hidden" name="returnPath" value={returnPath} />
+            <Input
+              name="commentContent"
+              placeholder="Aggiungi un commento..."
+              maxLength={MAX_COMMENT_LENGTH}
+              autoComplete="off"
+              className="h-7.5 flex-1 text-[11px]"
+            />
+            <Button
+              type="submit"
+              size="xs"
+              variant="secondary"
+              className="h-7.5 px-2 text-[10px] sm:shrink-0"
+            >
+              Invia
+            </Button>
+          </form>
+        </>
+      ) : null}
     </div>
   );
 }

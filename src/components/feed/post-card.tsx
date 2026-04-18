@@ -45,7 +45,7 @@ export function PostCard({
 }: PostCardProps) {
   const postActionClass = cn(
     buttonVariants({ variant: "outline", size: "xs" }),
-    "h-6 min-w-0 justify-center gap-1 rounded-full border-border/80 bg-black/12 px-1.5 text-[10px] text-muted-foreground shadow-none hover:bg-black/18 hover:text-foreground [&_svg]:size-[10px]",
+    "h-5 min-w-0 justify-center gap-0.75 rounded-full border-border/80 bg-black/12 px-1.25 text-[9.5px] font-medium text-muted-foreground shadow-none hover:bg-black/18 hover:text-foreground [&_svg]:size-[9px]",
   );
 
   return (
@@ -98,7 +98,7 @@ export function PostCard({
                     type="submit"
                     variant="destructive"
                     size="xs"
-                    className="h-6 w-auto justify-center gap-1 rounded-full px-1.5 text-[10px] shadow-none [&_svg]:size-[10px]"
+                    className="h-5 w-auto justify-center gap-0.75 rounded-full px-1.25 text-[9.5px] font-medium shadow-none [&_svg]:size-[9px]"
                     confirmMessage="Vuoi davvero eliminare questo post? L'azione non si puo annullare."
                   >
                     <Trash2 />
