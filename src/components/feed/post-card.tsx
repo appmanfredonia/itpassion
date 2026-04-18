@@ -48,6 +48,10 @@ export function PostCard({
 }: PostCardProps) {
   const [showComments, setShowComments] = useState(false);
   const commentsRegionId = `post-comments-${post.id}`;
+  const feedActionClass =
+    "h-6 min-w-[3.4rem] gap-1 px-1.5 text-[10px] [&_svg]:size-[10px]";
+  const activeFeedActionClass =
+    "border-primary/25 bg-primary/12 text-primary shadow-none hover:bg-primary/16 hover:text-primary";
   const postActionClass = cn(
     buttonVariants({ variant: "outline", size: "xs" }),
     "h-5 min-w-0 justify-center gap-0.75 rounded-full border-border/80 bg-black/12 px-1.25 text-[9.5px] font-medium text-muted-foreground shadow-none hover:bg-black/18 hover:text-foreground [&_svg]:size-[9px]",
@@ -144,7 +148,11 @@ export function PostCard({
               type="submit"
               size="xs"
               variant={post.likedByMe ? "secondary" : "ghost"}
-              className="h-6 min-w-[3rem] px-1.5 text-[10px] [&_svg]:size-[10px]"
+              className={cn(
+                feedActionClass,
+                "min-w-[3rem]",
+                post.likedByMe ? activeFeedActionClass : "text-muted-foreground",
+              )}
             >
               <Heart className={post.likedByMe ? "fill-current" : ""} />
               {post.likesCount}
@@ -159,8 +167,8 @@ export function PostCard({
             aria-controls={commentsRegionId}
             onClick={() => setShowComments((current) => !current)}
             className={cn(
-              "h-6 min-w-[3.4rem] gap-1 px-1.5 text-[10px] [&_svg]:size-[10px]",
-              post.commentedByMe ? "text-foreground" : "text-muted-foreground",
+              feedActionClass,
+              post.commentedByMe ? activeFeedActionClass : "text-muted-foreground",
             )}
           >
             <MessageCircle className="size-[10px]" />
@@ -174,7 +182,10 @@ export function PostCard({
               type="submit"
               size="xs"
               variant={post.savedByMe ? "secondary" : "ghost"}
-              className="h-6 min-w-[3.4rem] px-1.5 text-[10px] [&_svg]:size-[10px]"
+              className={cn(
+                feedActionClass,
+                post.savedByMe ? activeFeedActionClass : "text-muted-foreground",
+              )}
             >
               <Bookmark className={post.savedByMe ? "fill-current" : ""} />
               {post.savedByMe ? "Salvato" : "Salva"}
