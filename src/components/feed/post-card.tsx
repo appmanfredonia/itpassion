@@ -95,14 +95,14 @@ export function PostCard({
         className="surface-panel overflow-hidden rounded-[1.35rem] border-border/80 bg-card/92 shadow-[0_24px_44px_-32px_oklch(0_0_0_/_0.95)]"
       >
         <CardHeader className="gap-3 px-4 pb-3 pt-4">
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex min-w-0 items-center gap-3">
               <Avatar>
-              {postState.authorAvatarUrl && (
-                <AvatarImage src={postState.authorAvatarUrl} alt={`Avatar di @${postState.authorUsername}`} />
-              )}
-              <AvatarFallback>{avatarFallback(postState.authorUsername)}</AvatarFallback>
-            </Avatar>
+                {postState.authorAvatarUrl && (
+                  <AvatarImage src={postState.authorAvatarUrl} alt={`Avatar di @${postState.authorUsername}`} />
+                )}
+                <AvatarFallback>{avatarFallback(postState.authorUsername)}</AvatarFallback>
+              </Avatar>
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold tracking-tight text-foreground">
                   {postState.authorDisplayName}
@@ -120,21 +120,21 @@ export function PostCard({
               </div>
             </div>
 
-            <div className="flex shrink-0 flex-col items-end gap-2">
-              <Link href={`/explore?passion=${postState.passionSlug}`} className="min-w-0">
-                  <Badge
-                    variant="secondary"
-                    className="max-w-[9rem] border-primary/20 bg-primary/10 text-primary"
-                  >
-                    {postState.passionName}
-                  </Badge>
+            <div className="flex w-full min-w-0 flex-col gap-2 sm:w-auto sm:max-w-[14rem] sm:items-end">
+              <Link href={`/explore?passion=${postState.passionSlug}`} className="min-w-0 self-start sm:self-auto">
+                <Badge
+                  variant="secondary"
+                  className="max-w-[9rem] border-primary/20 bg-primary/10 text-primary"
+                >
+                  {postState.passionName}
+                </Badge>
               </Link>
 
               {postState.canManage ? (
-                <div className="flex items-center gap-1.5">
+                <div className="grid w-full grid-cols-2 gap-1.5 sm:flex sm:w-auto sm:justify-end">
                   <button
                     type="button"
-                    className={postActionClass}
+                    className={cn(postActionClass, "w-full")}
                     onClick={() => setShowEditModal(true)}
                   >
                     <Pencil className="size-3" />
@@ -148,7 +148,7 @@ export function PostCard({
                       type="submit"
                       variant="destructive"
                       size="xs"
-                      className="h-5 w-auto justify-center gap-0.75 rounded-full px-1.25 text-[9.5px] font-medium shadow-none [&_svg]:size-[9px]"
+                      className="h-5 w-full justify-center gap-0.75 rounded-full px-1.25 text-[9.5px] font-medium shadow-none sm:w-auto [&_svg]:size-[9px]"
                       confirmMessage="Vuoi davvero eliminare questo post? L'azione non si puo annullare."
                     >
                       <Trash2 />

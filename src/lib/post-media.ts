@@ -4,6 +4,8 @@ import type { Database } from "@/types/database";
 
 export const POST_MEDIA_BUCKET = "post-media";
 export const MAX_MEDIA_FILE_SIZE_BYTES = 40 * 1024 * 1024;
+export type PostContentType = "text" | "image" | "video";
+export type PostMediaKind = Exclude<PostContentType, "text">;
 
 export function buildSafeFileName(fileName: string): string {
   const sanitized = fileName
@@ -20,6 +22,59 @@ export function buildMediaStoragePath(userId: string, postId: string, originalFi
   const dayKey = new Date().toISOString().slice(0, 10);
   const safeFileName = buildSafeFileName(originalFileName);
   return `${userId}/${dayKey}/${postId}-${crypto.randomUUID()}-${safeFileName}`;
+}
+
+export function getMediaKindFromMimeType(value: string): PostMediaKind | null {
+  const normalized = value.trim().toLowerCase();
+  if (normalized.startsWith("video/")) {
+    return "video";
+  }
+
+  if (normalized.startsWith("image/")) {
+    return "image";
+  }
+
+  return null;
+}
+
+export function getMediaKindFromFile(file: File | null): PostMediaKind | null {
+  if (!file) {
+    return null;
+  }
+
+  return getMediaKindFromMimeType(file.type);
+}
+
+export function inferContentTypeFromMediaKinds(kinds: Array<PostMediaKind | null | undefined>): PostContentType {
+  if (kinds.some((kind) => kind === "video")) {
+    return "video";
+  }
+
+  if (kinds.some((kind) => kind === "image")) {
+    return "image";
+  }
+
+  return "text";
+}
+
+export function detectPostContentType(options: {
+  textContent: string;
+  selectedMediaKind?: PostMediaKind | null;
+  existingMediaKinds?: Array<PostMediaKind | null | undefined>;
+  removeExistingMedia?: boolean;
+}): PostContentType {
+  const selectedMediaKinds = options.selectedMediaKind ? [options.selectedMediaKind] : [];
+  const existingMediaKinds =
+    options.removeExistingMedia || options.selectedMediaKind
+      ? []
+      : (options.existingMediaKinds ?? []);
+  const inferredFromMedia = inferContentTypeFromMediaKinds([...selectedMediaKinds, ...existingMediaKinds]);
+
+  if (inferredFromMedia !== "text") {
+    return inferredFromMedia;
+  }
+
+  return options.textContent.trim().length > 0 ? "text" : "text";
 }
 
 export function errorDetailFromUnknown(error: unknown): string {

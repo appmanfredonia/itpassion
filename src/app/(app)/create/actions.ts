@@ -5,15 +5,16 @@ import { redirect } from "next/navigation";
 import { ensureUserProfile, getPassionCatalog } from "@/lib/auth";
 import {
   buildMediaStoragePath,
+  detectPostContentType,
   errorDetailFromUnknown,
+  getMediaKindFromFile,
+  type PostContentType as ContentType,
   mapStorageUploadErrorToMessage,
   MAX_MEDIA_FILE_SIZE_BYTES,
   POST_MEDIA_BUCKET,
   removePostMediaFromStorage,
 } from "@/lib/post-media";
 import { createServerSupabaseClient } from "@/lib/supabase";
-
-type ContentType = "text" | "image" | "video";
 
 type ExistingMediaRow = {
   id: string;
@@ -42,28 +43,12 @@ export type InlineUpdatePostResult =
       error: string;
     };
 
-function isValidContentType(value: string): value is ContentType {
-  return value === "text" || value === "image" || value === "video";
-}
-
 function toUploadedFile(value: FormDataEntryValue | null): File | null {
   if (!(value instanceof File) || value.size === 0) {
     return null;
   }
 
   return value;
-}
-
-function isCompatibleMediaFile(contentType: ContentType, file: File): boolean {
-  if (contentType === "image") {
-    return file.type.startsWith("image/");
-  }
-
-  if (contentType === "video") {
-    return file.type.startsWith("video/");
-  }
-
-  return false;
 }
 
 function redirectCreateError(message: string, editingPostId?: string | null): never {
@@ -222,41 +207,26 @@ export async function updatePostInlineAction(formData: FormData): Promise<Inline
     return { success: false, error: "Post non valido per la modifica." };
   }
 
-  const contentTypeRaw = formData.get("contentType");
   const textContentRaw = formData.get("textContent");
   const mediaFileRaw = formData.get("mediaFile");
   const passionSlugRaw = formData.get("passionSlug");
+  const removeMedia = formData.get("removeMedia") === "true";
 
-  if (
-    typeof contentTypeRaw !== "string" ||
-    !isValidContentType(contentTypeRaw) ||
-    typeof passionSlugRaw !== "string" ||
-    !passionSlugRaw
-  ) {
+  if (typeof passionSlugRaw !== "string" || !passionSlugRaw) {
     return { success: false, error: "Compila i campi obbligatori prima di salvare." };
   }
 
   const textContent = typeof textContentRaw === "string" ? textContentRaw.trim() : "";
   const mediaFile = toUploadedFile(mediaFileRaw);
-  const wantsMedia = contentTypeRaw === "image" || contentTypeRaw === "video";
-
-  if (contentTypeRaw === "text" && textContent.length === 0) {
-    return { success: false, error: "Per un post testuale inserisci un contenuto." };
-  }
+  const selectedMediaKind = getMediaKindFromFile(mediaFile);
 
   if (mediaFile) {
     if (mediaFile.size > MAX_MEDIA_FILE_SIZE_BYTES) {
       return { success: false, error: "File troppo grande. Limite massimo 40MB." };
     }
 
-    if (!isCompatibleMediaFile(contentTypeRaw, mediaFile)) {
-      return {
-        success: false,
-        error:
-          contentTypeRaw === "image"
-            ? "Il file selezionato non e un'immagine valida."
-            : "Il file selezionato non e un video valido.",
-      };
+    if (!selectedMediaKind) {
+      return { success: false, error: "Il file selezionato non e un media valido." };
     }
   }
 
@@ -305,21 +275,19 @@ export async function updatePostInlineAction(formData: FormData): Promise<Inline
     return { success: false, error: "Post non trovato o non modificabile." };
   }
 
-  if (wantsMedia && !mediaFile) {
-    const existingMedia = existingEditTarget.media;
-    if (existingMedia.length === 0) {
-      return { success: false, error: "Carica un file media per questo contenuto." };
-    }
+  const nextContentType = detectPostContentType({
+    textContent,
+    selectedMediaKind,
+    existingMediaKinds: existingEditTarget.media.map((mediaRow) => mediaRow.media_kind),
+    removeExistingMedia: removeMedia,
+  });
+  const wantsMedia = nextContentType !== "text";
 
-    const hasDifferentMediaKind = existingMedia.some(
-      (mediaRow) => mediaRow.media_kind !== contentTypeRaw,
-    );
-    if (hasDifferentMediaKind) {
-      return {
-        success: false,
-        error: "Carica un nuovo file per passare da foto a video o viceversa.",
-      };
-    }
+  if (nextContentType === "text" && textContent.length === 0) {
+    return {
+      success: false,
+      error: "Aggiungi un testo o carica un media prima di salvare il post.",
+    };
   }
 
   let uploadedMedia:
@@ -331,7 +299,7 @@ export async function updatePostInlineAction(formData: FormData): Promise<Inline
     | null = null;
 
   try {
-    if (wantsMedia && mediaFile) {
+    if (selectedMediaKind && mediaFile) {
       uploadedMedia = await uploadReplacementMedia(user.id, editingPostId, mediaFile);
     }
   } catch (error) {
@@ -357,7 +325,7 @@ export async function updatePostInlineAction(formData: FormData): Promise<Inline
     .from("posts")
     .update({
       passion_slug: passionSlugRaw,
-      content_type: contentTypeRaw,
+      content_type: nextContentType,
       text_content: textContent.length > 0 ? textContent : null,
       updated_at: nextUpdatedAt,
     })
@@ -405,7 +373,7 @@ export async function updatePostInlineAction(formData: FormData): Promise<Inline
       .insert({
         post_id: editingPostId,
         media_url: uploadedMedia.mediaPublicUrl,
-        media_kind: contentTypeRaw,
+        media_kind: nextContentType,
       })
       .select("id")
       .single();
@@ -452,11 +420,11 @@ export async function updatePostInlineAction(formData: FormData): Promise<Inline
       id: editingPostId,
       passionSlug: passionSlugRaw,
       passionName,
-      contentType: contentTypeRaw,
+      contentType: nextContentType,
       textContent: textContent.length > 0 ? textContent : null,
       updatedAt: nextUpdatedAt,
       media: buildUpdatedMediaPayload(
-        contentTypeRaw,
+        nextContentType,
         existingEditTarget.media,
         uploadedMedia?.mediaPublicUrl ?? null,
       ),
@@ -486,40 +454,26 @@ export async function createPostAction(formData: FormData): Promise<never> {
     typeof editingPostIdRaw === "string" && editingPostIdRaw.trim().length > 0
       ? editingPostIdRaw.trim()
       : null;
-  const contentTypeRaw = formData.get("contentType");
   const textContentRaw = formData.get("textContent");
   const mediaFileRaw = formData.get("mediaFile");
   const passionSlugRaw = formData.get("passionSlug");
+  const removeMedia = formData.get("removeMedia") === "true";
 
-  if (
-    typeof contentTypeRaw !== "string" ||
-    !isValidContentType(contentTypeRaw) ||
-    typeof passionSlugRaw !== "string" ||
-    !passionSlugRaw
-  ) {
+  if (typeof passionSlugRaw !== "string" || !passionSlugRaw) {
     redirectCreateError("Compila i campi obbligatori prima di pubblicare.", editingPostId);
   }
 
   const textContent = typeof textContentRaw === "string" ? textContentRaw.trim() : "";
   const mediaFile = toUploadedFile(mediaFileRaw);
-  const wantsMedia = contentTypeRaw === "image" || contentTypeRaw === "video";
-
-  if (contentTypeRaw === "text" && textContent.length === 0) {
-    redirectCreateError("Per un post testuale inserisci un contenuto.", editingPostId);
-  }
+  const selectedMediaKind = getMediaKindFromFile(mediaFile);
 
   if (mediaFile) {
     if (mediaFile.size > MAX_MEDIA_FILE_SIZE_BYTES) {
       redirectCreateError("File troppo grande. Limite massimo 40MB.", editingPostId);
     }
 
-    if (!isCompatibleMediaFile(contentTypeRaw, mediaFile)) {
-      redirectCreateError(
-        contentTypeRaw === "image"
-          ? "Il file selezionato non e un'immagine valida."
-          : "Il file selezionato non e un video valido.",
-        editingPostId,
-      );
+    if (!selectedMediaKind) {
+      redirectCreateError("Il file selezionato non e un media valido.", editingPostId);
     }
   }
 
@@ -573,25 +527,18 @@ export async function createPostAction(formData: FormData): Promise<never> {
     if (!existingEditTarget) {
       redirectCreateError("Post non trovato o non modificabile.", editingPostId);
     }
+  }
 
-    if (wantsMedia && !mediaFile) {
-      const existingMedia = existingEditTarget.media;
-      if (existingMedia.length === 0) {
-        redirectCreateError("Carica un file media per questo contenuto.", editingPostId);
-      }
+  const inferredContentType = detectPostContentType({
+    textContent,
+    selectedMediaKind,
+    existingMediaKinds: existingEditTarget?.media.map((mediaRow) => mediaRow.media_kind),
+    removeExistingMedia: removeMedia,
+  });
+  const wantsMedia = inferredContentType !== "text";
 
-      const hasDifferentMediaKind = existingMedia.some(
-        (mediaRow) => mediaRow.media_kind !== contentTypeRaw,
-      );
-      if (hasDifferentMediaKind) {
-        redirectCreateError(
-          "Carica un nuovo file per passare da foto a video o viceversa.",
-          editingPostId,
-        );
-      }
-    }
-  } else if (wantsMedia && !mediaFile) {
-    redirectCreateError("Per contenuti foto o video carica un file media.", null);
+  if (inferredContentType === "text" && textContent.length === 0) {
+    redirectCreateError("Aggiungi un testo o carica un media prima di pubblicare.", editingPostId);
   }
 
   let postId = editingPostId;
@@ -604,15 +551,15 @@ export async function createPostAction(formData: FormData): Promise<never> {
     | null = null;
 
   if (!postId) {
-    const { data: createdPost, error: createPostError } = await supabase
-      .from("posts")
-      .insert({
-        user_id: user.id,
-        passion_slug: passionSlugRaw,
-        content_type: contentTypeRaw,
-        text_content: textContent.length > 0 ? textContent : null,
-      })
-      .select("id")
+      const { data: createdPost, error: createPostError } = await supabase
+        .from("posts")
+        .insert({
+          user_id: user.id,
+          passion_slug: passionSlugRaw,
+          content_type: inferredContentType,
+          text_content: textContent.length > 0 ? textContent : null,
+        })
+        .select("id")
       .single();
 
     if (createPostError || !createdPost) {
@@ -623,7 +570,7 @@ export async function createPostAction(formData: FormData): Promise<never> {
   }
 
   try {
-    if (wantsMedia && mediaFile && postId) {
+    if (selectedMediaKind && mediaFile && postId) {
       uploadedMedia = await uploadReplacementMedia(user.id, postId, mediaFile);
     }
   } catch (error) {
@@ -650,7 +597,7 @@ export async function createPostAction(formData: FormData): Promise<never> {
         .from("posts")
         .update({
           passion_slug: passionSlugRaw,
-          content_type: contentTypeRaw,
+          content_type: inferredContentType,
           text_content: textContent.length > 0 ? textContent : null,
           updated_at: new Date().toISOString(),
         })
@@ -699,7 +646,7 @@ export async function createPostAction(formData: FormData): Promise<never> {
         .insert({
           post_id: postId,
           media_url: uploadedMedia.mediaPublicUrl,
-          media_kind: contentTypeRaw,
+          media_kind: inferredContentType,
         })
         .select("id")
         .single();
@@ -734,7 +681,7 @@ export async function createPostAction(formData: FormData): Promise<never> {
     const { error: mediaInsertError } = await supabase.from("post_media").insert({
       post_id: postId,
       media_url: uploadedMedia.mediaPublicUrl,
-      media_kind: contentTypeRaw,
+      media_kind: inferredContentType,
     });
 
     if (mediaInsertError) {

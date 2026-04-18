@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
-import { ImagePlus, Loader2, Video, X } from "lucide-react";
+import { ImagePlus, Loader2, Trash2, Video, X } from "lucide-react";
 import {
   updatePostInlineAction,
   type InlineUpdatePostResult,
@@ -14,6 +14,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { FeedPost } from "@/lib/feed";
+import {
+  detectPostContentType,
+  getMediaKindFromFile,
+} from "@/lib/post-media";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -28,8 +32,6 @@ type PassionOption = {
   slug: string;
   name: string;
 };
-
-type ContentType = FeedPost["contentType"];
 
 function avatarFallback(username: string): string {
   const normalized = username.replace("@", "").trim();
@@ -47,8 +49,8 @@ function formatCreatedAt(isoDate: string): string {
   }).format(new Date(isoDate));
 }
 
-function localPreviewLabel(contentType: ContentType) {
-  return contentType === "video" ? "Nuovo video selezionato" : "Nuova immagine selezionata";
+function localPreviewLabel(kind: "image" | "video") {
+  return kind === "video" ? "Nuovo video selezionato" : "Nuova immagine selezionata";
 }
 
 export function PostEditModal({
@@ -59,21 +61,21 @@ export function PostEditModal({
 }: PostEditModalProps) {
   const [textContent, setTextContent] = useState(post.textContent ?? "");
   const [passionSlug, setPassionSlug] = useState(post.passionSlug);
-  const [contentType, setContentType] = useState<ContentType>(post.contentType);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [removeExistingMedia, setRemoveExistingMedia] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [passions, setPassions] = useState<PassionOption[]>([
     { slug: post.passionSlug, name: post.passionName },
   ]);
   const [isPending, startTransition] = useTransition();
-  const overlayRef = useRef<HTMLDivElement>(null);
-  const firstFieldRef = useRef<HTMLTextAreaElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewUrl = useMemo(
     () => (selectedFile ? URL.createObjectURL(selectedFile) : null),
     [selectedFile],
   );
+  const selectedMediaKind = getMediaKindFromFile(selectedFile);
 
   useEffect(() => {
     if (!previewUrl) {
@@ -101,7 +103,7 @@ export function PostEditModal({
     }
 
     window.setTimeout(() => {
-      firstFieldRef.current?.focus();
+      closeButtonRef.current?.focus();
     }, 0);
 
     return () => {
@@ -167,20 +169,28 @@ export function PostEditModal({
 
   const selectedPassionName =
     passions.find((passion) => passion.slug === passionSlug)?.name ?? post.passionName;
+  const inferredContentType = detectPostContentType({
+    textContent,
+    selectedMediaKind,
+    existingMediaKinds: post.media.map((mediaItem) => mediaItem.kind),
+    removeExistingMedia,
+  });
 
   const visibleMedia =
-    contentType === "text"
+    inferredContentType === "text"
       ? []
       : previewUrl
-        ? [{ kind: contentType === "video" ? "video" : "image", url: previewUrl, isPreview: true }]
-        : post.media;
+        ? [{ kind: selectedMediaKind ?? "image", url: previewUrl, isPreview: true }]
+        : removeExistingMedia
+          ? []
+          : post.media;
 
   async function handleSubmit() {
     const formData = new FormData();
     formData.set("editingPostId", post.id);
     formData.set("textContent", textContent);
     formData.set("passionSlug", passionSlug);
-    formData.set("contentType", contentType);
+    formData.set("removeMedia", String(removeExistingMedia));
 
     if (selectedFile) {
       formData.set("mediaFile", selectedFile);
@@ -211,7 +221,6 @@ export function PostEditModal({
   return createPortal(
     <div className="fixed inset-0 z-[110] flex items-center justify-center px-4 py-6 md:px-6">
       <div
-        ref={overlayRef}
         className="absolute inset-0 bg-black/76 backdrop-blur-[2px]"
         onClick={() => {
           if (!isPending) {
@@ -232,6 +241,7 @@ export function PostEditModal({
           </div>
 
           <Button
+            ref={closeButtonRef}
             type="button"
             variant="ghost"
             size="icon-sm"
@@ -262,9 +272,18 @@ export function PostEditModal({
               </div>
             </div>
 
-            <Badge variant="secondary" className="ml-auto border-primary/20 bg-primary/10 text-primary">
-              {selectedPassionName}
-            </Badge>
+            <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+              <Badge variant="secondary" className="border-primary/20 bg-primary/10 text-primary">
+                {selectedPassionName}
+              </Badge>
+              <Badge variant="outline" className="border-white/10 bg-white/[0.03] text-muted-foreground">
+                {inferredContentType === "video"
+                  ? "Video"
+                  : inferredContentType === "image"
+                    ? "Foto"
+                    : "Testo"}
+              </Badge>
+            </div>
           </div>
 
           <div className="grid gap-4 md:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
@@ -272,7 +291,6 @@ export function PostEditModal({
               <div className="flex flex-col gap-2">
                 <Label htmlFor={`post-edit-text-${post.id}`}>Contenuto</Label>
                 <Textarea
-                  ref={firstFieldRef}
                   id={`post-edit-text-${post.id}`}
                   value={textContent}
                   onChange={(event) => setTextContent(event.target.value)}
@@ -299,26 +317,23 @@ export function PostEditModal({
                     ))}
                   </select>
                 </div>
-
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor={`post-edit-type-${post.id}`}>Tipo contenuto</Label>
-                  <select
-                    id={`post-edit-type-${post.id}`}
-                    value={contentType}
-                    onChange={(event) => setContentType(event.target.value as ContentType)}
-                    className="h-11 rounded-[1.1rem] border border-white/10 bg-white/[0.03] px-3 text-sm text-foreground"
-                    disabled={isPending}
-                  >
-                    <option value="text">Testo</option>
-                    <option value="image">Foto</option>
-                    <option value="video">Video</option>
-                  </select>
-                </div>
               </div>
 
               {catalogError ? (
                 <p className="text-xs text-muted-foreground">{catalogError}</p>
               ) : null}
+
+              <div className="rounded-[1.2rem] border border-white/8 bg-white/[0.03] px-3.5 py-3 text-xs leading-relaxed text-muted-foreground">
+                Il tipo contenuto viene rilevato automaticamente:
+                <span className="ml-1 text-foreground">
+                  {inferredContentType === "video"
+                    ? "video"
+                    : inferredContentType === "image"
+                      ? "foto"
+                      : "testo"}
+                </span>
+                .
+              </div>
             </div>
 
             <div className="flex flex-col gap-3 rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-4">
@@ -332,7 +347,7 @@ export function PostEditModal({
                   </h3>
                 </div>
 
-                {contentType !== "text" ? (
+                {inferredContentType !== "text" || post.media.length > 0 || selectedFile ? (
                   <Button
                     type="button"
                     variant="outline"
@@ -344,7 +359,19 @@ export function PostEditModal({
                     <ImagePlus className="size-3" />
                     {selectedFile ? "Sostituisci file" : "Carica file"}
                   </Button>
-                ) : null}
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="xs"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isPending}
+                    className="rounded-full border-white/10 bg-white/[0.03] text-foreground hover:bg-white/[0.08]"
+                  >
+                    <ImagePlus className="size-3" />
+                    Aggiungi media
+                  </Button>
+                )}
               </div>
 
               <Input
@@ -352,14 +379,16 @@ export function PostEditModal({
                 type="file"
                 accept="image/*,video/*"
                 className="hidden"
-                onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
+                onChange={(event) => {
+                  const nextFile = event.target.files?.[0] ?? null;
+                  setSelectedFile(nextFile);
+                  if (nextFile) {
+                    setRemoveExistingMedia(false);
+                  }
+                }}
               />
 
-              {contentType === "text" ? (
-                <div className="rounded-[1.2rem] border border-dashed border-white/10 bg-black/16 px-4 py-5 text-sm leading-relaxed text-muted-foreground">
-                  Questo post verra salvato come contenuto testuale. I media attuali verranno rimossi.
-                </div>
-              ) : visibleMedia.length > 0 ? (
+              {visibleMedia.length > 0 ? (
                 <div className={cn("grid gap-2", visibleMedia.length > 1 ? "grid-cols-2" : "grid-cols-1")}>
                   {visibleMedia.map((mediaItem, index) => (
                     <div
@@ -387,7 +416,7 @@ export function PostEditModal({
                       <div className="flex items-center justify-between gap-2 border-t border-white/8 px-3 py-2 text-[11px] text-muted-foreground">
                         <span>{mediaItem.kind === "video" ? "Video" : "Immagine"}</span>
                         {"isPreview" in mediaItem && mediaItem.isPreview ? (
-                          <span className="text-primary">{localPreviewLabel(contentType)}</span>
+                          <span className="text-primary">{localPreviewLabel(mediaItem.kind)}</span>
                         ) : null}
                       </div>
                     </div>
@@ -395,16 +424,39 @@ export function PostEditModal({
                 </div>
               ) : (
                 <div className="rounded-[1.2rem] border border-dashed border-white/10 bg-black/16 px-4 py-5 text-sm leading-relaxed text-muted-foreground">
-                  Nessun media disponibile. Carica un file per completare il post.
+                  {removeExistingMedia || post.media.length === 0
+                    ? "Questo post verra salvato come contenuto testuale finché non aggiungi un media."
+                    : "Nessun media disponibile. Carica un file per completare il post."}
                 </div>
               )}
 
-              {contentType === "video" ? (
-                <p className="inline-flex items-center gap-2 text-xs text-muted-foreground">
-                  <Video className="size-3.5" />
-                  Se cambi video, il nuovo file sostituisce quello esistente.
-                </p>
-              ) : null}
+              <div className="flex flex-wrap items-center gap-2">
+                {post.media.length > 0 || selectedFile ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    onClick={() => {
+                      setSelectedFile(null);
+                      setRemoveExistingMedia(true);
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = "";
+                      }
+                    }}
+                    disabled={isPending}
+                    className="rounded-full text-muted-foreground hover:text-foreground"
+                  >
+                    <Trash2 className="size-3" />
+                    Rimuovi media
+                  </Button>
+                ) : null}
+                {selectedMediaKind === "video" || (!selectedFile && inferredContentType === "video") ? (
+                  <p className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+                    <Video className="size-3.5" />
+                    Se cambi video, il nuovo file sostituisce quello esistente.
+                  </p>
+                ) : null}
+              </div>
             </div>
           </div>
 

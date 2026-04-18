@@ -179,9 +179,18 @@ export default async function CreatePage({ searchParams }: CreatePageProps) {
                     ))}
                   </div>
                   <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                    Lascia il file vuoto per mantenere il media attuale. Passando a un post testuale
-                    il media verra rimosso.
+                    Lascia il file vuoto per mantenere il media attuale, oppure rimuovilo per tornare
+                    a un post testuale.
                   </p>
+                  <label className="mt-3 inline-flex items-center gap-2 text-xs text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      name="removeMedia"
+                      value="true"
+                      className="size-4 rounded border border-border/80 bg-surface-1"
+                    />
+                    Rimuovi il media attuale quando salvi
+                  </label>
                 </div>
               ) : null}
 
@@ -214,18 +223,11 @@ export default async function CreatePage({ searchParams }: CreatePageProps) {
                 </select>
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="post-content-type">Tipo contenuto</Label>
-                <select
-                  id="post-content-type"
-                  name="contentType"
-                  defaultValue={editablePost?.contentType ?? "text"}
-                  className="h-11 rounded-[1.2rem] border border-input bg-surface-1 px-3 text-sm"
-                >
-                  <option value="text">Testo</option>
-                  <option value="image">Foto</option>
-                  <option value="video">Video</option>
-                </select>
+              <div className="rounded-[1.2rem] border border-border/80 bg-surface-1/95 px-3 py-2.5 text-xs leading-relaxed text-muted-foreground">
+                Il tipo contenuto viene rilevato automaticamente:
+                <span className="ml-1 text-foreground">
+                  video se carichi un video, foto se carichi un&apos;immagine, testo se non ci sono media.
+                </span>
               </div>
 
               <div className="flex flex-col gap-2 sm:flex-row">
