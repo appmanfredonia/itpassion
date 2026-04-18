@@ -1,0 +1,55 @@
+
+> itpassion@0.1.0 predev
+> npm run env:check -- development
+
+
+> itpassion@0.1.0 env:check
+> node scripts/check-env.mjs development
+
+[env-check] OK: 3 variabili obbligatorie presenti (development).
+
+> itpassion@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.3 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.40.1:3000
+- Environments: .env.local
+✓ Ready in 4.1s
+○ Compiling proxy ...
+- Experiments (use with caution):
+  · proxyClientMaxBodySize: "50mb"
+  · serverActions
+
+ GET /login 200 in 500ms (next.js: 203ms, proxy.ts: 15ms, application-code: 282ms)
+ GET /login 200 in 289ms (next.js: 11ms, proxy.ts: 14ms, application-code: 263ms)
+ GET /login 200 in 233ms (next.js: 11ms, proxy.ts: 12ms, application-code: 210ms)
+ GET /login 200 in 225ms (next.js: 6ms, proxy.ts: 10ms, application-code: 210ms)
+ POST /login 303 in 2.0s (next.js: 19ms, proxy.ts: 29ms, application-code: 1996ms)
+ GET /feed 200 in 5.5s (next.js: 277ms, proxy.ts: 383ms, application-code: 4.8s)
+ GET /feed 200 in 2.3s (next.js: 19ms, proxy.ts: 354ms, application-code: 1913ms)
+ GET /explore 200 in 3.7s (next.js: 259ms, proxy.ts: 309ms, application-code: 3.1s)
+○ Compiling /map ...
+ GET /map 200 in 5.9s (next.js: 3.4s, proxy.ts: 302ms, application-code: 2.3s)
+ GET /create 200 in 2.1s (next.js: 302ms, proxy.ts: 351ms, application-code: 1467ms)
+ GET /profile 200 in 2.8s (next.js: 175ms, proxy.ts: 206ms, application-code: 2.4s)
+ GET /login 200 in 209ms (next.js: 19ms, proxy.ts: 13ms, application-code: 177ms)
+ POST /login 303 in 738ms (next.js: 10ms, proxy.ts: 21ms, application-code: 707ms)
+ GET /feed 200 in 2.5s (next.js: 13ms, proxy.ts: 315ms, application-code: 2.2s)
+ GET /map 200 in 1576ms (next.js: 18ms, proxy.ts: 230ms, application-code: 1328ms)
+ GET /login 200 in 314ms (next.js: 12ms, proxy.ts: 16ms, application-code: 286ms)
+ POST /login 303 in 590ms (next.js: 14ms, proxy.ts: 24ms, application-code: 552ms)
+ GET /feed 200 in 2.4s (next.js: 13ms, proxy.ts: 327ms, application-code: 2.0s)
+ GET /feed 200 in 2.6s (next.js: 12ms, proxy.ts: 272ms, application-code: 2.3s)
+ GET /map 200 in 2.1s (next.js: 12ms, proxy.ts: 739ms, application-code: 1316ms)
+ GET /login 200 in 198ms (next.js: 7ms, proxy.ts: 10ms, application-code: 181ms)
+ POST /login 303 in 682ms (next.js: 15ms, proxy.ts: 26ms, application-code: 640ms)
+ GET /feed 200 in 2.4s (next.js: 12ms, proxy.ts: 252ms, application-code: 2.1s)
+ GET /feed 200 in 1930ms (next.js: 11ms, proxy.ts: 201ms, application-code: 1718ms)
+ GET /map 200 in 1928ms (next.js: 12ms, proxy.ts: 293ms, application-code: 1623ms)
+✓ Compiled in 3.8s
+✓ Compiled in 265ms
+✓ Compiled in 968ms
+✓ Compiled in 308ms
+✓ Compiled in 701ms
+✓ Compiled in 206ms

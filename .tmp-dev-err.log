@@ -1,0 +1,41 @@
+⚠ Blocked cross-origin request to Next.js dev resource /_next/webpack-hmr from "127.0.0.1".
+Cross-origin access to Next.js dev resources is blocked by default for safety.
+
+To allow this host in development, add it to "allowedDevOrigins" in next.config.js and restart the dev server:
+
+// next.config.js
+module.exports = {
+  allowedDevOrigins: ['127.0.0.1'],
+}
+
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+⨯ ./src/app/(app)/map/page.tsx:2:1
+Module not found: Can't resolve '@/components/map/area-map'
+  [90m1 |[0m [36mimport[0m { redirect } [36mfrom[0m [32m"next/navigation"[0m;
+[31m[1m>[0m [90m2 |[0m [36mimport[0m { [33mAreaMap[0m } [36mfrom[0m [32m"@/components/map/area-map"[0m;
+  [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m3 |[0m [36mimport[0m { [33mMapResultCard[0m } [36mfrom[0m [32m"@/components/map/map-result-card"[0m;
+  [90m4 |[0m [36mimport[0m { [33mSectionHeader[0m } [36mfrom[0m [32m"@/components/section-header"[0m;
+  [90m5 |[0m [36mimport[0m { [33mStateCard[0m } [36mfrom[0m [32m"@/components/state-card"[0m;
+
+Import map: aliased to relative './src/components/map/area-map' inside of [project]/
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./src/app/(app)/map/page.tsx:2:1
+Module not found: Can't resolve '@/components/map/area-map'
+  [90m1 |[0m [36mimport[0m { redirect } [36mfrom[0m [32m"next/navigation"[0m;
+[31m[1m>[0m [90m2 |[0m [36mimport[0m { [33mAreaMap[0m } [36mfrom[0m [32m"@/components/map/area-map"[0m;
+  [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m3 |[0m [36mimport[0m { [33mMapResultCard[0m } [36mfrom[0m [32m"@/components/map/map-result-card"[0m;
+  [90m4 |[0m [36mimport[0m { [33mSectionHeader[0m } [36mfrom[0m [32m"@/components/section-header"[0m;
+  [90m5 |[0m [36mimport[0m { [33mStateCard[0m } [36mfrom[0m [32m"@/components/state-card"[0m;
+
+Import map: aliased to relative './src/components/map/area-map' inside of [project]/
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
