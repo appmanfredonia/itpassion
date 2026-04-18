@@ -53,12 +53,12 @@ export function PostCard({
   const commentButtonRef = useRef<HTMLButtonElement>(null);
   const commentsContainerRef = useRef<HTMLDivElement>(null);
   const feedActionClass =
-    "h-6 min-w-[3.4rem] gap-1 px-1.5 text-[10px] [&_svg]:size-[10px]";
+    "h-[22px] min-w-[2.8rem] gap-1 px-1.5 text-[10px] [&_svg]:size-[10px] sm:h-6 sm:min-w-[3.4rem]";
   const activeFeedActionClass =
     "border-primary/25 bg-primary/12 text-primary shadow-none hover:bg-primary/16 hover:text-primary";
   const postActionClass = cn(
     buttonVariants({ variant: "outline", size: "xs" }),
-    "h-5 min-w-0 justify-center gap-0.75 rounded-full border-border/80 bg-black/12 px-1.25 text-[9.5px] font-medium text-muted-foreground shadow-none hover:bg-black/18 hover:text-foreground [&_svg]:size-[9px]",
+    "h-[18px] min-w-0 justify-center gap-0.5 rounded-full border-border/80 bg-black/12 px-1.5 text-[9px] font-medium text-muted-foreground shadow-none hover:bg-black/18 hover:text-foreground sm:h-5 sm:gap-0.75 sm:px-1.25 sm:text-[9.5px] [&_svg]:size-[9px]",
   );
 
   useEffect(() => {
@@ -93,64 +93,64 @@ export function PostCard({
         id={`post-${post.id}`}
         className="surface-panel overflow-hidden rounded-[1.35rem] border-border/80 bg-card/92 shadow-[0_24px_44px_-32px_oklch(0_0_0_/_0.95)]"
       >
-        <CardHeader className="gap-3 px-4 pb-3 pt-4 sm:px-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex min-w-0 flex-1 items-center gap-3">
-              <Avatar>
+        <CardHeader className="gap-2.5 px-3.5 pb-2.5 pt-3.5 sm:gap-3 sm:px-5 sm:pb-3 sm:pt-4">
+          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
+              <Avatar className="size-7 sm:size-8">
                 {postState.authorAvatarUrl && (
                   <AvatarImage src={postState.authorAvatarUrl} alt={`Avatar di @${postState.authorUsername}`} />
                 )}
                 <AvatarFallback>{avatarFallback(postState.authorUsername)}</AvatarFallback>
               </Avatar>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold tracking-tight text-foreground">
+              <div className="min-w-0 space-y-0.5">
+                <p className="truncate text-[13px] font-semibold tracking-tight text-foreground sm:text-sm">
                   {postState.authorDisplayName}
                 </p>
-                <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-muted-foreground">
+                <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px] leading-tight text-muted-foreground sm:text-[11px]">
                   <Link
                     href={`/profile/${postState.authorUsername}`}
-                    className="truncate hover:text-primary"
+                    className="max-w-full truncate hover:text-primary"
                   >
                     @{postState.authorUsername}
                   </Link>
                   <span className="text-white/18">/</span>
-                  <p>{formatCreatedAt(postState.createdAt)}</p>
+                  <p className="whitespace-nowrap">{formatCreatedAt(postState.createdAt)}</p>
                 </div>
               </div>
             </div>
 
-            <div className="grid w-full shrink-0 gap-2 sm:w-auto sm:min-w-[11.5rem] md:min-w-[12.5rem] sm:justify-items-end">
+            <div className="inline-grid max-w-full shrink-0 gap-1.5 self-start sm:w-auto sm:min-w-[11.5rem] md:min-w-[12.5rem] sm:justify-items-end">
               <Link
                 href={`/explore?passion=${postState.passionSlug}`}
                 className="min-w-0 max-w-full justify-self-start sm:justify-self-end"
               >
                 <Badge
                   variant="secondary"
-                  className="max-w-full border-primary/20 bg-primary/10 text-primary"
+                  className="h-[18px] max-w-full border-primary/20 bg-primary/10 px-1.5 text-[9px] text-primary sm:h-5 sm:px-2 sm:text-[10.5px]"
                 >
                   {postState.passionName}
                 </Badge>
               </Link>
 
               {postState.canManage ? (
-                <div className="grid w-full grid-cols-2 gap-1.5">
+                <div className="inline-grid grid-cols-2 gap-1.25 sm:gap-1.5">
                   <button
                     type="button"
-                    className={cn(postActionClass, "w-full min-w-0 whitespace-nowrap")}
+                    className={cn(postActionClass, "min-w-0 whitespace-nowrap")}
                     onClick={() => setShowEditModal(true)}
                   >
                     <Pencil className="size-3" />
                     Modifica
                   </button>
 
-                  <form action={deletePostAction} className="min-w-0 w-full">
+                  <form action={deletePostAction} className="min-w-0">
                     <input type="hidden" name="postId" value={postState.id} />
                     <input type="hidden" name="returnPath" value={returnPath} />
                     <ConfirmSubmitButton
                       type="submit"
                       variant="destructive"
                       size="xs"
-                      className="h-5 w-full min-w-0 justify-center gap-0.75 rounded-full px-1.25 text-[9.5px] font-medium whitespace-nowrap shadow-none [&_svg]:size-[9px]"
+                      className="h-[18px] min-w-0 justify-center gap-0.5 rounded-full px-1.5 text-[9px] font-medium whitespace-nowrap shadow-none sm:h-5 sm:gap-0.75 sm:px-1.25 sm:text-[9.5px] [&_svg]:size-[9px]"
                       confirmMessage="Vuoi davvero eliminare questo post? L'azione non si puo annullare."
                     >
                       <Trash2 />
@@ -163,20 +163,20 @@ export function PostCard({
           </div>
 
           {postState.textContent ? (
-            <p className="text-[13px] leading-[1.55] whitespace-pre-wrap break-words text-foreground/92 [overflow-wrap:anywhere]">
+            <p className="text-[12.5px] leading-[1.5] whitespace-pre-wrap break-words text-foreground/92 [overflow-wrap:anywhere] sm:text-[13px] sm:leading-[1.55]">
               {postState.textContent}
             </p>
           ) : null}
         </CardHeader>
 
-        <CardContent className="flex flex-col gap-3 px-4 pb-4 pt-0">
+        <CardContent className="flex flex-col gap-2.5 px-3.5 pb-3.5 pt-0 sm:gap-3 sm:px-4 sm:pb-4">
           <PostMediaGallery
             post={postState}
             onPostUpdate={(nextPost) => setPostState(nextPost)}
           />
 
-          <div className="flex items-center justify-between gap-2 border-t border-white/6 pt-2">
-            <div className="flex min-w-0 items-center gap-2">
+          <div className="flex items-center justify-between gap-1.5 border-t border-white/6 pt-2 sm:gap-2">
+            <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
               <form action={toggleLikeAction}>
                 <input type="hidden" name="postId" value={postState.id} />
                 <input type="hidden" name="returnPath" value={returnPath} />
