@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bookmark, Heart, MessageCircle, Pencil, Trash2 } from "lucide-react";
 import {
   deletePostAction,
@@ -47,7 +47,11 @@ export function PostCard({
   commentPreviewLimit = 0,
 }: PostCardProps) {
   const [showComments, setShowComments] = useState(false);
+  const [comments, setComments] = useState(post.comments);
+  const [commentedByMe, setCommentedByMe] = useState(post.commentedByMe);
   const commentsRegionId = `post-comments-${post.id}`;
+  const commentButtonRef = useRef<HTMLButtonElement>(null);
+  const commentsContainerRef = useRef<HTMLDivElement>(null);
   const feedActionClass =
     "h-6 min-w-[3.4rem] gap-1 px-1.5 text-[10px] [&_svg]:size-[10px]";
   const activeFeedActionClass =
@@ -56,6 +60,28 @@ export function PostCard({
     buttonVariants({ variant: "outline", size: "xs" }),
     "h-5 min-w-0 justify-center gap-0.75 rounded-full border-border/80 bg-black/12 px-1.25 text-[9.5px] font-medium text-muted-foreground shadow-none hover:bg-black/18 hover:text-foreground [&_svg]:size-[9px]",
   );
+
+  useEffect(() => {
+    if (!showComments) {
+      return;
+    }
+
+    function handlePointerDown(event: PointerEvent) {
+      const target = event.target as Node | null;
+      if (!target) {
+        return;
+      }
+
+      if (commentButtonRef.current?.contains(target) || commentsContainerRef.current?.contains(target)) {
+        return;
+      }
+
+      setShowComments(false);
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [showComments]);
 
   return (
     <Card
@@ -160,19 +186,20 @@ export function PostCard({
           </form>
 
           <Button
+            ref={commentButtonRef}
             type="button"
             size="xs"
-            variant={post.commentedByMe ? "secondary" : "ghost"}
+            variant={commentedByMe ? "secondary" : "ghost"}
             aria-expanded={showComments}
             aria-controls={commentsRegionId}
             onClick={() => setShowComments((current) => !current)}
             className={cn(
               feedActionClass,
-              post.commentedByMe ? activeFeedActionClass : "text-muted-foreground",
+              commentedByMe ? activeFeedActionClass : "text-muted-foreground",
             )}
           >
-            <MessageCircle className={cn("size-[10px]", post.commentedByMe && "fill-current")} />
-            {post.commentsCount}
+            <MessageCircle className={cn("size-[10px]", commentedByMe && "fill-current")} />
+            {comments.length}
           </Button>
 
           <form action={toggleSavePostAction}>
@@ -194,13 +221,21 @@ export function PostCard({
         </div>
 
         {showComments ? (
-          <div id={commentsRegionId} className="px-0.5 pt-0.5">
+          <div
+            id={commentsRegionId}
+            ref={commentsContainerRef}
+            className="px-0.5 pt-0.5"
+          >
             <PostComments
               postId={post.id}
-              comments={post.comments}
+              comments={comments}
               returnPath={returnPath}
               commentPreviewLimit={commentPreviewLimit}
               showToggle={false}
+              onCommentsChange={(nextComments) => {
+                setComments(nextComments);
+                setCommentedByMe(nextComments.some((comment) => comment.canEdit));
+              }}
             />
           </div>
         ) : null}

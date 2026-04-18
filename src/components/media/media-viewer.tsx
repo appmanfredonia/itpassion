@@ -23,6 +23,7 @@ import {
   getMediaTypeLabel,
   getRenderablePostMedia,
 } from "@/lib/media";
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 type MediaViewerProps = {
@@ -62,10 +63,22 @@ export function MediaViewer({
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const [showReportPrompt, setShowReportPrompt] = useState(false);
   const [shareFeedback, setShareFeedback] = useState<string | null>(null);
+  const [likedByMe, setLikedByMe] = useState(post.likedByMe);
+  const [likesCount, setLikesCount] = useState(post.likesCount);
+  const [savedByMe, setSavedByMe] = useState(post.savedByMe);
+  const [comments, setComments] = useState(post.comments);
+  const [commentedByMe, setCommentedByMe] = useState(post.commentedByMe);
+  const [isSubmittingLike, setIsSubmittingLike] = useState(false);
+  const [isSubmittingSave, setIsSubmittingSave] = useState(false);
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const commentButtonRef = useRef<HTMLButtonElement>(null);
+  const commentsContainerRef = useRef<HTMLDivElement>(null);
   const scrollYRef = useRef(0);
   const touchStartXRef = useRef<number | null>(null);
+  const supabase = useMemo(() => createBrowserSupabaseClient(), []);
 
   const currentMedia = media[currentIndex] ?? null;
   const hasMultipleMedia = media.length > 1;
@@ -148,6 +161,28 @@ export function MediaViewer({
     const timeoutId = window.setTimeout(() => setShareFeedback(null), 2200);
     return () => window.clearTimeout(timeoutId);
   }, [shareFeedback]);
+
+  useEffect(() => {
+    if (!showComments) {
+      return;
+    }
+
+    function handlePointerDown(event: PointerEvent) {
+      const target = event.target as Node | null;
+      if (!target) {
+        return;
+      }
+
+      if (commentButtonRef.current?.contains(target) || commentsContainerRef.current?.contains(target)) {
+        return;
+      }
+
+      setShowComments(false);
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [showComments]);
 
   function showPreviousMedia() {
     if (!hasMultipleMedia) {
@@ -237,7 +272,93 @@ export function MediaViewer({
 
   function handleReport() {
     setMenuOpen(false);
-    setShareFeedback("Segnalazione disponibile a breve");
+    setShowReportPrompt(true);
+    setShareFeedback(null);
+  }
+
+  async function getViewerUserId(): Promise<string | null> {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error || !user) {
+      setShareFeedback("Sessione non valida");
+      return null;
+    }
+
+    return user.id;
+  }
+
+  async function handleToggleLike() {
+    if (isSubmittingLike) {
+      return;
+    }
+
+    setIsSubmittingLike(true);
+    const userId = await getViewerUserId();
+    if (!userId) {
+      setIsSubmittingLike(false);
+      return;
+    }
+
+    const nextLikedState = !likedByMe;
+    setLikedByMe(nextLikedState);
+    setLikesCount((value) => Math.max(0, value + (nextLikedState ? 1 : -1)));
+
+    const mutation = nextLikedState
+      ? supabase.from("likes").insert({ post_id: post.id, user_id: userId })
+      : supabase.from("likes").delete().eq("post_id", post.id).eq("user_id", userId);
+
+    const { error } = await mutation;
+    if (error) {
+      setLikedByMe(!nextLikedState);
+      setLikesCount((value) => Math.max(0, value + (nextLikedState ? -1 : 1)));
+      setShareFeedback("Interazione non riuscita");
+    }
+
+    setIsSubmittingLike(false);
+  }
+
+  async function handleToggleSave() {
+    if (isSubmittingSave) {
+      return;
+    }
+
+    setIsSubmittingSave(true);
+    const userId = await getViewerUserId();
+    if (!userId) {
+      setIsSubmittingSave(false);
+      return;
+    }
+
+    const nextSavedState = !savedByMe;
+    setSavedByMe(nextSavedState);
+
+    const mutation = nextSavedState
+      ? supabase.from("saved_posts").insert({ post_id: post.id, user_id: userId })
+      : supabase.from("saved_posts").delete().eq("post_id", post.id).eq("user_id", userId);
+
+    const { error } = await mutation;
+    if (error) {
+      setSavedByMe(!nextSavedState);
+      setShareFeedback("Salvataggio non riuscito");
+    }
+
+    setIsSubmittingSave(false);
+  }
+
+  async function handleSubmitReport() {
+    if (isSubmittingReport) {
+      return;
+    }
+
+    setIsSubmittingReport(true);
+    window.setTimeout(() => {
+      setIsSubmittingReport(false);
+      setShowReportPrompt(false);
+      setShareFeedback("Segnalazione inviata");
+    }, 500);
   }
 
   if (!open || !currentMedia || typeof document === "undefined") {
@@ -313,7 +434,7 @@ export function MediaViewer({
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="flex min-h-0 flex-1 items-center justify-center px-4 pb-[16.5rem] pt-[calc(env(safe-area-inset-top)+4.25rem)] md:px-8 md:pb-[17.5rem] md:pt-24">
+        <div className="flex min-h-0 flex-1 items-center justify-center px-4 pb-4 pt-[calc(env(safe-area-inset-top)+4.25rem)] md:px-8 md:pb-5 md:pt-24">
           <div className="relative flex h-full w-full items-center justify-center">
             {hasMultipleMedia ? (
               <>
@@ -364,7 +485,7 @@ export function MediaViewer({
         </div>
 
         {hasMultipleMedia ? (
-          <div className="pointer-events-none absolute inset-x-0 bottom-[14.4rem] z-20 flex items-center justify-center gap-1.5 md:bottom-[15.4rem]">
+          <div className="pointer-events-none relative z-20 flex items-center justify-center gap-1.5 pb-3">
             {media.map((item, index) => (
               <span
                 key={`${item.url}-${index}`}
@@ -377,7 +498,7 @@ export function MediaViewer({
           </div>
         ) : null}
 
-        <div className="absolute inset-x-0 bottom-0 z-30 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:px-6 md:pb-6">
+        <div className="relative z-30 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:px-6 md:pb-6">
           <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 rounded-[1.85rem] border border-white/10 bg-black/42 p-4 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.92)] backdrop-blur-xl md:p-5">
             <div className="flex items-start gap-3">
               <Avatar size="sm">
@@ -410,35 +531,42 @@ export function MediaViewer({
 
             <div className="flex items-center gap-2">
               <div className="flex min-w-0 items-center gap-2">
-                <span
+                <button
+                  type="button"
+                  onClick={handleToggleLike}
+                  disabled={isSubmittingLike}
                   className={cn(
                     viewerActionClass,
-                    post.likedByMe && activeViewerActionClass,
+                    likedByMe && activeViewerActionClass,
                   )}
                 >
-                  <Heart className={cn("size-4", post.likedByMe && "fill-current")} />
-                  {post.likesCount}
-                </span>
+                  <Heart className={cn("size-4", likedByMe && "fill-current")} />
+                  {likesCount}
+                </button>
                 <button
+                  ref={commentButtonRef}
                   type="button"
                   onClick={() => setShowComments((value) => !value)}
                   className={cn(
                     viewerActionClass,
-                    (post.commentedByMe || showComments) && activeViewerActionClass,
+                    (commentedByMe || showComments) && activeViewerActionClass,
                   )}
                 >
-                  <MessageCircle className={cn("size-4", post.commentedByMe && "fill-current")} />
-                  {post.commentsCount}
+                  <MessageCircle className={cn("size-4", commentedByMe && "fill-current")} />
+                  {comments.length}
                 </button>
-                <span
+                <button
+                  type="button"
+                  onClick={handleToggleSave}
+                  disabled={isSubmittingSave}
                   className={cn(
                     viewerActionClass,
-                    post.savedByMe && activeViewerActionClass,
+                    savedByMe && activeViewerActionClass,
                   )}
                 >
-                  <Bookmark className={cn("size-4", post.savedByMe && "fill-current")} />
-                  {post.savedByMe ? "Salvato" : "Salva"}
-                </span>
+                  <Bookmark className={cn("size-4", savedByMe && "fill-current")} />
+                  {savedByMe ? "Salvato" : "Salva"}
+                </button>
               </div>
               <button
                 type="button"
@@ -454,14 +582,52 @@ export function MediaViewer({
               <p className="text-[11px] text-white/68">{shareFeedback}</p>
             ) : null}
 
+            {showReportPrompt ? (
+              <div className="flex flex-col gap-3 rounded-[1.15rem] border border-white/10 bg-black/34 p-3">
+                <div className="flex flex-col gap-1">
+                  <p className="text-sm font-semibold text-white">Segnala contenuto</p>
+                  <p className="text-[11px] leading-relaxed text-white/68">
+                    Vuoi segnalare questo contenuto al team di ItPassion? Potrai aggiungere la gestione completa in un secondo momento.
+                  </p>
+                </div>
+                <div className="flex items-center justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    onClick={() => setShowReportPrompt(false)}
+                    className="text-white/82"
+                  >
+                    Annulla
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="xs"
+                    onClick={handleSubmitReport}
+                    disabled={isSubmittingReport}
+                  >
+                    {isSubmittingReport ? "Invio..." : "Conferma"}
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+
             {showComments ? (
-              <div className="max-h-[32vh] overflow-y-auto pt-1">
+              <div
+                ref={commentsContainerRef}
+                className="max-h-[32vh] overflow-y-auto pt-1"
+              >
                 <PostComments
                   postId={post.id}
-                  comments={post.comments}
+                  comments={comments}
                   returnPath={currentReturnPath}
                   commentPreviewLimit={0}
                   showToggle={false}
+                  onCommentsChange={(nextComments) => {
+                    setComments(nextComments);
+                    setCommentedByMe(nextComments.some((comment) => comment.canEdit));
+                  }}
                 />
               </div>
             ) : null}

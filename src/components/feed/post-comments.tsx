@@ -3,10 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState, useTransition, type FormEvent } from "react";
 import { ChevronDown, ChevronUp, MessageCircle, Pencil, Trash2 } from "lucide-react";
-import {
-  addCommentAction,
-  deleteCommentAction,
-} from "@/app/(app)/feed/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,6 +16,7 @@ type PostCommentsProps = {
   returnPath: string;
   commentPreviewLimit: number;
   showToggle?: boolean;
+  onCommentsChange?: (comments: FeedComment[]) => void;
 };
 
 type FeedbackState =
@@ -32,19 +29,26 @@ const MAX_COMMENT_LENGTH = 500;
 export function PostComments({
   postId,
   comments: initialComments,
-  returnPath,
   showToggle = true,
+  onCommentsChange,
 }: PostCommentsProps) {
   const [comments, setComments] = useState(initialComments);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [draftContent, setDraftContent] = useState("");
+  const [newCommentContent, setNewCommentContent] = useState("");
   const [feedback, setFeedback] = useState<FeedbackState>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSaving, startSaving] = useTransition();
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
 
   useEffect(() => {
     setComments(initialComments);
   }, [initialComments]);
+
+  useEffect(() => {
+    onCommentsChange?.(comments);
+  }, [comments, onCommentsChange]);
 
   function startEditing(comment: FeedComment) {
     setIsExpanded(true);
@@ -134,6 +138,116 @@ export function PostComments({
   }
 
   const isVisible = showToggle ? isExpanded : true;
+
+  async function handleAddComment(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const content = newCommentContent.trim();
+    if (content.length === 0) {
+      setFeedback({ type: "error", message: "Scrivi un commento prima di inviare." });
+      return;
+    }
+
+    if (content.length > MAX_COMMENT_LENGTH) {
+      setFeedback({
+        type: "error",
+        message: "Commento troppo lungo (max 500 caratteri).",
+      });
+      return;
+    }
+
+    setIsSubmittingComment(true);
+    setFeedback(null);
+
+    try {
+      const supabase = createBrowserSupabaseClient();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        setFeedback({ type: "error", message: "Sessione non valida. Effettua di nuovo l'accesso." });
+        return;
+      }
+
+      const { data: insertedComment, error: insertError } = await supabase
+        .from("comments")
+        .insert({
+          post_id: postId,
+          user_id: user.id,
+          content,
+        })
+        .select("id, post_id, user_id, content, created_at, updated_at")
+        .single();
+
+      if (insertError || !insertedComment) {
+        setFeedback({
+          type: "error",
+          message: "Salvataggio commento non riuscito.",
+        });
+        return;
+      }
+
+      const { data: authorRow } = await supabase
+        .from("users")
+        .select("username, display_name")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      const authorUsername = authorRow?.username ?? `utente_${user.id.replace(/-/g, "").slice(0, 8)}`;
+      const nextComments = [
+        ...comments,
+        {
+          id: insertedComment.id,
+          userId: insertedComment.user_id,
+          authorUsername,
+          authorDisplayName: authorRow?.display_name ?? `@${authorUsername}`,
+          content: insertedComment.content,
+          createdAt: insertedComment.created_at,
+          canEdit: true,
+          canDelete: true,
+        },
+      ];
+
+      setComments(nextComments);
+      setNewCommentContent("");
+      setIsExpanded(true);
+      setFeedback({ type: "success", message: "Commento pubblicato." });
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  }
+
+  async function handleDeleteComment(comment: FeedComment) {
+    if (!comment.canDelete || deletingCommentId) {
+      return;
+    }
+
+    setDeletingCommentId(comment.id);
+    setFeedback(null);
+
+    try {
+      const supabase = createBrowserSupabaseClient();
+      const { error } = await supabase
+        .from("comments")
+        .delete()
+        .eq("id", comment.id)
+        .eq("user_id", comment.userId);
+
+      if (error) {
+        setFeedback({ type: "error", message: "Eliminazione commento non riuscita." });
+        return;
+      }
+
+      setComments((currentComments) =>
+        currentComments.filter((currentComment) => currentComment.id !== comment.id),
+      );
+      setFeedback({ type: "success", message: "Commento eliminato." });
+    } finally {
+      setDeletingCommentId(null);
+    }
+  }
 
   return (
     <div className="surface-soft flex flex-col gap-1 rounded-[0.95rem] border-border/80 bg-surface-1/95 p-1.25">
@@ -243,19 +357,17 @@ export function PostComments({
                           </Button>
                         ) : null}
                         {comment.canDelete ? (
-                          <form action={deleteCommentAction} className="self-start">
-                            <input type="hidden" name="commentId" value={comment.id} />
-                            <input type="hidden" name="returnPath" value={returnPath} />
-                            <Button
-                              type="submit"
-                              variant="ghost"
-                              size="xs"
-                              className="h-6.5 px-1.75 text-[10px] [&_svg]:size-[11px]"
-                            >
-                              <Trash2 />
-                              Elimina
-                            </Button>
-                          </form>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="xs"
+                            className="h-6.5 px-1.75 text-[10px] [&_svg]:size-[11px]"
+                            onClick={() => void handleDeleteComment(comment)}
+                            disabled={deletingCommentId === comment.id}
+                          >
+                            <Trash2 />
+                            {deletingCommentId === comment.id ? "..." : "Elimina"}
+                          </Button>
                         ) : null}
                       </div>
                     ) : null}
@@ -265,23 +377,25 @@ export function PostComments({
             </div>
           )}
 
-          <form action={addCommentAction} className="flex flex-col gap-1 sm:flex-row sm:items-center">
-            <input type="hidden" name="postId" value={postId} />
-            <input type="hidden" name="returnPath" value={returnPath} />
+          <form onSubmit={handleAddComment} className="flex flex-col gap-1 sm:flex-row sm:items-center">
             <Input
               name="commentContent"
+              value={newCommentContent}
+              onChange={(event) => setNewCommentContent(event.target.value)}
               placeholder="Aggiungi un commento..."
               maxLength={MAX_COMMENT_LENGTH}
               autoComplete="off"
               className="h-7.5 flex-1 text-[11px]"
+              disabled={isSubmittingComment}
             />
             <Button
               type="submit"
               size="xs"
               variant="secondary"
               className="h-7.5 px-2 text-[10px] sm:shrink-0"
+              disabled={isSubmittingComment}
             >
-              Invia
+              {isSubmittingComment ? "Invio..." : "Invia"}
             </Button>
           </form>
         </>
