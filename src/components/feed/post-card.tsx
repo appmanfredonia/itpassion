@@ -137,7 +137,7 @@ export function PostCard({
         )}
 
         <div className="px-0.5">
-          <PostMediaGallery contentType={post.contentType} media={post.media} />
+          <PostMediaGallery post={post} />
         </div>
 
         <div className="flex items-center justify-between gap-2 px-0.5 pt-0.5">
