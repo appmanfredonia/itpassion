@@ -163,7 +163,7 @@ export function PostCard({
           </div>
 
           {postState.textContent ? (
-            <p className="text-[12.5px] leading-[1.5] whitespace-pre-wrap break-words text-foreground/92 [overflow-wrap:anywhere] sm:text-[13px] sm:leading-[1.55]">
+            <p className="max-w-full min-w-0 text-[12.5px] leading-[1.5] whitespace-pre-wrap break-words text-foreground/92 [overflow-wrap:anywhere] [word-break:break-word] sm:text-[13px] sm:leading-[1.55]">
               {postState.textContent}
             </p>
           ) : null}

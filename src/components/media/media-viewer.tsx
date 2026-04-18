@@ -12,9 +12,13 @@ import {
   Link2,
   MessageCircle,
   MoreHorizontal,
+  Pencil,
   Share2,
+  Trash2,
   X,
 } from "lucide-react";
+import { deletePostAction } from "@/app/(app)/feed/actions";
+import { PostEditModal } from "@/components/feed/post-edit-modal";
 import { PostComments } from "@/components/feed/post-comments";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -61,17 +65,14 @@ export function MediaViewer({
 }: MediaViewerProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const media = useMemo(() => getRenderablePostMedia(post.media), [post.media]);
+  const [postState, setPostState] = useState(post);
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeletePrompt, setShowDeletePrompt] = useState(false);
   const [showReportPrompt, setShowReportPrompt] = useState(false);
   const [shareFeedback, setShareFeedback] = useState<string | null>(null);
-  const [likedByMe, setLikedByMe] = useState(post.likedByMe);
-  const [likesCount, setLikesCount] = useState(post.likesCount);
-  const [savedByMe, setSavedByMe] = useState(post.savedByMe);
-  const [comments, setComments] = useState(post.comments);
-  const [commentedByMe, setCommentedByMe] = useState(post.commentedByMe);
   const [isSubmittingLike, setIsSubmittingLike] = useState(false);
   const [isSubmittingSave, setIsSubmittingSave] = useState(false);
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
@@ -81,11 +82,23 @@ export function MediaViewer({
   const scrollYRef = useRef(0);
   const touchStartXRef = useRef<number | null>(null);
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
-
-  const currentMedia = media[currentIndex] ?? null;
+  const media = useMemo(() => getRenderablePostMedia(postState.media), [postState.media]);
+  const safeCurrentIndex = media.length === 0 ? 0 : Math.min(currentIndex, media.length - 1);
+  const currentMedia = media[safeCurrentIndex] ?? null;
   const hasMultipleMedia = media.length > 1;
-  const effectivePostHref = postHref ?? `/feed?post=${post.id}`;
+  const effectivePostHref = postHref ?? `/feed?post=${postState.id}`;
   const currentReturnPath = searchParams.size > 0 ? `${pathname}?${searchParams.toString()}` : pathname;
+  const likedByMe = postState.likedByMe;
+  const likesCount = postState.likesCount;
+  const savedByMe = postState.savedByMe;
+  const comments = postState.comments;
+  const commentedByMe = postState.commentedByMe;
+
+  useEffect(() => {
+    if (media.length === 0 && open) {
+      onClose();
+    }
+  }, [media.length, onClose, open]);
 
   useEffect(() => {
     if (!open || typeof window === "undefined") {
@@ -186,17 +199,9 @@ export function MediaViewer({
     return () => document.removeEventListener("pointerdown", handlePointerDown);
   }, [showComments]);
 
-  function propagatePostUpdate(nextValues: Partial<FeedPost>) {
-    onPostUpdate?.({
-      ...post,
-      likedByMe,
-      likesCount,
-      savedByMe,
-      comments,
-      commentsCount: comments.length,
-      commentedByMe,
-      ...nextValues,
-    });
+  function propagatePostUpdate(nextPost: FeedPost) {
+    setPostState(nextPost);
+    onPostUpdate?.(nextPost);
   }
 
   function showPreviousMedia() {
@@ -204,7 +209,7 @@ export function MediaViewer({
       return;
     }
 
-    setCurrentIndex((value) => (value - 1 + media.length) % media.length);
+    setCurrentIndex((value) => ((Math.min(value, media.length - 1) - 1 + media.length) % media.length));
   }
 
   function showNextMedia() {
@@ -212,7 +217,7 @@ export function MediaViewer({
       return;
     }
 
-    setCurrentIndex((value) => (value + 1) % media.length);
+    setCurrentIndex((value) => ((Math.min(value, media.length - 1) + 1) % media.length));
   }
 
   function handleTouchStart(event: TouchEvent<HTMLDivElement>) {
@@ -252,8 +257,10 @@ export function MediaViewer({
 
     const shareUrl = new URL(effectivePostHref, window.location.origin).toString();
     const sharePayload = {
-      title: `${post.authorDisplayName} su ItPassion`,
-      text: post.textContent?.trim() || `Guarda questo contenuto di @${post.authorUsername} su ItPassion`,
+      title: `${postState.authorDisplayName} su ItPassion`,
+      text:
+        postState.textContent?.trim() ||
+        `Guarda questo contenuto di @${postState.authorUsername} su ItPassion`,
       url: shareUrl,
     };
 
@@ -287,7 +294,22 @@ export function MediaViewer({
 
   function handleReport() {
     setMenuOpen(false);
+    setShowDeletePrompt(false);
     setShowReportPrompt(true);
+    setShareFeedback(null);
+  }
+
+  function handleStartEdit() {
+    setMenuOpen(false);
+    setShowDeletePrompt(false);
+    setShowReportPrompt(false);
+    setShowEditModal(true);
+  }
+
+  function handleStartDelete() {
+    setMenuOpen(false);
+    setShowReportPrompt(false);
+    setShowDeletePrompt(true);
     setShareFeedback(null);
   }
 
@@ -319,23 +341,21 @@ export function MediaViewer({
 
     const nextLikedState = !likedByMe;
     const nextLikesCount = Math.max(0, likesCount + (nextLikedState ? 1 : -1));
-    setLikedByMe(nextLikedState);
-    setLikesCount(nextLikesCount);
     propagatePostUpdate({
+      ...postState,
       likedByMe: nextLikedState,
       likesCount: nextLikesCount,
     });
 
     const mutation = nextLikedState
-      ? supabase.from("likes").insert({ post_id: post.id, user_id: userId })
-      : supabase.from("likes").delete().eq("post_id", post.id).eq("user_id", userId);
+      ? supabase.from("likes").insert({ post_id: postState.id, user_id: userId })
+      : supabase.from("likes").delete().eq("post_id", postState.id).eq("user_id", userId);
 
     const { error } = await mutation;
     if (error) {
-      setLikedByMe(!nextLikedState);
       const rollbackLikesCount = Math.max(0, nextLikesCount + (nextLikedState ? -1 : 1));
-      setLikesCount(rollbackLikesCount);
       propagatePostUpdate({
+        ...postState,
         likedByMe: !nextLikedState,
         likesCount: rollbackLikesCount,
       });
@@ -358,17 +378,21 @@ export function MediaViewer({
     }
 
     const nextSavedState = !savedByMe;
-    setSavedByMe(nextSavedState);
-    propagatePostUpdate({ savedByMe: nextSavedState });
+    propagatePostUpdate({
+      ...postState,
+      savedByMe: nextSavedState,
+    });
 
     const mutation = nextSavedState
-      ? supabase.from("saved_posts").insert({ post_id: post.id, user_id: userId })
-      : supabase.from("saved_posts").delete().eq("post_id", post.id).eq("user_id", userId);
+      ? supabase.from("saved_posts").insert({ post_id: postState.id, user_id: userId })
+      : supabase.from("saved_posts").delete().eq("post_id", postState.id).eq("user_id", userId);
 
     const { error } = await mutation;
     if (error) {
-      setSavedByMe(!nextSavedState);
-      propagatePostUpdate({ savedByMe: !nextSavedState });
+      propagatePostUpdate({
+        ...postState,
+        savedByMe: !nextSavedState,
+      });
       setShareFeedback("Salvataggio non riuscito");
     }
 
@@ -435,6 +459,26 @@ export function MediaViewer({
 
           {menuOpen ? (
             <div className="absolute right-0 top-12 flex min-w-48 flex-col gap-1 rounded-2xl border border-white/12 bg-black/76 p-2 text-sm shadow-[0_18px_42px_-20px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+              {postState.canManage ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleStartEdit}
+                    className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-left text-white/88 transition-colors hover:bg-white/8"
+                  >
+                    <Pencil className="size-4" />
+                    Modifica
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleStartDelete}
+                    className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-left text-destructive transition-colors hover:bg-destructive/14"
+                  >
+                    <Trash2 className="size-4" />
+                    Elimina
+                  </button>
+                </>
+              ) : null}
               <button
                 type="button"
                 onClick={copyMediaUrl}
@@ -493,7 +537,7 @@ export function MediaViewer({
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={currentMedia.url}
-                alt={`${getMediaTypeLabel(currentMedia.kind)} del post di @${post.authorUsername}`}
+                alt={`${getMediaTypeLabel(currentMedia.kind)} del post di @${postState.authorUsername}`}
                 className="max-h-full max-w-full rounded-[1.6rem] object-contain shadow-[0_28px_80px_-30px_rgba(0,0,0,0.85)]"
               />
             ) : (
@@ -518,7 +562,7 @@ export function MediaViewer({
                 key={`${item.url}-${index}`}
                 className={cn(
                   "h-1.5 rounded-full transition-all",
-                  currentIndex === index ? "w-6 bg-white" : "w-1.5 bg-white/35",
+                  safeCurrentIndex === index ? "w-6 bg-white" : "w-1.5 bg-white/35",
                 )}
               />
             ))}
@@ -529,28 +573,28 @@ export function MediaViewer({
           <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 rounded-[1.85rem] border border-white/10 bg-black/42 p-4 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.92)] backdrop-blur-xl md:p-5">
             <div className="flex items-start gap-3">
               <Avatar size="sm">
-                {post.authorAvatarUrl ? (
-                  <AvatarImage src={post.authorAvatarUrl} alt={`Avatar di @${post.authorUsername}`} />
+                {postState.authorAvatarUrl ? (
+                  <AvatarImage src={postState.authorAvatarUrl} alt={`Avatar di @${postState.authorUsername}`} />
                 ) : null}
-                <AvatarFallback>{avatarFallback(post.authorUsername)}</AvatarFallback>
+                <AvatarFallback>{avatarFallback(postState.authorUsername)}</AvatarFallback>
               </Avatar>
 
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <p className="truncate text-sm font-semibold tracking-tight text-white">
-                    {post.authorDisplayName}
+                    {postState.authorDisplayName}
                   </p>
                   <p className="truncate text-[11px] text-white/62">
-                    @{post.authorUsername}
+                    @{postState.authorUsername}
                   </p>
                   <span className="text-[11px] text-white/38">•</span>
                   <p className="truncate text-[11px] text-white/62">
-                    {formatCreatedAt(post.createdAt)}
+                    {formatCreatedAt(postState.createdAt)}
                   </p>
                 </div>
-                {post.textContent ? (
-                  <p className="mt-1.5 max-h-24 overflow-y-auto pr-1 text-sm leading-relaxed break-words text-white/88 [overflow-wrap:anywhere]">
-                    {post.textContent}
+                {postState.textContent ? (
+                  <p className="mt-1.5 max-h-24 overflow-y-auto pr-1 text-sm leading-relaxed whitespace-pre-wrap break-words text-white/88 [overflow-wrap:anywhere] [word-break:break-word]">
+                    {postState.textContent}
                   </p>
                 ) : null}
               </div>
@@ -640,22 +684,50 @@ export function MediaViewer({
               </div>
             ) : null}
 
+            {showDeletePrompt ? (
+              <div className="flex flex-col gap-3 rounded-[1.15rem] border border-destructive/20 bg-destructive/10 p-3">
+                <div className="flex flex-col gap-1">
+                  <p className="text-sm font-semibold text-white">Elimina post</p>
+                  <p className="text-[11px] leading-relaxed text-white/68">
+                    Vuoi davvero eliminare questo post? L&apos;azione non si puo annullare.
+                  </p>
+                </div>
+                <div className="flex items-center justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    onClick={() => setShowDeletePrompt(false)}
+                    className="text-white/82"
+                  >
+                    Annulla
+                  </Button>
+                  <form action={deletePostAction}>
+                    <input type="hidden" name="postId" value={postState.id} />
+                    <input type="hidden" name="returnPath" value={currentReturnPath} />
+                    <Button type="submit" variant="destructive" size="xs">
+                      Elimina
+                    </Button>
+                  </form>
+                </div>
+              </div>
+            ) : null}
+
             {showComments ? (
               <div
                 ref={commentsContainerRef}
                 className="max-h-[32vh] overflow-y-auto pt-1"
               >
                 <PostComments
-                  postId={post.id}
+                  postId={postState.id}
                   comments={comments}
                   returnPath={currentReturnPath}
                   commentPreviewLimit={0}
                   showToggle={false}
                   onCommentsChange={(nextComments) => {
                     const nextCommentedByMe = nextComments.some((comment) => comment.canEdit);
-                    setComments(nextComments);
-                    setCommentedByMe(nextCommentedByMe);
                     propagatePostUpdate({
+                      ...postState,
                       comments: nextComments,
                       commentsCount: nextComments.length,
                       commentedByMe: nextCommentedByMe,
@@ -667,6 +739,17 @@ export function MediaViewer({
           </div>
         </div>
       </div>
+
+      {showEditModal ? (
+        <PostEditModal
+          open
+          onClose={() => setShowEditModal(false)}
+          post={postState}
+          onPostUpdate={(nextPost) => {
+            propagatePostUpdate(nextPost);
+          }}
+        />
+      ) : null}
     </div>,
     document.body,
   );
