@@ -6,7 +6,6 @@ import {
   toggleSavePostAction,
 } from "@/app/(app)/feed/actions";
 import { ConfirmSubmitButton } from "@/components/feed/confirm-submit-button";
-import { PostComments } from "@/components/feed/post-comments";
 import { PostMediaGallery } from "@/components/feed/post-media-gallery";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -41,7 +40,6 @@ function avatarFallback(username: string): string {
 export function PostCard({
   post,
   returnPath,
-  commentPreviewLimit = 0,
 }: PostCardProps) {
   const postActionClass = cn(
     buttonVariants({ variant: "outline", size: "xs" }),
@@ -131,7 +129,7 @@ export function PostCard({
           <PostMediaGallery contentType={post.contentType} media={post.media} />
         </div>
 
-        <div className="surface-soft flex flex-wrap items-center gap-0.75 rounded-[0.9rem] border-border/80 bg-black/14 p-0.75">
+        <div className="surface-soft flex items-center justify-between gap-1 rounded-[0.9rem] border-border/80 bg-black/14 p-0.75">
           <form action={toggleLikeAction}>
             <input type="hidden" name="postId" value={post.id} />
             <input type="hidden" name="returnPath" value={returnPath} />
@@ -139,12 +137,17 @@ export function PostCard({
               type="submit"
               size="xs"
               variant={post.likedByMe ? "secondary" : "ghost"}
-              className="h-6 px-1.5 text-[10px] [&_svg]:size-[10px]"
+              className="h-6 min-w-[3rem] px-1.5 text-[10px] [&_svg]:size-[10px]"
             >
               <Heart className={post.likedByMe ? "fill-current" : ""} />
               {post.likesCount}
             </Button>
           </form>
+
+          <div className="inline-flex h-6 min-w-[3.4rem] items-center justify-center gap-1 rounded-full px-1.5 text-[10px] text-muted-foreground">
+            <MessageCircle className="size-[10px]" />
+            {post.commentsCount}
+          </div>
 
           <form action={toggleSavePostAction}>
             <input type="hidden" name="postId" value={post.id} />
@@ -153,27 +156,13 @@ export function PostCard({
               type="submit"
               size="xs"
               variant={post.savedByMe ? "secondary" : "ghost"}
-              className="h-6 px-1.5 text-[10px] [&_svg]:size-[10px]"
+              className="h-6 min-w-[3.4rem] px-1.5 text-[10px] [&_svg]:size-[10px]"
             >
               <Bookmark className={post.savedByMe ? "fill-current" : ""} />
               {post.savedByMe ? "Salvato" : "Salva"}
             </Button>
           </form>
-
-          <p className="ml-auto min-w-0 truncate text-right text-[9.5px] text-muted-foreground">
-            <span className="inline-flex items-center gap-1">
-              <MessageCircle className="size-[11px]" />
-              {post.commentsCount} commenti
-            </span>
-          </p>
         </div>
-
-        <PostComments
-          postId={post.id}
-          comments={post.comments}
-          returnPath={returnPath}
-          commentPreviewLimit={commentPreviewLimit}
-        />
       </CardContent>
     </Card>
   );
