@@ -53,3 +53,13 @@
 ✓ Compiled in 308ms
 ✓ Compiled in 701ms
 ✓ Compiled in 206ms
+✓ Compiled in 475ms
+ GET /login 200 in 3.1s (next.js: 1125ms, proxy.ts: 873ms, application-code: 1124ms)
+ GET /login 200 in 305ms (next.js: 9ms, proxy.ts: 17ms, application-code: 279ms)
+ POST /login 303 in 755ms (next.js: 13ms, proxy.ts: 24ms, application-code: 719ms)
+ GET /feed 200 in 7.4s (next.js: 733ms, proxy.ts: 385ms, application-code: 6.2s)
+ GET /map 200 in 3.5s (next.js: 402ms, proxy.ts: 237ms, application-code: 2.9s)
+ GET /login 200 in 257ms (next.js: 12ms, proxy.ts: 26ms, application-code: 219ms)
+ POST /login 303 in 761ms (next.js: 17ms, proxy.ts: 27ms, application-code: 717ms)
+ GET /feed 200 in 2.3s (next.js: 17ms, proxy.ts: 327ms, application-code: 1970ms)
+ GET /map 200 in 1693ms (next.js: 13ms, proxy.ts: 214ms, application-code: 1465ms)
