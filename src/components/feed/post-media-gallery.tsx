@@ -66,12 +66,12 @@ export function PostMediaGallery({ contentType, media }: PostMediaGalleryProps) 
   }
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-1">
       <div
         className={
           renderableMedia.length > 1
-            ? "grid grid-cols-1 gap-1.5 sm:grid-cols-2"
-            : "grid grid-cols-1 gap-1.5"
+            ? "grid grid-cols-1 gap-1 sm:grid-cols-2"
+            : "grid grid-cols-1 gap-1"
         }
       >
         {renderableMedia.map((mediaItem, index) => {
@@ -81,9 +81,9 @@ export function PostMediaGallery({ contentType, media }: PostMediaGalleryProps) 
           return (
             <figure
               key={`${mediaItem.kind}-${mediaItem.url}-${index}`}
-              className="group/media overflow-hidden rounded-[1rem] border border-border/80 bg-surface-2 shadow-[0_14px_28px_-26px_oklch(0_0_0_/_0.88)]"
+              className="group/media mx-auto w-full overflow-hidden rounded-[0.9rem] border border-border/80 bg-surface-2 shadow-[0_10px_22px_-22px_oklch(0_0_0_/_0.84)]"
             >
-              <div className="relative aspect-[16/8.6] w-full max-h-[13rem] bg-muted/20 sm:aspect-[16/8.2] sm:max-h-[15rem]">
+              <div className="relative aspect-[16/7.4] w-full max-h-[10.5rem] bg-muted/20 sm:aspect-[16/7.8] sm:max-h-[11.75rem]">
                 {mediaItem.kind === "image" ? (
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -91,7 +91,7 @@ export function PostMediaGallery({ contentType, media }: PostMediaGalleryProps) 
                       src={mediaItem.url}
                       alt={mediaAlt}
                       loading="lazy"
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover/media:scale-[1.03]"
+                      className="h-full w-full object-cover object-center transition-transform duration-300 group-hover/media:scale-[1.02]"
                     />
                   </>
                 ) : (
@@ -99,23 +99,23 @@ export function PostMediaGallery({ contentType, media }: PostMediaGalleryProps) 
                     controls
                     preload="metadata"
                     playsInline
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-cover object-center"
                   >
                     <source src={mediaItem.url} />
                     Il tuo browser non supporta la riproduzione video.
                   </video>
                 )}
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-black/28 via-black/5 to-transparent" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-black/18 via-black/4 to-transparent" />
               </div>
-              <figcaption className="flex min-h-7 items-center justify-between gap-2 border-t border-border/70 bg-black/16 px-2 py-0.75">
-                <span className="text-[9.5px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+              <figcaption className="flex min-h-6 items-center justify-between gap-2 border-t border-border/70 bg-black/16 px-1.75 py-0.5">
+                <span className="text-[9px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                   {mediaLabel}
                 </span>
                 <a
                   href={mediaItem.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-[10px] font-medium text-primary hover:underline"
+                  className="text-[9.5px] font-medium text-primary hover:underline"
                 >
                   Apri
                 </a>

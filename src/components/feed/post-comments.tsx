@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, useTransition, type FormEvent } from "react";
-import { ChevronDown, ChevronUp, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, MessageCircle, Pencil, Trash2 } from "lucide-react";
 import {
   addCommentAction,
   deleteCommentAction,
@@ -131,23 +131,22 @@ export function PostComments({
     });
   }
 
-  const commentsButtonLabel =
-    comments.length === 0
-      ? "Commenta"
-      : comments.length === 1
-        ? "Mostra 1 commento"
-        : `Mostra ${comments.length} commenti`;
-
   return (
-    <div className="surface-soft flex flex-col gap-1.5 rounded-[1.05rem] border-border/80 bg-surface-1/95 p-1.75">
+    <div className="surface-soft flex flex-col gap-1 rounded-[0.95rem] border-border/80 bg-surface-1/95 p-1.25">
       <div className="flex flex-wrap items-center justify-between gap-1.5">
         <button
           type="button"
           onClick={() => setIsExpanded((current) => !current)}
-          className="inline-flex items-center gap-1 rounded-full border border-border/80 bg-black/12 px-2 py-0.75 text-[10px] font-semibold tracking-[0.08em] text-muted-foreground uppercase transition-colors hover:text-foreground"
+          aria-label={isExpanded ? "Nascondi commenti" : "Apri commenti"}
+          className="inline-flex items-center gap-1 rounded-full border border-border/80 bg-black/12 px-1.5 py-0.5 text-[10px] text-muted-foreground transition-colors hover:text-foreground"
         >
-          {isExpanded ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
-          {isExpanded ? "Nascondi commenti" : commentsButtonLabel}
+          <MessageCircle className="size-[11px]" />
+          {comments.length > 0 ? (
+            <span className="inline-flex min-w-4 items-center justify-center rounded-full bg-black/18 px-1 text-[9px] leading-none">
+              {comments.length}
+            </span>
+          ) : null}
+          {isExpanded ? <ChevronUp className="size-[11px]" /> : <ChevronDown className="size-[11px]" />}
         </button>
         {feedback ? (
           <p
@@ -159,18 +158,14 @@ export function PostComments({
           >
             {feedback.message}
           </p>
-        ) : comments.length > 0 ? (
-          <p className="text-[10px] text-muted-foreground">
-            {comments.length === 1 ? "1 commento" : `${comments.length} commenti`}
-          </p>
         ) : null}
       </div>
 
       {isExpanded ? (
         comments.length === 0 ? (
-          <p className="text-xs text-muted-foreground">Nessun commento al momento.</p>
+          <p className="text-[10px] text-muted-foreground">Nessun commento al momento.</p>
         ) : (
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1">
             {comments.map((comment) => {
               const isEditing = comment.canEdit && editingCommentId === comment.id;
 
@@ -178,7 +173,7 @@ export function PostComments({
                 <div
                   key={comment.id}
                   className={cn(
-                    "flex flex-col gap-1.5 rounded-[1rem] border border-border/80 bg-black/12 px-2.5 py-1.75 sm:flex-row sm:items-start sm:justify-between",
+                    "flex flex-col gap-1 rounded-[0.9rem] border border-border/80 bg-black/12 px-2 py-1.5 sm:flex-row sm:items-start sm:justify-between",
                     isEditing && "border-primary/20 bg-primary/[0.04]",
                   )}
                 >
@@ -258,13 +253,9 @@ export function PostComments({
             })}
           </div>
         )
-      ) : (
-        <p className="text-[11px] text-muted-foreground">
-          I commenti vengono caricati solo quando li apri, per tenere il feed piu compatto.
-        </p>
-      )}
+      ) : null}
 
-      <form action={addCommentAction} className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
+      <form action={addCommentAction} className="flex flex-col gap-1 sm:flex-row sm:items-center">
           <input type="hidden" name="postId" value={postId} />
           <input type="hidden" name="returnPath" value={returnPath} />
           <Input
@@ -272,13 +263,13 @@ export function PostComments({
             placeholder="Aggiungi un commento..."
             maxLength={MAX_COMMENT_LENGTH}
             autoComplete="off"
-            className="h-8 flex-1 text-[12px]"
+            className="h-7.5 flex-1 text-[11px]"
           />
           <Button
             type="submit"
             size="xs"
             variant="secondary"
-            className="h-8 px-2.5 text-[10.5px] sm:shrink-0"
+            className="h-7.5 px-2 text-[10px] sm:shrink-0"
           >
             Invia
           </Button>

@@ -45,17 +45,17 @@ export function PostCard({
 }: PostCardProps) {
   const postActionClass = cn(
     buttonVariants({ variant: "outline", size: "xs" }),
-    "h-6.5 min-w-0 justify-center gap-1 rounded-full border-border/80 bg-black/12 px-1.75 text-[10.5px] text-muted-foreground shadow-none hover:bg-black/18 hover:text-foreground [&_svg]:size-[11px]",
+    "h-6 min-w-0 justify-center gap-1 rounded-full border-border/80 bg-black/12 px-1.5 text-[10px] text-muted-foreground shadow-none hover:bg-black/18 hover:text-foreground [&_svg]:size-[10px]",
   );
 
   return (
     <Card
       id={`post-${post.id}`}
-      className="surface-panel rounded-[1.25rem] border-border/80 bg-card/88 py-0.5"
+      className="surface-panel rounded-[1.15rem] border-border/80 bg-card/88 py-0"
     >
-      <CardHeader className="pb-0.5">
-        <div className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex min-w-0 items-center gap-1.5">
+      <CardHeader className="pb-0">
+        <div className="flex flex-col gap-1.25 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 items-center gap-1.25">
             <Avatar size="sm">
               {post.authorAvatarUrl && (
                 <AvatarImage src={post.authorAvatarUrl} alt={`Avatar di @${post.authorUsername}`} />
@@ -63,24 +63,24 @@ export function PostCard({
               <AvatarFallback>{avatarFallback(post.authorUsername)}</AvatarFallback>
             </Avatar>
             <div className="flex min-w-0 flex-col leading-tight">
-              <p className="truncate text-[12px] font-semibold tracking-tight">{post.authorDisplayName}</p>
+              <p className="truncate text-[11px] font-semibold tracking-tight">{post.authorDisplayName}</p>
               <Link
                 href={`/profile/${post.authorUsername}`}
-                className="truncate text-[10px] text-muted-foreground hover:text-primary"
+                className="truncate text-[9.5px] text-muted-foreground hover:text-primary"
               >
                 @{post.authorUsername}
               </Link>
-              <p className="text-[9.5px] text-muted-foreground/90">{formatCreatedAt(post.createdAt)}</p>
+              <p className="text-[9px] text-muted-foreground/90">{formatCreatedAt(post.createdAt)}</p>
             </div>
           </div>
 
-          <div className="flex w-full min-w-0 flex-col gap-0.75 sm:w-auto sm:max-w-[22rem] sm:items-end">
+          <div className="flex w-full min-w-0 flex-col gap-0.5 sm:w-auto sm:max-w-[20rem] sm:items-end">
             {post.canManage ? (
-              <div className="grid w-full min-w-0 grid-cols-[minmax(0,max-content)_auto_auto] items-center gap-0.75 sm:w-auto">
+              <div className="grid w-full min-w-0 grid-cols-[minmax(0,max-content)_auto_auto] items-center gap-0.5 sm:w-auto">
                 <Link href={`/explore?passion=${post.passionSlug}`} className="min-w-0">
                   <Badge
                     variant="secondary"
-                    className="max-w-[7.5rem] justify-center truncate border-primary/20 bg-primary/10 text-primary sm:justify-start"
+                    className="max-w-[7rem] justify-center truncate border-primary/20 bg-primary/10 text-primary sm:justify-start"
                   >
                     {post.passionName}
                   </Badge>
@@ -98,7 +98,7 @@ export function PostCard({
                     type="submit"
                     variant="destructive"
                     size="xs"
-                    className="h-6.5 w-full justify-center gap-1 rounded-full px-1.75 text-[10.5px] shadow-none [&_svg]:size-[11px]"
+                    className="h-6 w-auto justify-center gap-1 rounded-full px-1.5 text-[10px] shadow-none [&_svg]:size-[10px]"
                     confirmMessage="Vuoi davvero eliminare questo post? L'azione non si puo annullare."
                   >
                     <Trash2 />
@@ -110,7 +110,7 @@ export function PostCard({
               <Link href={`/explore?passion=${post.passionSlug}`} className="self-start sm:self-auto">
                 <Badge
                   variant="secondary"
-                  className="max-w-[7.5rem] border-primary/20 bg-primary/10 text-primary"
+                  className="max-w-[7rem] border-primary/20 bg-primary/10 text-primary"
                 >
                   {post.passionName}
                 </Badge>
@@ -120,18 +120,18 @@ export function PostCard({
         </div>
       </CardHeader>
 
-      <CardContent className="flex flex-col gap-1.25">
+      <CardContent className="flex flex-col gap-1">
         {post.textContent && (
-          <p className="px-0.5 text-[12px] leading-[1.45] whitespace-pre-wrap break-words text-foreground/95 [overflow-wrap:anywhere]">
+          <p className="px-0.5 text-[11px] leading-[1.42] whitespace-pre-wrap break-words text-foreground/95 [overflow-wrap:anywhere]">
             {post.textContent}
           </p>
         )}
 
-        <div className="-mx-3 sm:mx-0">
+        <div className="-mx-2 sm:mx-0">
           <PostMediaGallery contentType={post.contentType} media={post.media} />
         </div>
 
-        <div className="surface-soft flex flex-wrap items-center gap-1 rounded-[0.95rem] border-border/80 bg-black/14 p-1">
+        <div className="surface-soft flex flex-wrap items-center gap-0.75 rounded-[0.9rem] border-border/80 bg-black/14 p-0.75">
           <form action={toggleLikeAction}>
             <input type="hidden" name="postId" value={post.id} />
             <input type="hidden" name="returnPath" value={returnPath} />
@@ -139,7 +139,7 @@ export function PostCard({
               type="submit"
               size="xs"
               variant={post.likedByMe ? "secondary" : "ghost"}
-              className="h-6.5 px-1.75 text-[10.5px] [&_svg]:size-[11px]"
+              className="h-6 px-1.5 text-[10px] [&_svg]:size-[10px]"
             >
               <Heart className={post.likedByMe ? "fill-current" : ""} />
               {post.likesCount}
@@ -153,16 +153,16 @@ export function PostCard({
               type="submit"
               size="xs"
               variant={post.savedByMe ? "secondary" : "ghost"}
-              className="h-6.5 px-1.75 text-[10.5px] [&_svg]:size-[11px]"
+              className="h-6 px-1.5 text-[10px] [&_svg]:size-[10px]"
             >
               <Bookmark className={post.savedByMe ? "fill-current" : ""} />
               {post.savedByMe ? "Salvato" : "Salva"}
             </Button>
           </form>
 
-          <p className="ml-auto min-w-0 truncate text-right text-[10px] text-muted-foreground">
+          <p className="ml-auto min-w-0 truncate text-right text-[9.5px] text-muted-foreground">
             <span className="inline-flex items-center gap-1">
-              <MessageCircle className="size-3" />
+              <MessageCircle className="size-[11px]" />
               {post.commentsCount} commenti
             </span>
           </p>
