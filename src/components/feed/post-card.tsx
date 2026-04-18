@@ -46,9 +46,8 @@ export function PostCard({
   returnPath,
   commentPreviewLimit = 0,
 }: PostCardProps) {
+  const [postState, setPostState] = useState(post);
   const [showComments, setShowComments] = useState(false);
-  const [comments, setComments] = useState(post.comments);
-  const [commentedByMe, setCommentedByMe] = useState(post.commentedByMe);
   const commentsRegionId = `post-comments-${post.id}`;
   const commentButtonRef = useRef<HTMLButtonElement>(null);
   const commentsContainerRef = useRef<HTMLDivElement>(null);
@@ -60,6 +59,10 @@ export function PostCard({
     buttonVariants({ variant: "outline", size: "xs" }),
     "h-5 min-w-0 justify-center gap-0.75 rounded-full border-border/80 bg-black/12 px-1.25 text-[9.5px] font-medium text-muted-foreground shadow-none hover:bg-black/18 hover:text-foreground [&_svg]:size-[9px]",
   );
+
+  useEffect(() => {
+    setPostState(post);
+  }, [post]);
 
   useEffect(() => {
     if (!showComments) {
@@ -92,42 +95,42 @@ export function PostCard({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 items-center gap-2">
             <Avatar size="sm">
-              {post.authorAvatarUrl && (
-                <AvatarImage src={post.authorAvatarUrl} alt={`Avatar di @${post.authorUsername}`} />
+              {postState.authorAvatarUrl && (
+                <AvatarImage src={postState.authorAvatarUrl} alt={`Avatar di @${postState.authorUsername}`} />
               )}
-              <AvatarFallback>{avatarFallback(post.authorUsername)}</AvatarFallback>
+              <AvatarFallback>{avatarFallback(postState.authorUsername)}</AvatarFallback>
             </Avatar>
             <div className="flex min-w-0 flex-col leading-tight">
-              <p className="truncate text-[11px] font-semibold tracking-tight">{post.authorDisplayName}</p>
+              <p className="truncate text-[11px] font-semibold tracking-tight">{postState.authorDisplayName}</p>
               <Link
-                href={`/profile/${post.authorUsername}`}
+                href={`/profile/${postState.authorUsername}`}
                 className="truncate text-[9.5px] text-muted-foreground hover:text-primary"
               >
-                @{post.authorUsername}
+                @{postState.authorUsername}
               </Link>
-              <p className="text-[9px] text-muted-foreground/90">{formatCreatedAt(post.createdAt)}</p>
+              <p className="text-[9px] text-muted-foreground/90">{formatCreatedAt(postState.createdAt)}</p>
             </div>
           </div>
 
           <div className="flex w-full min-w-0 flex-col gap-1 sm:w-auto sm:max-w-[20rem] sm:items-end">
-            {post.canManage ? (
+            {postState.canManage ? (
               <div className="grid w-full min-w-0 grid-cols-[minmax(0,max-content)_auto_auto] items-center gap-1 sm:w-auto">
-                <Link href={`/explore?passion=${post.passionSlug}`} className="min-w-0">
+                <Link href={`/explore?passion=${postState.passionSlug}`} className="min-w-0">
                   <Badge
                     variant="secondary"
                     className="max-w-[7rem] justify-center truncate border-primary/20 bg-primary/10 text-primary sm:justify-start"
                   >
-                    {post.passionName}
+                    {postState.passionName}
                   </Badge>
                 </Link>
 
-                <Link href={`/create?edit=${post.id}`} className={postActionClass}>
+                <Link href={`/create?edit=${postState.id}`} className={postActionClass}>
                   <Pencil className="size-3" />
                   Modifica
                 </Link>
 
                 <form action={deletePostAction} className="min-w-0">
-                  <input type="hidden" name="postId" value={post.id} />
+                  <input type="hidden" name="postId" value={postState.id} />
                   <input type="hidden" name="returnPath" value={returnPath} />
                   <ConfirmSubmitButton
                     type="submit"
@@ -142,12 +145,12 @@ export function PostCard({
                 </form>
               </div>
             ) : (
-              <Link href={`/explore?passion=${post.passionSlug}`} className="self-start sm:self-auto">
+              <Link href={`/explore?passion=${postState.passionSlug}`} className="self-start sm:self-auto">
                 <Badge
                   variant="secondary"
                   className="max-w-[7rem] border-primary/20 bg-primary/10 text-primary"
                 >
-                  {post.passionName}
+                  {postState.passionName}
                 </Badge>
               </Link>
             )}
@@ -156,32 +159,35 @@ export function PostCard({
       </CardHeader>
 
       <CardContent className="flex flex-col gap-2">
-        {post.textContent && (
+        {postState.textContent && (
           <p className="px-0.5 text-[11px] leading-[1.42] whitespace-pre-wrap break-words text-foreground/95 [overflow-wrap:anywhere]">
-            {post.textContent}
+            {postState.textContent}
           </p>
         )}
 
         <div className="px-0.5">
-          <PostMediaGallery post={post} />
+          <PostMediaGallery
+            post={postState}
+            onPostUpdate={(nextPost) => setPostState(nextPost)}
+          />
         </div>
 
         <div className="flex items-center justify-between gap-2 px-0.5 pt-0.5">
           <form action={toggleLikeAction}>
-            <input type="hidden" name="postId" value={post.id} />
+            <input type="hidden" name="postId" value={postState.id} />
             <input type="hidden" name="returnPath" value={returnPath} />
             <Button
               type="submit"
               size="xs"
-              variant={post.likedByMe ? "secondary" : "ghost"}
+              variant={postState.likedByMe ? "secondary" : "ghost"}
               className={cn(
                 feedActionClass,
                 "min-w-[3rem]",
-                post.likedByMe ? activeFeedActionClass : "text-muted-foreground",
+                postState.likedByMe ? activeFeedActionClass : "text-muted-foreground",
               )}
             >
-              <Heart className={post.likedByMe ? "fill-current" : ""} />
-              {post.likesCount}
+              <Heart className={postState.likedByMe ? "fill-current" : ""} />
+              {postState.likesCount}
             </Button>
           </form>
 
@@ -189,33 +195,33 @@ export function PostCard({
             ref={commentButtonRef}
             type="button"
             size="xs"
-            variant={commentedByMe ? "secondary" : "ghost"}
+            variant={postState.commentedByMe ? "secondary" : "ghost"}
             aria-expanded={showComments}
             aria-controls={commentsRegionId}
             onClick={() => setShowComments((current) => !current)}
             className={cn(
               feedActionClass,
-              commentedByMe ? activeFeedActionClass : "text-muted-foreground",
+              postState.commentedByMe ? activeFeedActionClass : "text-muted-foreground",
             )}
           >
-            <MessageCircle className={cn("size-[10px]", commentedByMe && "fill-current")} />
-            {comments.length}
+            <MessageCircle className={cn("size-[10px]", postState.commentedByMe && "fill-current")} />
+            {postState.commentsCount}
           </Button>
 
           <form action={toggleSavePostAction}>
-            <input type="hidden" name="postId" value={post.id} />
+            <input type="hidden" name="postId" value={postState.id} />
             <input type="hidden" name="returnPath" value={returnPath} />
             <Button
               type="submit"
               size="xs"
-              variant={post.savedByMe ? "secondary" : "ghost"}
+              variant={postState.savedByMe ? "secondary" : "ghost"}
               className={cn(
                 feedActionClass,
-                post.savedByMe ? activeFeedActionClass : "text-muted-foreground",
+                postState.savedByMe ? activeFeedActionClass : "text-muted-foreground",
               )}
             >
-              <Bookmark className={post.savedByMe ? "fill-current" : ""} />
-              {post.savedByMe ? "Salvato" : "Salva"}
+              <Bookmark className={postState.savedByMe ? "fill-current" : ""} />
+              {postState.savedByMe ? "Salvato" : "Salva"}
             </Button>
           </form>
         </div>
@@ -227,14 +233,18 @@ export function PostCard({
             className="px-0.5 pt-0.5"
           >
             <PostComments
-              postId={post.id}
-              comments={comments}
+              postId={postState.id}
+              comments={postState.comments}
               returnPath={returnPath}
               commentPreviewLimit={commentPreviewLimit}
               showToggle={false}
               onCommentsChange={(nextComments) => {
-                setComments(nextComments);
-                setCommentedByMe(nextComments.some((comment) => comment.canEdit));
+                setPostState((currentPost) => ({
+                  ...currentPost,
+                  comments: nextComments,
+                  commentsCount: nextComments.length,
+                  commentedByMe: nextComments.some((comment) => comment.canEdit),
+                }));
               }}
             />
           </div>

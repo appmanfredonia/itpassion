@@ -32,6 +32,7 @@ type MediaViewerProps = {
   post: FeedPost;
   initialIndex?: number;
   postHref?: string;
+  onPostUpdate?: (post: FeedPost) => void;
 };
 
 function formatCreatedAt(isoDate: string): string {
@@ -56,6 +57,7 @@ export function MediaViewer({
   post,
   initialIndex = 0,
   postHref,
+  onPostUpdate,
 }: MediaViewerProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -184,6 +186,19 @@ export function MediaViewer({
     return () => document.removeEventListener("pointerdown", handlePointerDown);
   }, [showComments]);
 
+  function propagatePostUpdate(nextValues: Partial<FeedPost>) {
+    onPostUpdate?.({
+      ...post,
+      likedByMe,
+      likesCount,
+      savedByMe,
+      comments,
+      commentsCount: comments.length,
+      commentedByMe,
+      ...nextValues,
+    });
+  }
+
   function showPreviousMedia() {
     if (!hasMultipleMedia) {
       return;
@@ -303,8 +318,13 @@ export function MediaViewer({
     }
 
     const nextLikedState = !likedByMe;
+    const nextLikesCount = Math.max(0, likesCount + (nextLikedState ? 1 : -1));
     setLikedByMe(nextLikedState);
-    setLikesCount((value) => Math.max(0, value + (nextLikedState ? 1 : -1)));
+    setLikesCount(nextLikesCount);
+    propagatePostUpdate({
+      likedByMe: nextLikedState,
+      likesCount: nextLikesCount,
+    });
 
     const mutation = nextLikedState
       ? supabase.from("likes").insert({ post_id: post.id, user_id: userId })
@@ -313,7 +333,12 @@ export function MediaViewer({
     const { error } = await mutation;
     if (error) {
       setLikedByMe(!nextLikedState);
-      setLikesCount((value) => Math.max(0, value + (nextLikedState ? -1 : 1)));
+      const rollbackLikesCount = Math.max(0, nextLikesCount + (nextLikedState ? -1 : 1));
+      setLikesCount(rollbackLikesCount);
+      propagatePostUpdate({
+        likedByMe: !nextLikedState,
+        likesCount: rollbackLikesCount,
+      });
       setShareFeedback("Interazione non riuscita");
     }
 
@@ -334,6 +359,7 @@ export function MediaViewer({
 
     const nextSavedState = !savedByMe;
     setSavedByMe(nextSavedState);
+    propagatePostUpdate({ savedByMe: nextSavedState });
 
     const mutation = nextSavedState
       ? supabase.from("saved_posts").insert({ post_id: post.id, user_id: userId })
@@ -342,6 +368,7 @@ export function MediaViewer({
     const { error } = await mutation;
     if (error) {
       setSavedByMe(!nextSavedState);
+      propagatePostUpdate({ savedByMe: !nextSavedState });
       setShareFeedback("Salvataggio non riuscito");
     }
 
@@ -625,8 +652,14 @@ export function MediaViewer({
                   commentPreviewLimit={0}
                   showToggle={false}
                   onCommentsChange={(nextComments) => {
+                    const nextCommentedByMe = nextComments.some((comment) => comment.canEdit);
                     setComments(nextComments);
-                    setCommentedByMe(nextComments.some((comment) => comment.canEdit));
+                    setCommentedByMe(nextCommentedByMe);
+                    propagatePostUpdate({
+                      comments: nextComments,
+                      commentsCount: nextComments.length,
+                      commentedByMe: nextCommentedByMe,
+                    });
                   }}
                 />
               </div>

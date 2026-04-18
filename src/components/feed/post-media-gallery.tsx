@@ -11,9 +11,10 @@ import {
 
 type PostMediaGalleryProps = {
   post: FeedPost;
+  onPostUpdate?: (post: FeedPost) => void;
 };
 
-export function PostMediaGallery({ post }: PostMediaGalleryProps) {
+export function PostMediaGallery({ post, onPostUpdate }: PostMediaGalleryProps) {
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const renderableMedia = getRenderablePostMedia(post.media);
   const invalidMediaCount = post.media.length - renderableMedia.length;
@@ -125,6 +126,7 @@ export function PostMediaGallery({ post }: PostMediaGalleryProps) {
           onClose={() => setViewerIndex(null)}
           post={post}
           initialIndex={viewerIndex}
+          onPostUpdate={onPostUpdate}
         />
       ) : null}
     </>

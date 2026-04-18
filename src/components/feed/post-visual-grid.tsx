@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Bookmark, Heart, MessageCircle, Play } from "lucide-react";
 import { MediaViewer } from "@/components/media/media-viewer";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +27,7 @@ export function PostVisualGrid({
   columns = 3,
   dense = false,
 }: PostVisualGridProps) {
+  const [postItems, setPostItems] = useState(posts);
   const [viewerPostId, setViewerPostId] = useState<string | null>(null);
   const denseAspectClass =
     columns === 2
@@ -37,9 +38,13 @@ export function PostVisualGrid({
       ? "aspect-[1.08] sm:aspect-[1.26] xl:aspect-[1.42]"
       : "aspect-[1.1] sm:aspect-[1.2]";
 
+  useEffect(() => {
+    setPostItems(posts);
+  }, [posts]);
+
   const viewerPost = useMemo(
-    () => posts.find((post) => post.id === viewerPostId) ?? null,
-    [posts, viewerPostId],
+    () => postItems.find((post) => post.id === viewerPostId) ?? null,
+    [postItems, viewerPostId],
   );
 
   return (
@@ -50,7 +55,7 @@ export function PostVisualGrid({
           columns === 2 ? "grid-cols-2" : "grid-cols-2 md:grid-cols-3",
         )}
       >
-        {posts.map((post) => {
+        {postItems.map((post) => {
           const media = getFirstRenderablePostMedia(post);
           const href = `/feed?post=${post.id}`;
           const cardClass = cn(
@@ -167,6 +172,13 @@ export function PostVisualGrid({
           post={viewerPost}
           initialIndex={0}
           postHref={`/feed?post=${viewerPost.id}`}
+          onPostUpdate={(nextPost) =>
+            setPostItems((currentPosts) =>
+              currentPosts.map((currentPost) =>
+                currentPost.id === nextPost.id ? nextPost : currentPost,
+              ),
+            )
+          }
         />
       ) : null}
     </>
