@@ -58,7 +58,7 @@ export function PostCard({
     "border-primary/25 bg-primary/12 text-primary shadow-none hover:bg-primary/16 hover:text-primary";
   const postActionClass = cn(
     buttonVariants({ variant: "outline", size: "xs" }),
-    "h-[18px] min-w-0 items-center justify-center gap-0.5 rounded-full border-border/80 bg-black/12 px-1.5 text-[9px] font-medium leading-none text-muted-foreground shadow-none hover:bg-black/18 hover:text-foreground sm:h-5 sm:gap-0.75 sm:px-1.25 sm:text-[9.5px] [&_svg]:size-[9px] [&_svg]:shrink-0",
+    "h-[18px] min-w-0 items-center justify-center gap-0.5 rounded-full border-border/80 bg-black/12 px-1.5 text-[9px] font-semibold leading-none tracking-[0.01em] text-muted-foreground shadow-none hover:bg-black/18 hover:text-foreground sm:h-5 sm:gap-0.75 sm:px-1.5 sm:text-[10.5px] [&_svg]:size-[9px] [&_svg]:shrink-0 [&_svg]:translate-y-[0.5px]",
   );
 
   useEffect(() => {
@@ -126,7 +126,7 @@ export function PostCard({
               >
                 <Badge
                   variant="secondary"
-                  className="h-[18px] max-w-full items-center border-primary/20 bg-primary/10 px-1.5 text-[9px] leading-none text-primary sm:h-5 sm:px-2 sm:text-[10.5px]"
+                  className="inline-flex h-[18px] max-w-full items-center justify-center border-primary/20 bg-primary/10 px-1.5 text-[9px] leading-none text-primary sm:h-5 sm:px-2 sm:text-[10.5px]"
                 >
                   {postState.passionName}
                 </Badge>
@@ -150,7 +150,7 @@ export function PostCard({
                       type="submit"
                       variant="destructive"
                       size="xs"
-                      className="h-[18px] shrink-0 items-center justify-center gap-0.5 rounded-full px-1.5 text-[9px] font-medium leading-none whitespace-nowrap shadow-none sm:h-5 sm:gap-0.75 sm:px-1.25 sm:text-[9.5px] [&_svg]:size-[9px] [&_svg]:shrink-0"
+                      className="h-[18px] shrink-0 items-center justify-center gap-0.5 rounded-full px-1.5 text-[9px] font-semibold leading-none tracking-[0.01em] whitespace-nowrap shadow-none sm:h-5 sm:gap-0.75 sm:px-1.5 sm:text-[10.5px] [&_svg]:size-[9px] [&_svg]:shrink-0 [&_svg]:translate-y-[0.5px]"
                       confirmMessage="Vuoi davvero eliminare questo post? L'azione non si puo annullare."
                     >
                       <Trash2 />
