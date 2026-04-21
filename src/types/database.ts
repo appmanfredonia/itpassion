@@ -251,6 +251,67 @@ export type Database = {
           },
         ];
       };
+      local_tribe_memberships: {
+        Row: {
+          tribe_id: string;
+          user_id: string;
+          created_at: string;
+        };
+        Insert: {
+          tribe_id: string;
+          user_id: string;
+          created_at?: string;
+        };
+        Update: {
+          tribe_id?: string;
+          user_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "local_tribe_memberships_tribe_id_fkey";
+            columns: ["tribe_id"];
+            isOneToOne: false;
+            referencedRelation: "local_tribes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      local_tribes: {
+        Row: {
+          id: string;
+          passion_slug: string;
+          province: string;
+          province_key: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          passion_slug: string;
+          province: string;
+          province_key: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          passion_slug?: string;
+          province?: string;
+          province_key?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "local_tribes_passion_slug_fkey";
+            columns: ["passion_slug"];
+            isOneToOne: false;
+            referencedRelation: "passions";
+            referencedColumns: ["slug"];
+          },
+        ];
+      };
       passions: {
         Row: {
           slug: string;
@@ -494,6 +555,12 @@ export type Database = {
           p_user_id: string;
         };
         Returns: boolean;
+      };
+      sync_user_local_tribes: {
+        Args: {
+          p_user_id: string;
+        };
+        Returns: number;
       };
     };
     Enums: Record<string, never>;

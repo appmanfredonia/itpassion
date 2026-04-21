@@ -6,6 +6,9 @@ export type PassionOption = {
   name: string;
 };
 
+export const PASSION_SELECTION_MIN = 1;
+export const PASSION_SELECTION_MAX = 3;
+
 export const AUTH_ROUTES = ["/login", "/register"] as const;
 
 const PROTECTED_ROUTE_PREFIXES = [
@@ -24,6 +27,10 @@ const PROTECTED_ROUTE_PREFIXES = [
 
 function isRelationMissingError(error: PostgrestError | null): boolean {
   return error?.code === "42P01";
+}
+
+function isSyncFunctionMissingError(error: PostgrestError | null): boolean {
+  return error?.code === "42883";
 }
 
 export function isAuthRoute(pathname: string): boolean {
@@ -102,12 +109,8 @@ export async function getUserSelectedPassionSlugs(
   return [];
 }
 
-export async function saveUserPassions(
-  supabase: SupabaseClient<Database>,
-  user: User,
-  selectedSlugs: string[],
-): Promise<{ storage: "database" }> {
-  const normalizedSlugs = Array.from(
+export function normalizeSelectedPassionSlugs(selectedSlugs: string[]): string[] {
+  return Array.from(
     new Set(
       selectedSlugs
         .filter((slug): slug is string => typeof slug === "string")
@@ -115,9 +118,60 @@ export async function saveUserPassions(
         .filter(Boolean),
     ),
   );
+}
 
-  if (normalizedSlugs.length === 0) {
-    throw new Error("Nessuna passione valida selezionata.");
+export function getPassionSelectionValidationError(
+  selectionOrCount: number | string[],
+): string | null {
+  const count = Array.isArray(selectionOrCount)
+    ? normalizeSelectedPassionSlugs(selectionOrCount).length
+    : selectionOrCount;
+
+  if (count < PASSION_SELECTION_MIN) {
+    return "Scegli da 1 a 3 passioni.";
+  }
+
+  if (count > PASSION_SELECTION_MAX) {
+    return "Puoi selezionare al massimo 3 passioni.";
+  }
+
+  return null;
+}
+
+export async function syncUserLocalTribes(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+): Promise<number> {
+  const { data, error } = await supabase.rpc("sync_user_local_tribes", {
+    p_user_id: userId,
+  });
+
+  if (error) {
+    if (isRelationMissingError(error) || isSyncFunctionMissingError(error)) {
+      console.warn("[auth][syncUserLocalTribes] skipped because local tribes schema is unavailable", {
+        userId,
+        code: error.code,
+        message: error.message,
+      });
+      return 0;
+    }
+
+    throw error;
+  }
+
+  return typeof data === "number" ? data : 0;
+}
+
+export async function saveUserPassions(
+  supabase: SupabaseClient<Database>,
+  user: User,
+  selectedSlugs: string[],
+): Promise<{ storage: "database" }> {
+  const normalizedSlugs = normalizeSelectedPassionSlugs(selectedSlugs);
+  const validationError = getPassionSelectionValidationError(normalizedSlugs);
+
+  if (validationError) {
+    throw new Error(validationError);
   }
 
   const { data: passionsRows, error: passionsError } = await supabase
@@ -153,6 +207,8 @@ export async function saveUserPassions(
   if (insertError) {
     throw insertError;
   }
+
+  await syncUserLocalTribes(supabase, user.id);
 
   return { storage: "database" };
 }

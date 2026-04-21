@@ -6,6 +6,7 @@ import {
   unblockUserAction,
   updatePrivacySettingsAction,
 } from "@/app/(app)/settings/actions";
+import { PassionSelectionFieldset } from "@/components/passions/passion-selection-fieldset";
 import { SectionHeader } from "@/components/section-header";
 import { StateCard } from "@/components/state-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -276,7 +277,8 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
             <CardHeader>
               <CardTitle>Passioni principali</CardTitle>
               <CardDescription>
-                Scegli le passioni che vuoi mostrare nel tuo profilo.
+                Scegli da 1 a 3 passioni. Entrerai automaticamente nelle tribu locali della tua
+                provincia.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
@@ -294,23 +296,15 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
                 />
               ) : (
                 <form action={updateProfilePassionsAction} className="flex flex-col gap-4">
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {passions.map((passion) => (
-                      <label
-                        key={passion.slug}
-                        className="surface-soft flex items-center gap-3 p-3 text-sm transition-colors hover:border-primary/40"
-                      >
-                        <input
-                          type="checkbox"
-                          name="passionSlugs"
-                          value={passion.slug}
-                          defaultChecked={selectedPassionSet.has(passion.slug)}
-                          className="size-4 rounded border-border bg-background accent-primary"
-                        />
-                        <span className="font-medium">{passion.name}</span>
-                      </label>
-                    ))}
-                  </div>
+                  <PassionSelectionFieldset
+                    passions={passions}
+                    selectedSlugs={Array.from(selectedPassionSet)}
+                    variant="tile"
+                  />
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    Quando cambi passioni o provincia, le tue tribu locali si aggiornano in
+                    automatico.
+                  </p>
                   <Button type="submit" size="sm" variant="secondary" className="w-fit">
                     Aggiorna passioni
                   </Button>

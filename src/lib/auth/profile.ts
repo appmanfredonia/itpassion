@@ -1,6 +1,7 @@
 import type { PostgrestError, SupabaseClient, User } from "@supabase/supabase-js";
 import { resolveItalianLocation } from "@/lib/location";
 import type { Database } from "@/types/database";
+import { syncUserLocalTribes } from "./passions";
 
 const USERNAME_REGEX = /^[a-z0-9_.]{3,24}$/;
 
@@ -234,6 +235,14 @@ export async function ensureUserProfile(
           .maybeSingle();
 
         if (!syncError && syncedProfile) {
+          try {
+            await syncUserLocalTribes(supabase, user.id);
+          } catch (tribeSyncError) {
+            console.error("[auth][ensureUserProfile] local tribe sync failed after location backfill", {
+              userId: user.id,
+              error: tribeSyncError,
+            });
+          }
           return mapProfileRow(syncedProfile);
         }
 
@@ -281,6 +290,14 @@ export async function ensureUserProfile(
     .single();
 
   if (!error && data) {
+    try {
+      await syncUserLocalTribes(supabase, user.id);
+    } catch (tribeSyncError) {
+      console.error("[auth][ensureUserProfile] local tribe sync failed after upsert", {
+        userId: user.id,
+        error: tribeSyncError,
+      });
+    }
     return mapProfileRow(data);
   }
 
@@ -304,6 +321,14 @@ export async function ensureUserProfile(
       .single();
 
     if (!retryError && retryData) {
+      try {
+        await syncUserLocalTribes(supabase, user.id);
+      } catch (tribeSyncError) {
+        console.error("[auth][ensureUserProfile] local tribe sync failed after username retry", {
+          userId: user.id,
+          error: tribeSyncError,
+        });
+      }
       return mapProfileRow(retryData);
     }
 

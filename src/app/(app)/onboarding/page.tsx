@@ -2,6 +2,7 @@ import { ChevronLeft } from "lucide-react";
 import { redirect } from "next/navigation";
 import { saveOnboardingPassionsAction } from "@/app/(app)/onboarding/actions";
 import { MockPhone } from "@/components/marketing/mock-phone";
+import { PassionSelectionFieldset } from "@/components/passions/passion-selection-fieldset";
 import { SectionHeader } from "@/components/section-header";
 import { StateCard } from "@/components/state-card";
 import { Button } from "@/components/ui/button";
@@ -44,7 +45,7 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
       <SectionHeader
         badge="Onboarding"
         title="Scegli le tue passioni"
-        description="Personalizza il feed iniziale con una selezione semplice, chiara e facile da aggiornare."
+        description="Scegli da 1 a 3 passioni. Entrerai automaticamente nelle tribu locali della tua provincia."
         className="hidden md:flex"
       />
 
@@ -79,7 +80,8 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
                 Quali sono le tue passioni?
               </h1>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                Scegli quelle che ti rappresentano di piu. Potrai cambiarle in seguito.
+                Scegli da 1 a 3 passioni. Entrerai automaticamente nelle tribu locali della tua
+                provincia.
               </p>
             </div>
 
@@ -103,25 +105,13 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
               />
             ) : (
               <form className="flex flex-col gap-[1.125rem]" action={saveOnboardingPassionsAction}>
-                <div className="flex flex-wrap gap-2">
-                  {passions.map((passion) => (
-                    <label key={passion.slug} className="cursor-pointer">
-                      <input
-                        type="checkbox"
-                        name="passionSlugs"
-                        value={passion.slug}
-                        defaultChecked={selectedSet.has(passion.slug)}
-                        className="peer sr-only"
-                      />
-                      <span className="inline-flex min-h-10 items-center rounded-full border border-border/80 bg-surface-1 px-3.5 py-2 text-sm font-medium text-foreground transition-[border-color,background-color,color,box-shadow] peer-checked:border-primary/35 peer-checked:bg-primary/12 peer-checked:text-primary peer-checked:shadow-[0_12px_24px_-20px_oklch(0.73_0.16_294_/_0.72)]">
-                        {passion.name}
-                      </span>
-                    </label>
-                  ))}
-                </div>
+                <PassionSelectionFieldset
+                  passions={passions}
+                  selectedSlugs={Array.from(selectedSet)}
+                />
 
                 <div className="flex flex-col gap-3 pt-1 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-                  <span>Selezione multipla attiva</span>
+                  <span>Potrai aggiornarle in seguito dalle impostazioni.</span>
                   <Button type="submit" className="h-11 w-full rounded-2xl sm:min-w-32 sm:w-auto">
                     Continua
                   </Button>

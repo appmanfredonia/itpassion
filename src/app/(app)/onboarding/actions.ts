@@ -1,7 +1,13 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { ensureUserProfile, getPassionCatalog, saveUserPassions } from "@/lib/auth";
+import {
+  ensureUserProfile,
+  getPassionCatalog,
+  getPassionSelectionValidationError,
+  normalizeSelectedPassionSlugs,
+  saveUserPassions,
+} from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase";
 
 function redirectOnboardingError(message: string): never {
@@ -38,18 +44,15 @@ function toUserSafeErrorMessage(error: unknown): string {
 }
 
 export async function saveOnboardingPassionsAction(formData: FormData): Promise<never> {
-  const selectedSlugs = Array.from(
-    new Set(
-      formData
-        .getAll("passionSlugs")
-        .filter((value): value is string => typeof value === "string")
-        .map((value) => value.trim())
-        .filter(Boolean),
-    ),
+  const selectedSlugs = normalizeSelectedPassionSlugs(
+    formData
+      .getAll("passionSlugs")
+      .filter((value): value is string => typeof value === "string"),
   );
+  const selectionError = getPassionSelectionValidationError(selectedSlugs);
 
-  if (selectedSlugs.length === 0) {
-    redirectOnboardingError("Seleziona almeno una passione per continuare.");
+  if (selectionError) {
+    redirectOnboardingError(selectionError);
   }
 
   const supabase = await createServerSupabaseClient();

@@ -5,9 +5,12 @@ import { redirect } from "next/navigation";
 import {
   ensureUserProfile,
   getPassionCatalog,
+  getPassionSelectionValidationError,
   isValidUsername,
   normalizeUsername,
+  normalizeSelectedPassionSlugs,
   saveUserPassions,
+  syncUserLocalTribes,
 } from "@/lib/auth";
 import { getItalianCityValidationError, resolveItalianLocation } from "@/lib/location";
 import {
@@ -171,6 +174,8 @@ export async function updateProfileDetailsAction(formData: FormData): Promise<ne
         throw updateProfileError;
       }
 
+      await syncUserLocalTribes(supabase, user.id);
+
       const { error: updateMetadataError } = await supabase.auth.updateUser({
         data: {
           username: normalizedUsername,
@@ -228,18 +233,15 @@ export async function updateProfileDetailsAction(formData: FormData): Promise<ne
 }
 
 export async function updateProfilePassionsAction(formData: FormData): Promise<never> {
-  const selectedSlugs = Array.from(
-    new Set(
-      formData
-        .getAll("passionSlugs")
-        .filter((value): value is string => typeof value === "string")
-        .map((value) => value.trim())
-        .filter(Boolean),
-    ),
+  const selectedSlugs = normalizeSelectedPassionSlugs(
+    formData
+      .getAll("passionSlugs")
+      .filter((value): value is string => typeof value === "string"),
   );
+  const selectionError = getPassionSelectionValidationError(selectedSlugs);
 
-  if (selectedSlugs.length === 0) {
-    redirectPassionsError("Seleziona almeno una passione.");
+  if (selectionError) {
+    redirectPassionsError(selectionError);
   }
 
   const { supabase, user, profile } = await getAuthenticatedContext();
@@ -268,7 +270,10 @@ export async function updateProfilePassionsAction(formData: FormData): Promise<n
         if (profile?.username) {
           revalidatePath(`/profile/${profile.username}`);
         }
-        result = { ok: true, message: "Passioni aggiornate." };
+        result = {
+          ok: true,
+          message: "Passioni aggiornate.",
+        };
       }
     }
   } catch (error) {
