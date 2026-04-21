@@ -468,6 +468,57 @@ export type Database = {
           },
         ];
       };
+      tribe_rituals: {
+        Row: {
+          id: string;
+          tribe_id: string;
+          creator_id: string;
+          title: string;
+          description: string | null;
+          city: string | null;
+          scheduled_for: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          tribe_id: string;
+          creator_id: string;
+          title: string;
+          description?: string | null;
+          city?: string | null;
+          scheduled_for: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          tribe_id?: string;
+          creator_id?: string;
+          title?: string;
+          description?: string | null;
+          city?: string | null;
+          scheduled_for?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tribe_rituals_creator_id_fkey";
+            columns: ["creator_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tribe_rituals_tribe_id_fkey";
+            columns: ["tribe_id"];
+            isOneToOne: false;
+            referencedRelation: "local_tribes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       user_passions: {
         Row: {
           user_id: string;

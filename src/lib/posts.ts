@@ -4,6 +4,7 @@ import {
   getHiddenPrivateProfileIds,
   toSupabaseInFilter,
 } from "@/lib/privacy";
+import { normalizeProvinceMatchKey } from "@/lib/location";
 import type { Database } from "@/types/database";
 
 export type FeedTab = "per-te" | "seguiti";
@@ -45,8 +46,42 @@ export type FeedPost = {
   canManage: boolean;
 };
 
+export type FeedRitual = {
+  id: string;
+  tribeId: string;
+  creatorId: string;
+  creatorUsername: string;
+  creatorDisplayName: string;
+  creatorAvatarUrl: string | null;
+  passionSlug: string;
+  passionName: string;
+  province: string;
+  title: string;
+  description: string | null;
+  city: string | null;
+  scheduledFor: string;
+  createdAt: string;
+};
+
+export type FeedSuggestedUser = {
+  userId: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+  bio: string | null;
+  city: string | null;
+  province: string | null;
+  overlapCount: number;
+  commonPassions: {
+    slug: string;
+    name: string;
+  }[];
+};
+
 export type FeedQueryResult = {
   posts: FeedPost[];
+  rituals: FeedRitual[];
+  suggestedUsers: FeedSuggestedUser[];
   warning: string | null;
 };
 
@@ -59,6 +94,17 @@ export type SavedPostsResult = {
 type PostRow = Database["public"]["Tables"]["posts"]["Row"];
 type UserRow = Database["public"]["Tables"]["users"]["Row"];
 type CommentRow = Database["public"]["Tables"]["comments"]["Row"];
+type UserPassionRow = Database["public"]["Tables"]["user_passions"]["Row"];
+type LocalTribeRow = Database["public"]["Tables"]["local_tribes"]["Row"];
+type TribeRitualRow = Database["public"]["Tables"]["tribe_rituals"]["Row"];
+
+type ViewerFeedContext = {
+  selectedPassionSlugs: string[];
+  followedUserIds: string[];
+  viewerProvince: string | null;
+  viewerProvinceKey: string | null;
+  hiddenUserIds: Set<string>;
+};
 
 function normalizeContentType(value: string): "text" | "image" | "video" {
   if (value === "image" || value === "video") {
@@ -111,6 +157,10 @@ function excludeHiddenPostRows(
   return postRows.filter((row) => !hiddenUserIds.has(row.user_id));
 }
 
+function isRelationMissingError(error: { code?: string } | null | undefined): boolean {
+  return error?.code === "42P01";
+}
+
 async function getHiddenUserSetForViewer(
   supabase: SupabaseClient<Database>,
   viewerUserId: string,
@@ -125,6 +175,139 @@ async function getHiddenUserSetForViewer(
     blockVisibility.blockedMeIds,
     hiddenPrivateProfileIds,
   );
+}
+
+async function getViewerFeedContext(
+  supabase: SupabaseClient<Database>,
+  viewerUserId: string,
+): Promise<ViewerFeedContext> {
+  const [hiddenUserIds, passionsResult, followsResult, viewerResult] = await Promise.all([
+    getHiddenUserSetForViewer(supabase, viewerUserId),
+    supabase
+      .from("user_passions")
+      .select("passion_slug")
+      .eq("user_id", viewerUserId),
+    supabase
+      .from("follows")
+      .select("following_id")
+      .eq("follower_id", viewerUserId),
+    supabase
+      .from("users")
+      .select("province")
+      .eq("id", viewerUserId)
+      .maybeSingle(),
+  ]);
+
+  if (passionsResult.error) {
+    throw passionsResult.error;
+  }
+
+  if (followsResult.error) {
+    throw followsResult.error;
+  }
+
+  if (viewerResult.error) {
+    throw viewerResult.error;
+  }
+
+  const selectedPassionSlugs = unique(
+    (passionsResult.data ?? []).map((row) => row.passion_slug).filter(Boolean),
+  );
+  const followedUserIds = unique(
+    (followsResult.data ?? [])
+      .map((row) => row.following_id)
+      .filter((followingId) => followingId && !hiddenUserIds.has(followingId)),
+  );
+  const viewerProvince = viewerResult.data?.province ?? null;
+
+  return {
+    selectedPassionSlugs,
+    followedUserIds,
+    viewerProvince,
+    viewerProvinceKey: normalizeProvinceMatchKey(viewerProvince),
+    hiddenUserIds,
+  };
+}
+
+async function getPassionNameMap(
+  supabase: SupabaseClient<Database>,
+  passionSlugs: string[],
+): Promise<Map<string, string>> {
+  if (passionSlugs.length === 0) {
+    return new Map();
+  }
+
+  const { data, error } = await supabase
+    .from("passions")
+    .select("slug, name")
+    .in("slug", passionSlugs);
+
+  if (error) {
+    throw error;
+  }
+
+  return new Map((data ?? []).map((row) => [row.slug, row.name]));
+}
+
+async function getAffinityRowsByUserId(
+  supabase: SupabaseClient<Database>,
+  viewerUserId: string,
+  selectedPassionSlugs: string[],
+  hiddenUserIds: Set<string>,
+): Promise<Map<string, UserPassionRow[]>> {
+  if (selectedPassionSlugs.length === 0) {
+    return new Map();
+  }
+
+  const { data, error } = await supabase
+    .from("user_passions")
+    .select("user_id, passion_slug, created_at")
+    .neq("user_id", viewerUserId)
+    .in("passion_slug", selectedPassionSlugs);
+
+  if (error) {
+    throw error;
+  }
+
+  const byUserId = new Map<string, UserPassionRow[]>();
+  for (const row of data ?? []) {
+    if (hiddenUserIds.has(row.user_id)) {
+      continue;
+    }
+
+    const currentRows = byUserId.get(row.user_id) ?? [];
+    currentRows.push(row);
+    byUserId.set(row.user_id, currentRows);
+  }
+
+  return byUserId;
+}
+
+function sortUserIdsByAffinity(affinityRowsByUserId: Map<string, UserPassionRow[]>): string[] {
+  return Array.from(affinityRowsByUserId.entries())
+    .sort((firstEntry, secondEntry) => {
+      const overlapDelta = secondEntry[1].length - firstEntry[1].length;
+      if (overlapDelta !== 0) {
+        return overlapDelta;
+      }
+
+      return firstEntry[0].localeCompare(secondEntry[0]);
+    })
+    .map(([userId]) => userId);
+}
+
+function sortPostsByAffinity(posts: FeedPost[], affinityRowsByUserId: Map<string, UserPassionRow[]>): FeedPost[] {
+  return [...posts].sort((firstPost, secondPost) => {
+    const overlapDelta =
+      (affinityRowsByUserId.get(secondPost.userId)?.length ?? 0) -
+      (affinityRowsByUserId.get(firstPost.userId)?.length ?? 0);
+
+    if (overlapDelta !== 0) {
+      return overlapDelta;
+    }
+
+    return sortDescByDate(firstPost.createdAt, secondPost.createdAt);
+  });
 }
 
 async function fetchUsersByIds(
@@ -285,6 +468,168 @@ async function hydratePosts(
   });
 }
 
+async function getFeedRituals(
+  supabase: SupabaseClient<Database>,
+  viewerUserId: string,
+  hiddenUserIds: Set<string>,
+  limit = 6,
+): Promise<{ rituals: FeedRitual[]; warning: string | null }> {
+  const membershipsResult = await supabase
+    .from("local_tribe_memberships")
+    .select("tribe_id")
+    .eq("user_id", viewerUserId);
+
+  if (membershipsResult.error) {
+    if (isRelationMissingError(membershipsResult.error)) {
+      return {
+        rituals: [],
+        warning: "Le migrazioni delle tribu locali non sono ancora attive: i rituali arriveranno appena lo schema sara disponibile.",
+      };
+    }
+
+    throw membershipsResult.error;
+  }
+
+  const tribeIds = unique((membershipsResult.data ?? []).map((row) => row.tribe_id));
+  if (tribeIds.length === 0) {
+    return { rituals: [], warning: null };
+  }
+
+  const ritualsResult = await supabase
+    .from("tribe_rituals")
+    .select("id, tribe_id, creator_id, title, description, city, scheduled_for, created_at, updated_at")
+    .in("tribe_id", tribeIds)
+    .order("scheduled_for", { ascending: true })
+    .limit(limit);
+
+  if (ritualsResult.error) {
+    if (isRelationMissingError(ritualsResult.error)) {
+      return {
+        rituals: [],
+        warning: "I rituali non sono ancora disponibili in questo ambiente: applica la migration dedicata per attivarli nel feed.",
+      };
+    }
+
+    throw ritualsResult.error;
+  }
+
+  const ritualRows: TribeRitualRow[] = (ritualsResult.data ?? []).filter(
+    (row) => !hiddenUserIds.has(row.creator_id),
+  );
+  if (ritualRows.length === 0) {
+    return { rituals: [], warning: null };
+  }
+
+  const [tribesResult, creators] = await Promise.all([
+    supabase
+      .from("local_tribes")
+      .select("id, passion_slug, province, province_key, created_at, updated_at")
+      .in("id", unique(ritualRows.map((row) => row.tribe_id))),
+    fetchUsersByIds(supabase, unique(ritualRows.map((row) => row.creator_id))),
+  ]);
+
+  if (tribesResult.error) {
+    throw tribesResult.error;
+  }
+
+  const tribeRows: LocalTribeRow[] = tribesResult.data ?? [];
+  const tribeById = new Map(tribeRows.map((row) => [row.id, row]));
+  const creatorById = toProfileMap(creators);
+  const ritualPassionNameMap = await getPassionNameMap(
+    supabase,
+    unique(tribeRows.map((row) => row.passion_slug)),
+  );
+
+  const rituals = ritualRows
+    .map((row) => {
+      const tribe = tribeById.get(row.tribe_id);
+      if (!tribe) {
+        return null;
+      }
+
+      const creator = creatorById.get(row.creator_id);
+      return {
+        id: row.id,
+        tribeId: row.tribe_id,
+        creatorId: row.creator_id,
+        creatorUsername: creator?.username ?? fallbackUsername(row.creator_id),
+        creatorDisplayName: creator?.display_name ?? `@${fallbackUsername(row.creator_id)}`,
+        creatorAvatarUrl: creator?.avatar_url ?? null,
+        passionSlug: tribe.passion_slug,
+        passionName: ritualPassionNameMap.get(tribe.passion_slug) ?? tribe.passion_slug,
+        province: tribe.province,
+        title: row.title,
+        description: row.description,
+        city: row.city,
+        scheduledFor: row.scheduled_for,
+        createdAt: row.created_at,
+      } satisfies FeedRitual;
+    })
+    .filter((ritual): ritual is FeedRitual => ritual !== null);
+
+  return { rituals, warning: null };
+}
+
+async function getSuggestedUsers(
+  supabase: SupabaseClient<Database>,
+  viewerUserId: string,
+  viewerProvinceKey: string | null,
+  selectedPassionSlugs: string[],
+  followedUserIds: string[],
+  hiddenUserIds: Set<string>,
+  affinityRowsByUserId: Map<string, UserPassionRow[]>,
+  limit = 6,
+): Promise<FeedSuggestedUser[]> {
+  if (!viewerProvinceKey || selectedPassionSlugs.length === 0 || affinityRowsByUserId.size === 0) {
+    return [];
+  }
+
+  const excludedUserIds = new Set([viewerUserId, ...followedUserIds, ...Array.from(hiddenUserIds)]);
+  const candidateUserIds = sortUserIdsByAffinity(affinityRowsByUserId).filter(
+    (userId) => !excludedUserIds.has(userId),
+  );
+
+  if (candidateUserIds.length === 0) {
+    return [];
+  }
+
+  const [candidateUsers, passionNameMap] = await Promise.all([
+    fetchUsersByIds(supabase, candidateUserIds),
+    getPassionNameMap(supabase, selectedPassionSlugs),
+  ]);
+
+  return candidateUsers
+    .filter((userRow) => normalizeProvinceMatchKey(userRow.province) === viewerProvinceKey)
+    .map((userRow) => {
+      const overlapRows = affinityRowsByUserId.get(userRow.id) ?? [];
+      const commonPassions = overlapRows.map((row) => ({
+        slug: row.passion_slug,
+        name: passionNameMap.get(row.passion_slug) ?? row.passion_slug,
+      }));
+
+      return {
+        userId: userRow.id,
+        username: userRow.username,
+        displayName: userRow.display_name,
+        avatarUrl: userRow.avatar_url,
+        bio: userRow.bio,
+        city: userRow.city,
+        province: userRow.province,
+        overlapCount: commonPassions.length,
+        commonPassions,
+      } satisfies FeedSuggestedUser;
+    })
+    .sort((firstUser, secondUser) => {
+      const overlapDelta = secondUser.overlapCount - firstUser.overlapCount;
+      if (overlapDelta !== 0) {
+        return overlapDelta;
+      }
+
+      return firstUser.displayName.localeCompare(secondUser.displayName, "it");
+    })
+    .slice(0, limit);
+}
+
 function dedupePostsById(posts: FeedPost[]): FeedPost[] {
   const byId = new Map<string, FeedPost>();
   posts.forEach((post) => {
@@ -299,53 +644,109 @@ export async function getFeedPosts(
   user: User,
   tab: FeedTab,
 ): Promise<FeedQueryResult> {
-  const hiddenUserIds = await getHiddenUserSetForViewer(supabase, user.id);
-  const hiddenUserIdsList = Array.from(hiddenUserIds);
-
-  let query = supabase
-    .from("posts")
-    .select("id, user_id, passion_slug, content_type, text_content, created_at, updated_at")
-    .order("created_at", { ascending: false })
-    .limit(30);
-
-  if (hiddenUserIdsList.length > 0) {
-    query = query.not("user_id", "in", toSupabaseInFilter(hiddenUserIdsList));
-  }
+  const viewerContext = await getViewerFeedContext(supabase, user.id);
+  const hiddenUserIdsList = Array.from(viewerContext.hiddenUserIds);
+  let warning: string | null = null;
 
   if (tab === "seguiti") {
-    const { data: followedRows, error: followsError } = await supabase
-      .from("follows")
-      .select("following_id")
-      .eq("follower_id", user.id);
-
-    if (followsError) {
-      throw followsError;
+    if (viewerContext.followedUserIds.length === 0) {
+      return { posts: [], rituals: [], suggestedUsers: [], warning: null };
     }
 
-    const followedUserIds = unique(
-      (followedRows ?? [])
-        .map((row) => row.following_id)
-        .filter((followingId) => !hiddenUserIds.has(followingId)),
+    let query = supabase
+      .from("posts")
+      .select("id, user_id, passion_slug, content_type, text_content, created_at, updated_at")
+      .in("user_id", viewerContext.followedUserIds)
+      .order("created_at", { ascending: false })
+      .limit(30);
+
+    if (hiddenUserIdsList.length > 0) {
+      query = query.not("user_id", "in", toSupabaseInFilter(hiddenUserIdsList));
+    }
+
+    const { data: postRows, error: postsError } = await query;
+    if (postsError) {
+      throw postsError;
+    }
+
+    const posts = await hydratePosts(
+      supabase,
+      user.id,
+      excludeHiddenPostRows(postRows ?? [], viewerContext.hiddenUserIds),
+      viewerContext.hiddenUserIds,
     );
-    if (followedUserIds.length === 0) {
-      return { posts: [], warning: null };
-    }
 
-    query = query.in("user_id", followedUserIds);
+    return { posts, rituals: [], suggestedUsers: [], warning: null };
   }
 
-  const { data: postRows, error: postsError } = await query;
-  if (postsError) {
-    throw postsError;
+  if (viewerContext.selectedPassionSlugs.length === 0) {
+    return {
+      posts: [],
+      rituals: [],
+      suggestedUsers: [],
+      warning: "Aggiungi almeno una passione per ricevere contenuti affini, rituali di tribu e suggerimenti mirati.",
+    };
   }
 
-  const posts = await hydratePosts(
+  const affinityRowsByUserId = await getAffinityRowsByUserId(
     supabase,
     user.id,
-    excludeHiddenPostRows(postRows ?? [], hiddenUserIds),
-    hiddenUserIds,
+    viewerContext.selectedPassionSlugs,
+    viewerContext.hiddenUserIds,
   );
-  return { posts, warning: null };
+  const candidateUserIds = sortUserIdsByAffinity(affinityRowsByUserId);
+
+  let posts: FeedPost[] = [];
+  if (candidateUserIds.length > 0) {
+    let postsQuery = supabase
+      .from("posts")
+      .select("id, user_id, passion_slug, content_type, text_content, created_at, updated_at")
+      .in("user_id", candidateUserIds)
+      .order("created_at", { ascending: false })
+      .limit(60);
+
+    if (hiddenUserIdsList.length > 0) {
+      postsQuery = postsQuery.not("user_id", "in", toSupabaseInFilter(hiddenUserIdsList));
+    }
+
+    const { data: postRows, error: postsError } = await postsQuery;
+    if (postsError) {
+      throw postsError;
+    }
+
+    const hydratedPosts = await hydratePosts(
+      supabase,
+      user.id,
+      excludeHiddenPostRows(postRows ?? [], viewerContext.hiddenUserIds),
+      viewerContext.hiddenUserIds,
+    );
+    posts = sortPostsByAffinity(hydratedPosts, affinityRowsByUserId).slice(0, 30);
+  }
+
+  const [ritualResult, suggestedUsers] = await Promise.all([
+    getFeedRituals(supabase, user.id, viewerContext.hiddenUserIds, 6),
+    getSuggestedUsers(
+      supabase,
+      user.id,
+      viewerContext.viewerProvinceKey,
+      viewerContext.selectedPassionSlugs,
+      viewerContext.followedUserIds,
+      viewerContext.hiddenUserIds,
+      affinityRowsByUserId,
+      6,
+    ),
+  ]);
+
+  if (ritualResult.warning) {
+    warning = ritualResult.warning;
+  }
+
+  return {
+    posts,
+    rituals: ritualResult.rituals,
+    suggestedUsers,
+    warning,
+  };
 }
 
 export async function getPostsByAuthor(

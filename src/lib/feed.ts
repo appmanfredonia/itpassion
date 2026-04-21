@@ -11,6 +11,8 @@ export {
   type FeedComment,
   type FeedPost,
   type FeedQueryResult,
+  type FeedRitual,
+  type FeedSuggestedUser,
   type FeedTab,
   type SavedPostsResult,
 } from "./posts";

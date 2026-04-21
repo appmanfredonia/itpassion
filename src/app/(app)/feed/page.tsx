@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Search } from "lucide-react";
+import { FeedRitualCard } from "@/components/feed/feed-ritual-card";
 import { PostCard } from "@/components/feed/post-card";
+import { FeedSuggestedUserCard } from "@/components/feed/feed-suggested-user-card";
 import { FeedStoryStrip } from "@/components/feed/feed-story-strip";
 import { SectionHeader } from "@/components/section-header";
 import { StateCard } from "@/components/state-card";
@@ -85,7 +87,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
     );
   }
 
-  const { posts, warning } = postsResult;
+  const { posts, rituals, suggestedUsers, warning } = postsResult;
 
   let resolvedPosts: FeedPost[] = posts;
   let requestedPostNotFound = false;
@@ -125,7 +127,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
       <SectionHeader
         badge="Feed"
         title="Feed"
-        description="Per te e Seguiti in una superficie piu mobile-first, con storie visuali e media dominanti."
+        description="Contenuti affini, rituali delle tue tribu e suggerimenti locali, senza rompere il ritmo dei post."
         action={
           <div className="flex items-center gap-2">
             <Link
@@ -199,6 +201,22 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
         </p>
       )}
 
+      {selectedTab === "per-te" ? (
+        <div className="app-page-shell flex flex-wrap items-end justify-between gap-3 rounded-[1.75rem] px-4 py-4 md:px-5">
+          <div>
+            <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+              Contenuti affini
+            </p>
+            <h2 className="mt-1 text-lg font-semibold tracking-tight">
+              Post di persone con passioni in comune
+            </h2>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {resolvedPosts.length === 0 ? "Nessun contenuto affine" : `${resolvedPosts.length} post rilevanti`}
+          </p>
+        </div>
+      ) : null}
+
       {resolvedPosts.length === 0 ? (
         <StateCard
           variant="empty"
@@ -206,7 +224,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
           description={
             selectedTab === "seguiti"
               ? "Segui altri profili per popolare questa sezione."
-              : "Pubblica il primo contenuto dalla pagina Crea."
+              : "Scegli le tue passioni e pubblica i primi contenuti per far crescere il feed."
           }
         />
       ) : (
@@ -221,6 +239,76 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
           ))}
         </div>
       )}
+
+      {selectedTab === "per-te" ? (
+        <>
+          <div className="app-page-shell flex flex-col gap-3 rounded-[1.75rem] px-4 py-4 md:px-5">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+                  Rituali delle tue tribu
+                </p>
+                <h2 className="mt-1 text-lg font-semibold tracking-tight">
+                  Appuntamenti locali delle passioni che condividi
+                </h2>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {rituals.length === 0 ? "Nessun rituale programmato" : `${rituals.length} rituali nel feed`}
+              </p>
+            </div>
+
+            {rituals.length === 0 ? (
+              <StateCard
+                variant="empty"
+                title="Nessun rituale disponibile"
+                description="Quando una delle tue tribu locali pubblichera un rituale, lo vedrai qui nel feed."
+              />
+            ) : (
+              <div className="grid gap-3 lg:grid-cols-2">
+                {rituals.map((ritual) => (
+                  <FeedRitualCard key={ritual.id} ritual={ritual} />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="app-page-shell flex flex-col gap-3 rounded-[1.75rem] px-4 py-4 md:px-5">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+                  Persone affini
+                </p>
+                <h2 className="mt-1 text-lg font-semibold tracking-tight">
+                  Profili con passioni in comune nella tua provincia
+                </h2>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {suggestedUsers.length === 0
+                  ? "Nessun suggerimento disponibile"
+                  : `${suggestedUsers.length} suggerimenti locali`}
+              </p>
+            </div>
+
+            {suggestedUsers.length === 0 ? (
+              <StateCard
+                variant="empty"
+                title="Nessun suggerimento disponibile"
+                description="Torna piu tardi: il feed aggiungera nuovi profili affini quando trovera passioni in comune nella tua provincia."
+              />
+            ) : (
+              <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
+                {suggestedUsers.map((suggestedUser) => (
+                  <FeedSuggestedUserCard
+                    key={suggestedUser.userId}
+                    user={suggestedUser}
+                    returnPath={returnPath}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      ) : null}
     </section>
   );
 }
