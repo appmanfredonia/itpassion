@@ -58,7 +58,7 @@ export function PostCard({
     "border-primary/25 bg-primary/12 text-primary shadow-none hover:bg-primary/16 hover:text-primary";
   const postActionClass = cn(
     buttonVariants({ variant: "outline", size: "xs" }),
-    "h-[18px] min-w-0 justify-center gap-0.5 rounded-full border-border/80 bg-black/12 px-1.5 text-[9px] font-medium text-muted-foreground shadow-none hover:bg-black/18 hover:text-foreground sm:h-5 sm:gap-0.75 sm:px-1.25 sm:text-[9.5px] [&_svg]:size-[9px]",
+    "h-[18px] min-w-0 items-center justify-center gap-0.5 rounded-full border-border/80 bg-black/12 px-1.5 text-[9px] font-medium leading-none text-muted-foreground shadow-none hover:bg-black/18 hover:text-foreground sm:h-5 sm:gap-0.75 sm:px-1.25 sm:text-[9.5px] [&_svg]:size-[9px] [&_svg]:shrink-0",
   );
 
   useEffect(() => {
@@ -122,11 +122,11 @@ export function PostCard({
             <div className="flex max-w-full shrink-0 items-center gap-1.25 self-start pr-1 sm:ml-3 sm:justify-end sm:gap-1.5">
               <Link
                 href={`/explore?passion=${postState.passionSlug}`}
-                className="min-w-0 max-w-[7.5rem] shrink min-[430px]:max-w-[8.5rem] sm:max-w-[8rem] md:max-w-[9rem]"
+                className="inline-flex min-w-0 max-w-[7.5rem] shrink items-center self-center min-[430px]:max-w-[8.5rem] sm:max-w-[8rem] md:max-w-[9rem]"
               >
                 <Badge
                   variant="secondary"
-                  className="h-[18px] max-w-full border-primary/20 bg-primary/10 px-1.5 text-[9px] text-primary sm:h-5 sm:px-2 sm:text-[10.5px]"
+                  className="h-[18px] max-w-full items-center border-primary/20 bg-primary/10 px-1.5 text-[9px] leading-none text-primary sm:h-5 sm:px-2 sm:text-[10.5px]"
                 >
                   {postState.passionName}
                 </Badge>
@@ -143,14 +143,14 @@ export function PostCard({
                     Modifica
                   </button>
 
-                  <form action={deletePostAction} className="shrink-0">
+                  <form action={deletePostAction} className="inline-flex shrink-0 items-center self-center">
                     <input type="hidden" name="postId" value={postState.id} />
                     <input type="hidden" name="returnPath" value={returnPath} />
                     <ConfirmSubmitButton
                       type="submit"
                       variant="destructive"
                       size="xs"
-                      className="h-[18px] shrink-0 justify-center gap-0.5 rounded-full px-1.5 text-[9px] font-medium whitespace-nowrap shadow-none sm:h-5 sm:gap-0.75 sm:px-1.25 sm:text-[9.5px] [&_svg]:size-[9px]"
+                      className="h-[18px] shrink-0 items-center justify-center gap-0.5 rounded-full px-1.5 text-[9px] font-medium leading-none whitespace-nowrap shadow-none sm:h-5 sm:gap-0.75 sm:px-1.25 sm:text-[9.5px] [&_svg]:size-[9px] [&_svg]:shrink-0"
                       confirmMessage="Vuoi davvero eliminare questo post? L'azione non si puo annullare."
                     >
                       <Trash2 />
