@@ -1,7 +1,15 @@
-import { CalendarDays, MapPin, Sparkles } from "lucide-react";
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { CalendarDays, MapPin, Sparkles, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
+import { RitualParticipationButton } from "@/components/rituals/ritual-participation-button";
 import type { FeedRitual } from "@/lib/feed";
+import { formatRitualLocationLabel } from "@/lib/rituals";
+import { cn } from "@/lib/utils";
 
 type FeedRitualCardProps = {
   ritual: FeedRitual;
@@ -38,7 +46,16 @@ function formatScheduledLabel(ritual: FeedRitual): string {
 }
 
 export function FeedRitualCard({ ritual }: FeedRitualCardProps) {
-  const locationLabel = ritual.city ? `${ritual.city}, ${ritual.province}` : ritual.province;
+  const [ritualState, setRitualState] = useState(ritual);
+
+  useEffect(() => {
+    setRitualState(ritual);
+  }, [ritual]);
+
+  const locationLabel = formatRitualLocationLabel(ritualState);
+  const participantsLabel = ritualState.maxParticipants
+    ? `${ritualState.participantCount}/${ritualState.maxParticipants} partecipanti`
+    : `${ritualState.participantCount} partecipanti`;
 
   return (
     <article className="surface-panel flex flex-col gap-3 rounded-[1.5rem] border-border/80 bg-card/92 p-4">
@@ -54,18 +71,18 @@ export function FeedRitualCard({ ritual }: FeedRitualCardProps) {
           {new Intl.DateTimeFormat("it-IT", {
             dateStyle: "short",
             timeStyle: "short",
-          }).format(new Date(ritual.scheduledFor))}
+          }).format(new Date(ritualState.scheduledFor))}
         </span>
       </div>
 
       <div className="space-y-1">
-        <p className="text-lg font-semibold tracking-tight text-foreground">{ritual.title}</p>
-        <p className="text-sm text-muted-foreground">{formatScheduledLabel(ritual)}</p>
+        <p className="text-lg font-semibold tracking-tight text-foreground">{ritualState.title}</p>
+        <p className="text-sm text-muted-foreground">{formatScheduledLabel(ritualState)}</p>
       </div>
 
-      {ritual.description ? (
+      {ritualState.description ? (
         <p className="text-sm leading-relaxed text-foreground/88 [overflow-wrap:anywhere]">
-          {ritual.description}
+          {ritualState.description}
         </p>
       ) : null}
 
@@ -76,21 +93,54 @@ export function FeedRitualCard({ ritual }: FeedRitualCardProps) {
         </span>
         <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/18 bg-primary/8 px-2.5 py-1 text-[11px] text-primary">
           <Sparkles className="size-3.5" />
-          Tribu {ritual.passionName}
+          Tribu {ritualState.passionName}
+        </span>
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-black/14 px-2.5 py-1 text-[11px] text-muted-foreground">
+          <Users className="size-3.5" />
+          {participantsLabel}
         </span>
       </div>
 
       <div className="flex items-center gap-3 rounded-[1.1rem] border border-border/70 bg-black/12 px-3 py-2.5">
         <Avatar className="size-9">
-          {ritual.creatorAvatarUrl ? (
-            <AvatarImage src={ritual.creatorAvatarUrl} alt={`Avatar di @${ritual.creatorUsername}`} />
+          {ritualState.creatorAvatarUrl ? (
+            <AvatarImage src={ritualState.creatorAvatarUrl} alt={`Avatar di @${ritualState.creatorUsername}`} />
           ) : null}
-          <AvatarFallback>{avatarFallback(ritual.creatorUsername)}</AvatarFallback>
+          <AvatarFallback>{avatarFallback(ritualState.creatorUsername)}</AvatarFallback>
         </Avatar>
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold">{ritual.creatorDisplayName}</p>
-          <p className="truncate text-xs text-muted-foreground">@{ritual.creatorUsername}</p>
+          <p className="truncate text-sm font-semibold">{ritualState.creatorDisplayName}</p>
+          <p className="truncate text-xs text-muted-foreground">@{ritualState.creatorUsername}</p>
         </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <RitualParticipationButton
+          ritualId={ritualState.id}
+          joinedByMe={ritualState.joinedByMe}
+          participantCount={ritualState.participantCount}
+          maxParticipants={ritualState.maxParticipants}
+          isCreator={ritualState.isCreator}
+          size="sm"
+          className="w-full rounded-xl"
+          onParticipationChange={(nextState) =>
+            setRitualState((currentRitual) => ({
+              ...currentRitual,
+              joinedByMe: nextState.joinedByMe,
+              participantCount: nextState.participantCount,
+              remainingSpots:
+                currentRitual.maxParticipants === null
+                  ? null
+                  : Math.max(0, currentRitual.maxParticipants - nextState.participantCount),
+            }))
+          }
+        />
+        <Link
+          href={`/rituals/${ritualState.id}`}
+          className={cn(buttonVariants({ variant: "outline", size: "sm" }), "w-full rounded-xl")}
+        >
+          Apri rituale
+        </Link>
       </div>
     </article>
   );

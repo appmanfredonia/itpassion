@@ -330,7 +330,7 @@
   position: absolute;
   inset: 0.1rem;
   border-radius: 999px;
-  background: oklch(0.73 0.165 294 / 0.18);
+  background: var(--ritual-marker-soft, oklch(0.73 0.165 294 / 0.18));
   filter: blur(10px);
 }
 
@@ -341,10 +341,10 @@
   height: 0.9rem;
   border-radius: 999px;
   border: 2px solid oklch(0.98 0.004 260 / 0.92);
-  background: linear-gradient(160deg, oklch(0.76 0.17 294), oklch(0.69 0.15 243));
+  background: var(--ritual-marker-color, linear-gradient(160deg, oklch(0.76 0.17 294), oklch(0.69 0.15 243)));
   box-shadow:
-    0 0 0 4px oklch(0.73 0.165 294 / 0.18),
-    0 12px 26px -14px oklch(0.73 0.165 294 / 0.88);
+    0 0 0 4px var(--ritual-marker-soft, oklch(0.73 0.165 294 / 0.18)),
+    0 12px 26px -14px var(--ritual-marker-color, oklch(0.73 0.165 294 / 0.88));
 }
 
 .itpassion-map-marker-count {
@@ -461,9 +461,9 @@
 
 .itpassion-map-popup-badge-primary,
 .itpassion-map-popup-chip {
-  border-color: oklch(0.73 0.165 294 / 0.18);
-  background: oklch(0.73 0.165 294 / 0.09);
-  color: oklch(0.88 0.045 290);
+  border-color: var(--ritual-badge-border, oklch(0.73 0.165 294 / 0.18));
+  background: var(--ritual-badge-bg, oklch(0.73 0.165 294 / 0.09));
+  color: var(--ritual-badge-text, oklch(0.88 0.045 290));
 }
 
 .itpassion-map-popup-link {

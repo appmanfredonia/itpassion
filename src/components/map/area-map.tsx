@@ -2,17 +2,17 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
-import { MapPin, Sparkles } from "lucide-react";
-import type { MapUserMatch } from "@/lib/map";
-import { formatLocationLabel } from "@/lib/location";
+import { CalendarDays, MapPin, Sparkles } from "lucide-react";
+import type { RitualMapItem } from "@/lib/map";
+import { formatRitualLocationLabel } from "@/lib/rituals";
 
 type AreaMapProps = {
-  results: MapUserMatch[];
+  rituals: RitualMapItem[];
   viewerProvince: string | null;
 };
 
 type MarkerPoint = {
-  result: MapUserMatch;
+  ritual: RitualMapItem;
   latitude: number;
   longitude: number;
 };
@@ -20,133 +20,47 @@ type MarkerPoint = {
 const OPEN_FREE_MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 const DEFAULT_CENTER: [number, number] = [12.5674, 42.1265];
 const DEFAULT_ZOOM = 5.4;
-const SINGLE_RESULT_ZOOM = 9.6;
+const SINGLE_RESULT_ZOOM = 10.25;
 
-function avatarFallback(username: string): string {
-  const normalized = username.trim();
-  if (normalized.length === 0) {
-    return "IT";
-  }
-
-  return normalized.slice(0, 2).toUpperCase();
+function formatSchedule(value: string): string {
+  return new Intl.DateTimeFormat("it-IT", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
 }
 
-function createPopupContent(result: MapUserMatch): HTMLDivElement {
-  const wrapper = document.createElement("div");
-  wrapper.className = "itpassion-map-popup-card";
+function buildMarkerPoints(rituals: RitualMapItem[]): MarkerPoint[] {
+  const groupedByCoordinate = new Map<string, RitualMapItem[]>();
 
-  const header = document.createElement("div");
-  header.className = "itpassion-map-popup-header";
-  wrapper.appendChild(header);
-
-  const avatar = document.createElement("div");
-  avatar.className = "itpassion-map-popup-avatar";
-  header.appendChild(avatar);
-
-  if (result.avatarUrl) {
-    const image = document.createElement("img");
-    image.src = result.avatarUrl;
-    image.alt = `Avatar di @${result.username}`;
-    image.className = "itpassion-map-popup-avatar-image";
-    image.loading = "lazy";
-    image.onerror = () => {
-      avatar.textContent = avatarFallback(result.username);
-      image.remove();
-    };
-    avatar.appendChild(image);
-  } else {
-    avatar.textContent = avatarFallback(result.username);
-  }
-
-  const identity = document.createElement("div");
-  identity.className = "itpassion-map-popup-identity";
-  header.appendChild(identity);
-
-  const displayName = document.createElement("p");
-  displayName.className = "itpassion-map-popup-name";
-  displayName.textContent = result.displayName;
-  identity.appendChild(displayName);
-
-  const username = document.createElement("p");
-  username.className = "itpassion-map-popup-username";
-  username.textContent = `@${result.username}`;
-  identity.appendChild(username);
-
-  const location = document.createElement("p");
-  location.className = "itpassion-map-popup-location";
-  location.textContent = formatLocationLabel(result) ?? "Area non disponibile";
-  wrapper.appendChild(location);
-
-  const meta = document.createElement("div");
-  meta.className = "itpassion-map-popup-meta";
-  wrapper.appendChild(meta);
-
-  const sharedPassions = document.createElement("span");
-  sharedPassions.className = "itpassion-map-popup-badge itpassion-map-popup-badge-primary";
-  sharedPassions.textContent =
-    result.overlapCount === 1 ? "1 passione in comune" : `${result.overlapCount} passioni in comune`;
-  meta.appendChild(sharedPassions);
-
-  const approximateArea = document.createElement("span");
-  approximateArea.className = "itpassion-map-popup-badge";
-  approximateArea.textContent = "Posizione approssimata";
-  meta.appendChild(approximateArea);
-
-  if (result.commonPassions.length > 0) {
-    const chips = document.createElement("div");
-    chips.className = "itpassion-map-popup-chips";
-
-    result.commonPassions.slice(0, 4).forEach((passion) => {
-      const chip = document.createElement("span");
-      chip.className = "itpassion-map-popup-chip";
-      chip.textContent = passion.name;
-      chips.appendChild(chip);
-    });
-
-    wrapper.appendChild(chips);
-  }
-
-  const action = document.createElement("a");
-  action.href = `/profile/${result.username}`;
-  action.className = "itpassion-map-popup-link";
-  action.textContent = "Apri profilo";
-  wrapper.appendChild(action);
-
-  return wrapper;
-}
-
-function buildMarkerPoints(results: MapUserMatch[]): MarkerPoint[] {
-  const groupedByCoordinate = new Map<string, MapUserMatch[]>();
-
-  results
-    .filter((result) => result.latitude !== null && result.longitude !== null)
-    .forEach((result) => {
-      const latitude = result.latitude?.toFixed(6);
-      const longitude = result.longitude?.toFixed(6);
+  rituals
+    .filter((ritual) => ritual.latitude !== null && ritual.longitude !== null)
+    .forEach((ritual) => {
+      const latitude = ritual.latitude?.toFixed(6);
+      const longitude = ritual.longitude?.toFixed(6);
       if (!latitude || !longitude) {
         return;
       }
 
       const key = `${latitude}:${longitude}`;
       const currentGroup = groupedByCoordinate.get(key) ?? [];
-      currentGroup.push(result);
+      currentGroup.push(ritual);
       groupedByCoordinate.set(key, currentGroup);
     });
 
   const markerPoints: MarkerPoint[] = [];
 
   groupedByCoordinate.forEach((group) => {
-    const orderedGroup = [...group].sort((firstUser, secondUser) =>
-      firstUser.displayName.localeCompare(secondUser.displayName, "it"),
+    const orderedGroup = [...group].sort((firstRitual, secondRitual) =>
+      firstRitual.title.localeCompare(secondRitual.title, "it"),
     );
 
-    orderedGroup.forEach((result, index) => {
-      const baseLatitude = result.latitude ?? 0;
-      const baseLongitude = result.longitude ?? 0;
+    orderedGroup.forEach((ritual, index) => {
+      const baseLatitude = ritual.latitude ?? 0;
+      const baseLongitude = ritual.longitude ?? 0;
 
       if (orderedGroup.length === 1) {
         markerPoints.push({
-          result,
+          ritual,
           latitude: baseLatitude,
           longitude: baseLongitude,
         });
@@ -160,7 +74,7 @@ function buildMarkerPoints(results: MapUserMatch[]): MarkerPoint[] {
       const longitudeOffset = Math.cos(angle) * 0.0095 * ring;
 
       markerPoints.push({
-        result,
+        ritual,
         latitude: baseLatitude + latitudeOffset,
         longitude: baseLongitude + longitudeOffset,
       });
@@ -170,14 +84,83 @@ function buildMarkerPoints(results: MapUserMatch[]): MarkerPoint[] {
   return markerPoints;
 }
 
-function createMarkerElement(result: MapUserMatch): HTMLButtonElement {
+function createPopupContent(ritual: RitualMapItem): HTMLDivElement {
+  const wrapper = document.createElement("div");
+  wrapper.className = "itpassion-map-popup-card";
+  wrapper.style.setProperty("--ritual-badge-bg", ritual.color.badgeBackground);
+  wrapper.style.setProperty("--ritual-badge-border", ritual.color.badgeBorder);
+  wrapper.style.setProperty("--ritual-badge-text", ritual.color.badgeText);
+
+  const header = document.createElement("div");
+  header.className = "itpassion-map-popup-header";
+  wrapper.appendChild(header);
+
+  const identity = document.createElement("div");
+  identity.className = "itpassion-map-popup-identity";
+  header.appendChild(identity);
+
+  const title = document.createElement("p");
+  title.className = "itpassion-map-popup-name";
+  title.textContent = ritual.title;
+  identity.appendChild(title);
+
+  const tribe = document.createElement("p");
+  tribe.className = "itpassion-map-popup-username";
+  tribe.textContent = ritual.tribeLabel;
+  identity.appendChild(tribe);
+
+  const location = document.createElement("p");
+  location.className = "itpassion-map-popup-location";
+  location.textContent = formatRitualLocationLabel(ritual);
+  wrapper.appendChild(location);
+
+  const meta = document.createElement("div");
+  meta.className = "itpassion-map-popup-meta";
+  wrapper.appendChild(meta);
+
+  const passionBadge = document.createElement("span");
+  passionBadge.className = "itpassion-map-popup-badge itpassion-map-popup-badge-primary";
+  passionBadge.textContent = ritual.passionName;
+  meta.appendChild(passionBadge);
+
+  const scheduleBadge = document.createElement("span");
+  scheduleBadge.className = "itpassion-map-popup-badge";
+  scheduleBadge.textContent = formatSchedule(ritual.scheduledFor);
+  meta.appendChild(scheduleBadge);
+
+  const participantsBadge = document.createElement("span");
+  participantsBadge.className = "itpassion-map-popup-badge";
+  participantsBadge.textContent = ritual.maxParticipants
+    ? `${ritual.participantCount}/${ritual.maxParticipants} partecipanti`
+    : `${ritual.participantCount} partecipanti`;
+  meta.appendChild(participantsBadge);
+
+  if (ritual.description) {
+    const description = document.createElement("p");
+    description.className = "itpassion-map-popup-location";
+    description.textContent = ritual.description;
+    wrapper.appendChild(description);
+  }
+
+  const action = document.createElement("a");
+  action.href = `/rituals/${ritual.id}`;
+  action.className = "itpassion-map-popup-link";
+  action.textContent = "Apri rituale";
+  wrapper.appendChild(action);
+
+  return wrapper;
+}
+
+function createMarkerElement(ritual: RitualMapItem): HTMLButtonElement {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "itpassion-map-marker";
   button.setAttribute(
     "aria-label",
-    `Apri il popup di ${result.displayName}, ${result.overlapCount} passioni in comune`,
+    `Apri il popup del rituale ${ritual.title}, ${ritual.passionName}`,
   );
+  button.style.setProperty("--ritual-marker-color", ritual.color.marker);
+  button.style.setProperty("--ritual-marker-soft", ritual.color.markerSoft);
 
   const pulse = document.createElement("span");
   pulse.className = "itpassion-map-marker-pulse";
@@ -187,22 +170,22 @@ function createMarkerElement(result: MapUserMatch): HTMLButtonElement {
   core.className = "itpassion-map-marker-core";
   button.appendChild(core);
 
-  const count = document.createElement("span");
-  count.className = "itpassion-map-marker-count";
-  count.textContent = String(result.overlapCount);
-  button.appendChild(count);
+  const glyph = document.createElement("span");
+  glyph.className = "itpassion-map-marker-count";
+  glyph.textContent = ritual.passionName.slice(0, 1).toUpperCase();
+  button.appendChild(glyph);
 
   return button;
 }
 
-export function AreaMap({ results, viewerProvince }: AreaMapProps) {
+export function AreaMap({ rituals, viewerProvince }: AreaMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasMapError, setHasMapError] = useState(false);
 
-  const markerPoints = useMemo(() => buildMarkerPoints(results), [results]);
+  const markerPoints = useMemo(() => buildMarkerPoints(rituals), [rituals]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) {
@@ -229,10 +212,6 @@ export function AreaMap({ results, viewerProvince }: AreaMapProps) {
       }
     }, 10000);
 
-    const resizeTimeout = window.setTimeout(() => {
-      map.resize();
-    }, 220);
-
     const handleLoad = () => {
       window.clearTimeout(loadTimeout);
       setIsLoaded(true);
@@ -249,12 +228,10 @@ export function AreaMap({ results, viewerProvince }: AreaMapProps) {
     resizeObserver.observe(containerRef.current);
 
     map.once("load", handleLoad);
-
     mapRef.current = map;
 
     return () => {
       window.clearTimeout(loadTimeout);
-      window.clearTimeout(resizeTimeout);
       resizeObserver.disconnect();
       markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = [];
@@ -289,10 +266,10 @@ export function AreaMap({ results, viewerProvince }: AreaMapProps) {
         closeButton: false,
         maxWidth: "320px",
         className: "itpassion-map-popup",
-      }).setDOMContent(createPopupContent(markerPoint.result));
+      }).setDOMContent(createPopupContent(markerPoint.ritual));
 
       const marker = new maplibregl.Marker({
-        element: createMarkerElement(markerPoint.result),
+        element: createMarkerElement(markerPoint.ritual),
         anchor: "bottom",
       })
         .setLngLat([markerPoint.longitude, markerPoint.latitude])
@@ -320,7 +297,7 @@ export function AreaMap({ results, viewerProvince }: AreaMapProps) {
         left: 52,
       },
       duration: 900,
-      maxZoom: 9.25,
+      maxZoom: 10.1,
     });
   }, [isLoaded, markerPoints]);
 
@@ -339,9 +316,7 @@ export function AreaMap({ results, viewerProvince }: AreaMapProps) {
         </span>
         <span className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[11px] text-primary backdrop-blur-md">
           <Sparkles className="size-3" />
-          {markerPoints.length === 1
-            ? "1 simile a te"
-            : `${markerPoints.length} simili a te`}
+          {markerPoints.length === 1 ? "1 rituale visibile" : `${markerPoints.length} rituali visibili`}
         </span>
       </div>
 
@@ -350,7 +325,7 @@ export function AreaMap({ results, viewerProvince }: AreaMapProps) {
           <div className="rounded-[1.4rem] border border-border/80 bg-black/34 px-5 py-4 text-center backdrop-blur-md">
             <p className="text-sm font-semibold tracking-tight">Stiamo caricando la mappa reale</p>
             <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-              Tra pochi secondi vedrai i marker delle persone con le tue stesse passioni.
+              Tra pochi secondi vedrai i rituali delle tue tribu locali.
             </p>
           </div>
         </div>
@@ -361,7 +336,7 @@ export function AreaMap({ results, viewerProvince }: AreaMapProps) {
           <div className="max-w-sm rounded-[1.4rem] border border-border/80 bg-black/50 px-5 py-4 text-center backdrop-blur-md">
             <p className="text-sm font-semibold tracking-tight">Mappa momentaneamente non disponibile</p>
             <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-              Non siamo riusciti a inizializzare la mappa reale. Riprova tra pochi secondi.
+              Non siamo riusciti a inizializzare la mappa dei rituali. Riprova tra pochi secondi.
             </p>
           </div>
         </div>
@@ -370,7 +345,16 @@ export function AreaMap({ results, viewerProvince }: AreaMapProps) {
       {isLoaded && !hasMapError && markerPoints.length === 0 ? (
         <div className="absolute inset-x-4 bottom-16 z-[4] sm:bottom-20 sm:left-4 sm:right-auto sm:max-w-sm">
           <div className="rounded-[1.35rem] border border-border/80 bg-black/48 px-4 py-3 text-sm text-muted-foreground backdrop-blur-md">
-            Nessun profilo geolocalizzato da mostrare in questo momento nella tua provincia.
+            Nessun rituale geolocalizzabile da mostrare in questo momento nella tua provincia.
+          </div>
+        </div>
+      ) : null}
+
+      {isLoaded && !hasMapError && markerPoints.length > 0 ? (
+        <div className="pointer-events-none absolute right-3 top-14 z-[3] hidden max-w-[15rem] rounded-[1.1rem] border border-border/80 bg-black/38 px-3 py-2.5 text-[11px] leading-relaxed text-muted-foreground backdrop-blur-md sm:block">
+          <div className="flex items-center gap-1.5 text-white/82">
+            <CalendarDays className="size-3.5" />
+            Solo rituali delle tue tribu attive
           </div>
         </div>
       ) : null}

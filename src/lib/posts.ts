@@ -4,6 +4,7 @@ import {
   getHiddenPrivateProfileIds,
   toSupabaseInFilter,
 } from "@/lib/privacy";
+import { getRitualSummariesForViewer, type RitualSummary } from "@/lib/rituals";
 import { normalizeProvinceMatchKey } from "@/lib/location";
 import type { Database } from "@/types/database";
 
@@ -46,22 +47,7 @@ export type FeedPost = {
   canManage: boolean;
 };
 
-export type FeedRitual = {
-  id: string;
-  tribeId: string;
-  creatorId: string;
-  creatorUsername: string;
-  creatorDisplayName: string;
-  creatorAvatarUrl: string | null;
-  passionSlug: string;
-  passionName: string;
-  province: string;
-  title: string;
-  description: string | null;
-  city: string | null;
-  scheduledFor: string;
-  createdAt: string;
-};
+export type FeedRitual = RitualSummary;
 
 export type FeedSuggestedUser = {
   userId: string;
@@ -95,9 +81,6 @@ type PostRow = Database["public"]["Tables"]["posts"]["Row"];
 type UserRow = Database["public"]["Tables"]["users"]["Row"];
 type CommentRow = Database["public"]["Tables"]["comments"]["Row"];
 type UserPassionRow = Database["public"]["Tables"]["user_passions"]["Row"];
-type LocalTribeRow = Database["public"]["Tables"]["local_tribes"]["Row"];
-type TribeRitualRow = Database["public"]["Tables"]["tribe_rituals"]["Row"];
-
 type ViewerFeedContext = {
   selectedPassionSlugs: string[];
   followedUserIds: string[];
@@ -155,10 +138,6 @@ function excludeHiddenPostRows(
   }
 
   return postRows.filter((row) => !hiddenUserIds.has(row.user_id));
-}
-
-function isRelationMissingError(error: { code?: string } | null | undefined): boolean {
-  return error?.code === "42P01";
 }
 
 async function getHiddenUserSetForViewer(
@@ -471,103 +450,18 @@ async function hydratePosts(
 async function getFeedRituals(
   supabase: SupabaseClient<Database>,
   viewerUserId: string,
-  hiddenUserIds: Set<string>,
   limit = 6,
 ): Promise<{ rituals: FeedRitual[]; warning: string | null }> {
-  const membershipsResult = await supabase
-    .from("local_tribe_memberships")
-    .select("tribe_id")
-    .eq("user_id", viewerUserId);
+  const result = await getRitualSummariesForViewer(supabase, viewerUserId, {
+    upcomingOnly: true,
+    limit,
+    sort: "scheduled-asc",
+  });
 
-  if (membershipsResult.error) {
-    if (isRelationMissingError(membershipsResult.error)) {
-      return {
-        rituals: [],
-        warning: "Le migrazioni delle tribu locali non sono ancora attive: i rituali arriveranno appena lo schema sara disponibile.",
-      };
-    }
-
-    throw membershipsResult.error;
-  }
-
-  const tribeIds = unique((membershipsResult.data ?? []).map((row) => row.tribe_id));
-  if (tribeIds.length === 0) {
-    return { rituals: [], warning: null };
-  }
-
-  const ritualsResult = await supabase
-    .from("tribe_rituals")
-    .select("id, tribe_id, creator_id, title, description, city, scheduled_for, created_at, updated_at")
-    .in("tribe_id", tribeIds)
-    .order("scheduled_for", { ascending: true })
-    .limit(limit);
-
-  if (ritualsResult.error) {
-    if (isRelationMissingError(ritualsResult.error)) {
-      return {
-        rituals: [],
-        warning: "I rituali non sono ancora disponibili in questo ambiente: applica la migration dedicata per attivarli nel feed.",
-      };
-    }
-
-    throw ritualsResult.error;
-  }
-
-  const ritualRows: TribeRitualRow[] = (ritualsResult.data ?? []).filter(
-    (row) => !hiddenUserIds.has(row.creator_id),
-  );
-  if (ritualRows.length === 0) {
-    return { rituals: [], warning: null };
-  }
-
-  const [tribesResult, creators] = await Promise.all([
-    supabase
-      .from("local_tribes")
-      .select("id, passion_slug, province, province_key, created_at, updated_at")
-      .in("id", unique(ritualRows.map((row) => row.tribe_id))),
-    fetchUsersByIds(supabase, unique(ritualRows.map((row) => row.creator_id))),
-  ]);
-
-  if (tribesResult.error) {
-    throw tribesResult.error;
-  }
-
-  const tribeRows: LocalTribeRow[] = tribesResult.data ?? [];
-  const tribeById = new Map(tribeRows.map((row) => [row.id, row]));
-  const creatorById = toProfileMap(creators);
-  const ritualPassionNameMap = await getPassionNameMap(
-    supabase,
-    unique(tribeRows.map((row) => row.passion_slug)),
-  );
-
-  const rituals = ritualRows
-    .map((row) => {
-      const tribe = tribeById.get(row.tribe_id);
-      if (!tribe) {
-        return null;
-      }
-
-      const creator = creatorById.get(row.creator_id);
-      return {
-        id: row.id,
-        tribeId: row.tribe_id,
-        creatorId: row.creator_id,
-        creatorUsername: creator?.username ?? fallbackUsername(row.creator_id),
-        creatorDisplayName: creator?.display_name ?? `@${fallbackUsername(row.creator_id)}`,
-        creatorAvatarUrl: creator?.avatar_url ?? null,
-        passionSlug: tribe.passion_slug,
-        passionName: ritualPassionNameMap.get(tribe.passion_slug) ?? tribe.passion_slug,
-        province: tribe.province,
-        title: row.title,
-        description: row.description,
-        city: row.city,
-        scheduledFor: row.scheduled_for,
-        createdAt: row.created_at,
-      } satisfies FeedRitual;
-    })
-    .filter((ritual): ritual is FeedRitual => ritual !== null);
-
-  return { rituals, warning: null };
+  return {
+    rituals: result.rituals,
+    warning: result.warning,
+  };
 }
 
 async function getSuggestedUsers(
@@ -724,7 +618,7 @@ export async function getFeedPosts(
   }
 
   const [ritualResult, suggestedUsers] = await Promise.all([
-    getFeedRituals(supabase, user.id, viewerContext.hiddenUserIds, 6),
+    getFeedRituals(supabase, user.id, 6),
     getSuggestedUsers(
       supabase,
       user.id,

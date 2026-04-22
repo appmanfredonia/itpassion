@@ -476,6 +476,8 @@ export type Database = {
           title: string;
           description: string | null;
           city: string | null;
+          place: string | null;
+          max_participants: number | null;
           scheduled_for: string;
           created_at: string;
           updated_at: string;
@@ -487,6 +489,8 @@ export type Database = {
           title: string;
           description?: string | null;
           city?: string | null;
+          place?: string | null;
+          max_participants?: number | null;
           scheduled_for: string;
           created_at?: string;
           updated_at?: string;
@@ -498,6 +502,8 @@ export type Database = {
           title?: string;
           description?: string | null;
           city?: string | null;
+          place?: string | null;
+          max_participants?: number | null;
           scheduled_for?: string;
           created_at?: string;
           updated_at?: string;
@@ -515,6 +521,39 @@ export type Database = {
             columns: ["tribe_id"];
             isOneToOne: false;
             referencedRelation: "local_tribes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tribe_ritual_participants: {
+        Row: {
+          ritual_id: string;
+          user_id: string;
+          created_at: string;
+        };
+        Insert: {
+          ritual_id: string;
+          user_id: string;
+          created_at?: string;
+        };
+        Update: {
+          ritual_id?: string;
+          user_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tribe_ritual_participants_ritual_id_fkey";
+            columns: ["ritual_id"];
+            isOneToOne: false;
+            referencedRelation: "tribe_rituals";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tribe_ritual_participants_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
             referencedColumns: ["id"];
           },
         ];

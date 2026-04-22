@@ -256,6 +256,17 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
                 {rituals.length === 0 ? "Nessun rituale programmato" : `${rituals.length} rituali nel feed`}
               </p>
             </div>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs text-muted-foreground">
+                Crea un rituale solo dentro una tribu a cui appartieni e ritrovalo subito qui e in mappa.
+              </p>
+              <Link
+                href="/rituals/create"
+                className={buttonVariants({ size: "sm", variant: "outline" })}
+              >
+                Crea rituale
+              </Link>
+            </div>
 
             {rituals.length === 0 ? (
               <StateCard

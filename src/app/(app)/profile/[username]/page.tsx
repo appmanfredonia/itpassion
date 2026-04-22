@@ -5,6 +5,7 @@ import { toggleFollowAction } from "@/app/(app)/profile/actions";
 import {
   blockUserAction,
 } from "@/app/(app)/settings/actions";
+import { FeedRitualCard } from "@/components/feed/feed-ritual-card";
 import { PostVisualGrid } from "@/components/feed/post-visual-grid";
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { SectionHeader } from "@/components/section-header";
@@ -22,6 +23,7 @@ import {
   isFollowingProfile,
   type ProfilePageData,
 } from "@/lib/profile";
+import { getRitualsByCreator, type RitualSummary } from "@/lib/rituals";
 import { createServerSupabaseClient } from "@/lib/supabase";
 
 type PublicProfilePageProps = {
@@ -76,6 +78,7 @@ export default async function PublicProfilePage({
   let returnPath = `/profile/${username}`;
   let profileData: ProfilePageData | null = null;
   let posts: FeedPost[] = [];
+  let rituals: RitualSummary[] = [];
 
   try {
     await ensureUserProfile(supabase, viewerUser);
@@ -99,13 +102,14 @@ export default async function PublicProfilePage({
       }
 
       if (!isBlockedRelation) {
-        const [resolvedProfileData, resolvedPosts, resolvedFollowStatus, targetPrivacy] = await Promise.all([
+        const [resolvedProfileData, resolvedPosts, resolvedFollowStatus, targetPrivacy, resolvedRituals] = await Promise.all([
           getProfilePageData(supabase, targetProfile),
           getPostsByAuthor(supabase, viewerUser.id, targetProfile.id),
           isOwnProfile
             ? Promise.resolve(false)
             : isFollowingProfile(supabase, viewerUser.id, targetProfile.id),
           getUserPrivacySettings(supabase, targetProfile.id),
+          getRitualsByCreator(supabase, viewerUser.id, targetProfile.id, 3),
         ]);
 
         profileData = resolvedProfileData;
@@ -114,6 +118,7 @@ export default async function PublicProfilePage({
         canViewPrivateProfile =
           isOwnProfile || !isTargetProfilePrivate || isFollowing;
         posts = canViewPrivateProfile ? resolvedPosts : [];
+        rituals = canViewPrivateProfile ? resolvedRituals.rituals : [];
       }
     }
   } catch {
@@ -235,7 +240,28 @@ export default async function PublicProfilePage({
           title="Profilo privato"
           description="Segui questo utente per vedere i suoi contenuti."
         />
-      ) : posts.length === 0 ? (
+      ) : (
+        <>
+          {rituals.length > 0 ? (
+            <div className="app-page-shell flex flex-col gap-3 rounded-[1.75rem] px-4 py-4 md:px-5">
+              <div>
+                <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+                  Rituali creati
+                </p>
+                <h2 className="mt-1 text-lg font-semibold tracking-tight">
+                  Appuntamenti pubblici nelle tribu condivise
+                </h2>
+              </div>
+
+              <div className="grid gap-3 lg:grid-cols-2">
+                {rituals.map((ritual) => (
+                  <FeedRitualCard key={ritual.id} ritual={ritual} />
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {posts.length === 0 ? (
         <StateCard
           variant="empty"
           title="Nessun contenuto pubblicato"
@@ -243,6 +269,8 @@ export default async function PublicProfilePage({
         />
       ) : (
         <PostVisualGrid posts={posts} columns={3} />
+          )}
+        </>
       )}
     </section>
   );

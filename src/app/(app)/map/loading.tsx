@@ -6,8 +6,8 @@ export default function MapLoading() {
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <SectionHeader
         badge="Mappa"
-        title="Persone con le tue passioni nella tua provincia"
-        description="Stiamo preparando la vista locale e i profili compatibili."
+        title="Rituali delle tue tribu"
+        description="Stiamo preparando la mappa locale dei rituali e i filtri per passione."
       />
 
       <div className="stats-grid">
@@ -39,7 +39,7 @@ export default function MapLoading() {
           {Array.from({ length: 3 }).map((_, index) => (
             <div key={index} className="rounded-[1.5rem] border border-border/70 p-3">
               <div className="flex items-start gap-3">
-                <Skeleton className="size-12 rounded-full" />
+                <Skeleton className="size-10 rounded-2xl" />
                 <div className="flex flex-1 flex-col gap-2">
                   <Skeleton className="h-4 w-28" />
                   <Skeleton className="h-3 w-20" />

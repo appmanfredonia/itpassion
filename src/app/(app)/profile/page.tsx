@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { FeedRitualCard } from "@/components/feed/feed-ritual-card";
 import { PostVisualGrid } from "@/components/feed/post-visual-grid";
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { SectionHeader } from "@/components/section-header";
@@ -10,6 +11,7 @@ import {
   ensureUserProfile,
 } from "@/lib/auth";
 import { getPostsByAuthor, type FeedPost } from "@/lib/feed";
+import { getRitualsByCreator, type RitualSummary } from "@/lib/rituals";
 import { getProfilePageData, type ProfilePageData } from "@/lib/profile";
 import { createServerSupabaseClient } from "@/lib/supabase";
 
@@ -33,12 +35,18 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
   let hasError = false;
   let profileData: ProfilePageData | null = null;
   let posts: FeedPost[] = [];
+  let rituals: RitualSummary[] = [];
 
   try {
     const ensuredProfile = await ensureUserProfile(supabase, user);
     const profile = ensuredProfile ?? buildFallbackProfileFromAuthUser(user);
     profileData = await getProfilePageData(supabase, profile);
-    posts = await getPostsByAuthor(supabase, user.id, profile.id);
+    const [resolvedPosts, resolvedRituals] = await Promise.all([
+      getPostsByAuthor(supabase, user.id, profile.id),
+      getRitualsByCreator(supabase, user.id, profile.id, 3),
+    ]);
+    posts = resolvedPosts;
+    rituals = resolvedRituals.rituals;
   } catch {
     hasError = true;
   }
@@ -100,6 +108,30 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
           Crea nuovo post
         </Link>
       </div>
+
+      {rituals.length > 0 ? (
+        <div className="app-page-shell flex flex-col gap-3 rounded-[1.75rem] px-4 py-4 md:px-5">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+                Rituali creati
+              </p>
+              <h2 className="mt-1 text-lg font-semibold tracking-tight">
+                I prossimi appuntamenti delle tue tribu
+              </h2>
+            </div>
+            <Link href="/rituals/create" className={buttonVariants({ size: "sm", variant: "outline" })}>
+              Crea rituale
+            </Link>
+          </div>
+
+          <div className="grid gap-3 lg:grid-cols-2">
+            {rituals.map((ritual) => (
+              <FeedRitualCard key={ritual.id} ritual={ritual} />
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {posts.length === 0 ? (
         <StateCard
