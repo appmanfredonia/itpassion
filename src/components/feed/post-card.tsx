@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { formatItalianMediumDateTime } from "@/lib/date";
 import type { FeedPost } from "@/lib/feed";
 import { cn } from "@/lib/utils";
 
@@ -26,10 +27,7 @@ type PostCardProps = {
 };
 
 function formatCreatedAt(isoDate: string): string {
-  return new Intl.DateTimeFormat("it-IT", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(isoDate));
+  return formatItalianMediumDateTime(isoDate);
 }
 
 function avatarFallback(username: string): string {

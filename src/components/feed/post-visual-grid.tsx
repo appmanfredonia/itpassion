@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Bookmark, Heart, MessageCircle, Play } from "lucide-react";
 import { MediaViewer } from "@/components/media/media-viewer";
 import { Badge } from "@/components/ui/badge";
+import { formatItalianDayMonth } from "@/lib/date";
 import type { FeedPost } from "@/lib/feed";
 import { getFirstRenderablePostMedia } from "@/lib/media";
 import { cn } from "@/lib/utils";
@@ -16,10 +17,7 @@ type PostVisualGridProps = {
 };
 
 function formatDateLabel(value: string): string {
-  return new Intl.DateTimeFormat("it-IT", {
-    day: "2-digit",
-    month: "short",
-  }).format(new Date(value));
+  return formatItalianDayMonth(value);
 }
 
 export function PostVisualGrid({

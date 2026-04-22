@@ -22,6 +22,7 @@ import { PostEditModal } from "@/components/feed/post-edit-modal";
 import { PostComments } from "@/components/feed/post-comments";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { formatItalianMediumDateTime } from "@/lib/date";
 import type { FeedPost } from "@/lib/feed";
 import {
   getMediaTypeLabel,
@@ -40,10 +41,7 @@ type MediaViewerProps = {
 };
 
 function formatCreatedAt(isoDate: string): string {
-  return new Intl.DateTimeFormat("it-IT", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(isoDate));
+  return formatItalianMediumDateTime(isoDate);
 }
 
 function avatarFallback(username: string): string {

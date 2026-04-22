@@ -6,6 +6,7 @@ import { CalendarDays, MapPin, Sparkles, Users } from "lucide-react";
 import { RitualParticipationButton } from "@/components/rituals/ritual-participation-button";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { formatItalianMediumDateTime } from "@/lib/date";
 import type { RitualMapItem } from "@/lib/map";
 import { formatRitualLocationLabel } from "@/lib/rituals";
 import { cn } from "@/lib/utils";
@@ -15,10 +16,7 @@ type MapRitualCardProps = {
 };
 
 function formatSchedule(value: string): string {
-  return new Intl.DateTimeFormat("it-IT", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+  return formatItalianMediumDateTime(value);
 }
 
 export function MapRitualCard({ ritual }: MapRitualCardProps) {

@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { formatLocationLabel, normalizeProvinceMatchKey, resolveItalianLocation } from "@/lib/location";
 import { getBlockVisibilitySets, getHiddenPrivateProfileIds } from "@/lib/privacy";
 import type { Database } from "@/types/database";
@@ -64,6 +64,28 @@ export type RitualDetail = RitualSummary & {
 type UserRow = Database["public"]["Tables"]["users"]["Row"];
 type LocalTribeRow = Database["public"]["Tables"]["local_tribes"]["Row"];
 type TribeRitualParticipantRow = Database["public"]["Tables"]["tribe_ritual_participants"]["Row"];
+type LocalTribeSelection = Pick<
+  LocalTribeRow,
+  "id" | "passion_slug" | "province" | "province_key"
+>;
+type TribeRitualParticipantSelection = Pick<
+  TribeRitualParticipantRow,
+  "ritual_id" | "user_id"
+>;
+type FullRitualRow = {
+  id: string;
+  tribe_id: string;
+  creator_id: string;
+  title: string;
+  description: string | null;
+  city: string | null;
+  place: string | null;
+  max_participants: number | null;
+  scheduled_for: string;
+  created_at: string;
+  updated_at: string;
+};
+type BaseRitualRow = Omit<FullRitualRow, "place" | "max_participants">;
 
 const PASSION_COLOR_PRESETS: Record<string, RitualColorTheme> = {
   musica: {
@@ -153,8 +175,16 @@ function fallbackUsername(userId: string): string {
   return `utente_${userId.replace(/-/g, "").slice(0, 8)}`;
 }
 
-function isRelationMissingError(error: { code?: string } | null | undefined): boolean {
-  return error?.code === "42P01";
+function isRelationMissingError(error: PostgrestError | null | undefined): boolean {
+  return error?.code === "42P01" || error?.code === "PGRST205";
+}
+
+function isMissingColumnError(error: PostgrestError | null | undefined): boolean {
+  return error?.code === "42703" || error?.code === "PGRST204";
+}
+
+function isRecoverableSchemaError(error: PostgrestError | null | undefined): boolean {
+  return isRelationMissingError(error) || isMissingColumnError(error);
 }
 
 function createHiddenUserSet(
@@ -254,18 +284,19 @@ function createTribeLabel(passionName: string, province: string): string {
 async function fetchViewerTribeRows(
   supabase: SupabaseClient<Database>,
   viewerUserId: string,
-): Promise<{ tribeRows: LocalTribeRow[]; warning: string | null }> {
+): Promise<{ tribeRows: LocalTribeSelection[]; warning: string | null }> {
+  const missingTribesWarning =
+    "Le tribu locali non sono ancora attive in questo ambiente. Applica prima la migration delle tribu per attivare i rituali.";
   const membershipsResult = await supabase
     .from("local_tribe_memberships")
     .select("tribe_id")
     .eq("user_id", viewerUserId);
 
   if (membershipsResult.error) {
-    if (isRelationMissingError(membershipsResult.error)) {
+    if (isRecoverableSchemaError(membershipsResult.error)) {
       return {
         tribeRows: [],
-        warning:
-          "Le tribu locali non sono ancora attive in questo ambiente. Applica prima la migration delle tribu per attivare i rituali.",
+        warning: missingTribesWarning,
       };
     }
 
@@ -279,10 +310,17 @@ async function fetchViewerTribeRows(
 
   const tribesResult = await supabase
     .from("local_tribes")
-    .select("id, passion_slug, province, province_key, created_at, updated_at")
+    .select("id, passion_slug, province, province_key")
     .in("id", tribeIds);
 
   if (tribesResult.error) {
+    if (isRecoverableSchemaError(tribesResult.error)) {
+      return {
+        tribeRows: [],
+        warning: missingTribesWarning,
+      };
+    }
+
     throw tribesResult.error;
   }
 
@@ -354,6 +392,20 @@ export async function getRitualSummariesForViewer(
     return { rituals: [], tribes, warning };
   }
 
+  const unavailableRitualsWarning =
+    "I rituali non sono ancora disponibili in questo ambiente. Applica la migration dedicata per attivare la feature.";
+  const partialRitualsWarning =
+    "Alcuni dettagli dei rituali non sono ancora disponibili in questo ambiente. Applica l'ultima migration dei rituali per vedere luogo e capienza massima.";
+  const startOfTodayIso = (() => {
+    if (!options.upcomingOnly) {
+      return null;
+    }
+
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    return startOfToday.toISOString();
+  })();
+
   let ritualQuery = supabase
     .from("tribe_rituals")
     .select(
@@ -369,10 +421,8 @@ export async function getRitualSummariesForViewer(
     ritualQuery = ritualQuery.eq("creator_id", options.creatorId);
   }
 
-  if (options.upcomingOnly) {
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-    ritualQuery = ritualQuery.gte("scheduled_for", startOfToday.toISOString());
+  if (startOfTodayIso) {
+    ritualQuery = ritualQuery.gte("scheduled_for", startOfTodayIso);
   }
 
   if (options.sort === "created-desc") {
@@ -386,39 +436,105 @@ export async function getRitualSummariesForViewer(
   }
 
   const ritualsResult = await ritualQuery;
+  let ritualRows: FullRitualRow[] | null = null;
+  let resolvedWarning = warning;
+
   if (ritualsResult.error) {
     if (isRelationMissingError(ritualsResult.error)) {
       return {
         rituals: [],
         tribes,
-        warning:
-          "I rituali non sono ancora disponibili in questo ambiente. Applica la migration dedicata per attivare la feature.",
+        warning: unavailableRitualsWarning,
       };
     }
 
-    throw ritualsResult.error;
+    if (isMissingColumnError(ritualsResult.error)) {
+      let fallbackRitualQuery = supabase
+        .from("tribe_rituals")
+        .select(
+          "id, tribe_id, creator_id, title, description, city, scheduled_for, created_at, updated_at",
+        )
+        .in("tribe_id", filteredTribeIds);
+
+      if (options.ritualId) {
+        fallbackRitualQuery = fallbackRitualQuery.eq("id", options.ritualId);
+      }
+
+      if (options.creatorId) {
+        fallbackRitualQuery = fallbackRitualQuery.eq("creator_id", options.creatorId);
+      }
+
+      if (startOfTodayIso) {
+        fallbackRitualQuery = fallbackRitualQuery.gte("scheduled_for", startOfTodayIso);
+      }
+
+      if (options.sort === "created-desc") {
+        fallbackRitualQuery = fallbackRitualQuery.order("created_at", { ascending: false });
+      } else {
+        fallbackRitualQuery = fallbackRitualQuery.order("scheduled_for", { ascending: true });
+      }
+
+      if (options.limit) {
+        fallbackRitualQuery = fallbackRitualQuery.limit(options.limit);
+      }
+
+      const fallbackRitualsResult = await fallbackRitualQuery;
+
+      if (fallbackRitualsResult.error) {
+        if (isRecoverableSchemaError(fallbackRitualsResult.error)) {
+          return {
+            rituals: [],
+            tribes,
+            warning: unavailableRitualsWarning,
+          };
+        }
+
+        throw fallbackRitualsResult.error;
+      }
+
+      ritualRows = (fallbackRitualsResult.data ?? []).map((row: BaseRitualRow) => ({
+        id: row.id,
+        tribe_id: row.tribe_id,
+        creator_id: row.creator_id,
+        title: row.title,
+        description: row.description,
+        city: row.city,
+        place: null,
+        max_participants: null,
+        scheduled_for: row.scheduled_for,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+      }));
+      resolvedWarning = warning ?? partialRitualsWarning;
+    } else {
+      throw ritualsResult.error;
+    }
+  } else {
+    ritualRows = (ritualsResult.data ?? []) as FullRitualRow[];
   }
 
-  const ritualRows = (ritualsResult.data ?? []).filter((row) => !hiddenUserIds.has(row.creator_id));
-  if (ritualRows.length === 0) {
-    return { rituals: [], tribes, warning };
+  const visibleRitualRows = (ritualRows ?? []).filter(
+    (row) => !hiddenUserIds.has(row.creator_id),
+  );
+  if (visibleRitualRows.length === 0) {
+    return { rituals: [], tribes, warning: resolvedWarning };
   }
 
   const participantQuery = supabase
     .from("tribe_ritual_participants")
-    .select("ritual_id, user_id, created_at")
-    .in("ritual_id", unique(ritualRows.map((row) => row.id)));
+    .select("ritual_id, user_id")
+    .in("ritual_id", unique(visibleRitualRows.map((row) => row.id)));
 
   const [participantResult, creatorRows] = await Promise.all([
     participantQuery,
-    fetchUsersByIds(supabase, unique(ritualRows.map((row) => row.creator_id))),
+    fetchUsersByIds(supabase, unique(visibleRitualRows.map((row) => row.creator_id))),
   ]);
 
-  let participantRows: TribeRitualParticipantRow[] = [];
+  let participantRows: TribeRitualParticipantSelection[] = [];
   let participantWarning: string | null = null;
 
   if (participantResult.error) {
-    if (isRelationMissingError(participantResult.error)) {
+    if (isRecoverableSchemaError(participantResult.error)) {
       participantWarning =
         "Le partecipazioni ai rituali non sono ancora disponibili in questo ambiente: applica la migration dedicata per attivarle.";
     } else {
@@ -444,7 +560,7 @@ export async function getRitualSummariesForViewer(
     }
   });
 
-  const rituals = ritualRows.map((ritualRow) => {
+  const rituals = visibleRitualRows.map((ritualRow) => {
     const tribe = tribes.find((tribeOption) => tribeOption.id === ritualRow.tribe_id);
     const tribeFallback = tribeRowsById.get(ritualRow.tribe_id);
     const passionSlug = tribe?.passionSlug ?? tribeFallback?.passion_slug ?? "rituale";
@@ -489,7 +605,7 @@ export async function getRitualSummariesForViewer(
   return {
     rituals,
     tribes,
-    warning: participantWarning ?? warning,
+    warning: participantWarning ?? resolvedWarning,
   };
 }
 
@@ -511,11 +627,11 @@ export async function getRitualDetailForViewer(
 
   const participantResult = await supabase
     .from("tribe_ritual_participants")
-    .select("ritual_id, user_id, created_at")
+    .select("ritual_id, user_id")
     .eq("ritual_id", ritualId);
 
   if (participantResult.error) {
-    if (isRelationMissingError(participantResult.error)) {
+    if (isRecoverableSchemaError(participantResult.error)) {
       return {
         ritual: {
           ...baseRitual,

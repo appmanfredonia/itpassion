@@ -102,15 +102,20 @@ export default async function PublicProfilePage({
       }
 
       if (!isBlockedRelation) {
-        const [resolvedProfileData, resolvedPosts, resolvedFollowStatus, targetPrivacy, resolvedRituals] = await Promise.all([
+        const [resolvedProfileData, resolvedPosts, resolvedFollowStatus, targetPrivacy] = await Promise.all([
           getProfilePageData(supabase, viewerUser.id, targetProfile),
           getPostsByAuthor(supabase, viewerUser.id, targetProfile.id),
           isOwnProfile
             ? Promise.resolve(false)
             : isFollowingProfile(supabase, viewerUser.id, targetProfile.id),
           getUserPrivacySettings(supabase, targetProfile.id),
-          getRitualsByCreator(supabase, viewerUser.id, targetProfile.id, 3),
         ]);
+        const resolvedRituals = await getRitualsByCreator(
+          supabase,
+          viewerUser.id,
+          targetProfile.id,
+          3,
+        ).catch(() => null);
 
         profileData = resolvedProfileData;
         isFollowing = resolvedFollowStatus;
@@ -118,7 +123,7 @@ export default async function PublicProfilePage({
         canViewPrivateProfile =
           isOwnProfile || !isTargetProfilePrivate || isFollowing;
         posts = canViewPrivateProfile ? resolvedPosts : [];
-        rituals = canViewPrivateProfile ? resolvedRituals.rituals : [];
+        rituals = canViewPrivateProfile ? resolvedRituals?.rituals ?? [] : [];
       }
     }
   } catch {

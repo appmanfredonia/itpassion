@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { RitualParticipationButton } from "@/components/rituals/ritual-participation-button";
 import type { FeedRitual } from "@/lib/feed";
+import { formatItalianMediumDateTime, formatItalianShortDateTime } from "@/lib/date";
 import { formatRitualLocationLabel } from "@/lib/rituals";
 import { cn } from "@/lib/utils";
 
@@ -25,24 +26,7 @@ function avatarFallback(username: string): string {
 }
 
 function formatScheduledLabel(ritual: FeedRitual): string {
-  const scheduledDate = new Date(ritual.scheduledFor);
-  const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const startOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-  const startOfDayAfterTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2);
-
-  if (scheduledDate >= startOfToday && scheduledDate < startOfTomorrow) {
-    return `Oggi nella Tribu ${ritual.passionName} - ${ritual.province}`;
-  }
-
-  if (scheduledDate >= startOfTomorrow && scheduledDate < startOfDayAfterTomorrow) {
-    return `Domani nella Tribu ${ritual.passionName} - ${ritual.province}`;
-  }
-
-  return `${new Intl.DateTimeFormat("it-IT", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(scheduledDate)} - Tribu ${ritual.passionName}, ${ritual.province}`;
+  return `${formatItalianMediumDateTime(ritual.scheduledFor)} - Tribu ${ritual.passionName}, ${ritual.province}`;
 }
 
 export function FeedRitualCard({ ritual }: FeedRitualCardProps) {
@@ -68,10 +52,7 @@ export function FeedRitualCard({ ritual }: FeedRitualCardProps) {
         </Badge>
         <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
           <CalendarDays className="size-3.5" />
-          {new Intl.DateTimeFormat("it-IT", {
-            dateStyle: "short",
-            timeStyle: "short",
-          }).format(new Date(ritualState.scheduledFor))}
+          {formatItalianShortDateTime(ritualState.scheduledFor)}
         </span>
       </div>
 

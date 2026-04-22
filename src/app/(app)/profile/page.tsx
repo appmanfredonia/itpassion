@@ -46,14 +46,20 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
     const ensuredProfile = await ensureUserProfile(supabase, user);
     const profile = ensuredProfile ?? buildFallbackProfileFromAuthUser(user);
     profileData = await getProfilePageData(supabase, user.id, profile);
-    const [resolvedPosts, resolvedCreatedRituals, resolvedParticipatingRituals] = await Promise.all([
-      getPostsByAuthor(supabase, user.id, profile.id),
+    posts = await getPostsByAuthor(supabase, user.id, profile.id);
+
+    const [resolvedCreatedRituals, resolvedParticipatingRituals] = await Promise.allSettled([
       getRitualsByCreator(supabase, user.id, profile.id, 3),
       getParticipatingRitualsForViewer(supabase, user.id, 3),
     ]);
-    posts = resolvedPosts;
-    createdRituals = resolvedCreatedRituals.rituals;
-    participatingRituals = resolvedParticipatingRituals.rituals;
+
+    if (resolvedCreatedRituals.status === "fulfilled") {
+      createdRituals = resolvedCreatedRituals.value.rituals;
+    }
+
+    if (resolvedParticipatingRituals.status === "fulfilled") {
+      participatingRituals = resolvedParticipatingRituals.value.rituals;
+    }
   } catch {
     hasError = true;
   }

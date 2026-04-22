@@ -81,6 +81,7 @@ type PostRow = Database["public"]["Tables"]["posts"]["Row"];
 type UserRow = Database["public"]["Tables"]["users"]["Row"];
 type CommentRow = Database["public"]["Tables"]["comments"]["Row"];
 type UserPassionRow = Database["public"]["Tables"]["user_passions"]["Row"];
+type AffinityPassionRow = Pick<UserPassionRow, "user_id" | "passion_slug">;
 type ViewerFeedContext = {
   selectedPassionSlugs: string[];
   followedUserIds: string[];
@@ -233,14 +234,14 @@ async function getAffinityRowsByUserId(
   viewerUserId: string,
   selectedPassionSlugs: string[],
   hiddenUserIds: Set<string>,
-): Promise<Map<string, UserPassionRow[]>> {
+): Promise<Map<string, AffinityPassionRow[]>> {
   if (selectedPassionSlugs.length === 0) {
     return new Map();
   }
 
   const { data, error } = await supabase
     .from("user_passions")
-    .select("user_id, passion_slug, created_at")
+    .select("user_id, passion_slug")
     .neq("user_id", viewerUserId)
     .in("passion_slug", selectedPassionSlugs);
 
@@ -248,7 +249,7 @@ async function getAffinityRowsByUserId(
     throw error;
   }
 
-  const byUserId = new Map<string, UserPassionRow[]>();
+  const byUserId = new Map<string, AffinityPassionRow[]>();
   for (const row of data ?? []) {
     if (hiddenUserIds.has(row.user_id)) {
       continue;
@@ -262,7 +263,7 @@ async function getAffinityRowsByUserId(
   return byUserId;
 }
 
-function sortUserIdsByAffinity(affinityRowsByUserId: Map<string, UserPassionRow[]>): string[] {
+function sortUserIdsByAffinity(affinityRowsByUserId: Map<string, AffinityPassionRow[]>): string[] {
   return Array.from(affinityRowsByUserId.entries())
     .sort((firstEntry, secondEntry) => {
       const overlapDelta = secondEntry[1].length - firstEntry[1].length;
@@ -275,7 +276,7 @@ function sortUserIdsByAffinity(affinityRowsByUserId: Map<string, UserPassionRow[
     .map(([userId]) => userId);
 }
 
-function sortPostsByAffinity(posts: FeedPost[], affinityRowsByUserId: Map<string, UserPassionRow[]>): FeedPost[] {
+function sortPostsByAffinity(posts: FeedPost[], affinityRowsByUserId: Map<string, AffinityPassionRow[]>): FeedPost[] {
   return [...posts].sort((firstPost, secondPost) => {
     const overlapDelta =
       (affinityRowsByUserId.get(secondPost.userId)?.length ?? 0) -
@@ -471,7 +472,7 @@ async function getSuggestedUsers(
   selectedPassionSlugs: string[],
   followedUserIds: string[],
   hiddenUserIds: Set<string>,
-  affinityRowsByUserId: Map<string, UserPassionRow[]>,
+  affinityRowsByUserId: Map<string, AffinityPassionRow[]>,
   limit = 6,
 ): Promise<FeedSuggestedUser[]> {
   if (!viewerProvinceKey || selectedPassionSlugs.length === 0 || affinityRowsByUserId.size === 0) {
@@ -617,7 +618,7 @@ export async function getFeedPosts(
     posts = sortPostsByAffinity(hydratedPosts, affinityRowsByUserId).slice(0, 30);
   }
 
-  const [ritualResult, suggestedUsers] = await Promise.all([
+  const [ritualResult, suggestedUsersResult] = await Promise.allSettled([
     getFeedRituals(supabase, user.id, 6),
     getSuggestedUsers(
       supabase,
@@ -631,13 +632,23 @@ export async function getFeedPosts(
     ),
   ]);
 
-  if (ritualResult.warning) {
-    warning = ritualResult.warning;
+  const rituals =
+    ritualResult.status === "fulfilled" ? ritualResult.value.rituals : [];
+  const suggestedUsers =
+    suggestedUsersResult.status === "fulfilled" ? suggestedUsersResult.value : [];
+
+  if (ritualResult.status === "fulfilled") {
+    if (ritualResult.value.warning) {
+      warning = ritualResult.value.warning;
+    }
+  } else {
+    warning =
+      "I rituali delle tue tribu non sono disponibili in questo momento, ma i contenuti affini restano visibili.";
   }
 
   return {
     posts,
-    rituals: ritualResult.rituals,
+    rituals,
     suggestedUsers,
     warning,
   };

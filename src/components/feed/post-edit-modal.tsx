@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { formatItalianMediumDateTime } from "@/lib/date";
 import type { FeedPost } from "@/lib/feed";
 import {
   detectPostContentType,
@@ -43,10 +44,7 @@ function avatarFallback(username: string): string {
 }
 
 function formatCreatedAt(isoDate: string): string {
-  return new Intl.DateTimeFormat("it-IT", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(isoDate));
+  return formatItalianMediumDateTime(isoDate);
 }
 
 function localPreviewLabel(kind: "image" | "video") {

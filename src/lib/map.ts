@@ -104,10 +104,24 @@ export async function getTribalRitualMapData(
     };
   }
 
-  const ritualResult = await getRitualSummariesForViewer(supabase, currentUserId, {
-    upcomingOnly: true,
-    sort: "scheduled-asc",
-  });
+  let ritualResult: Awaited<ReturnType<typeof getRitualSummariesForViewer>>;
+  try {
+    ritualResult = await getRitualSummariesForViewer(supabase, currentUserId, {
+      upcomingOnly: true,
+      sort: "scheduled-asc",
+    });
+  } catch {
+    return {
+      locationStatus,
+      viewerLocationLabel,
+      viewerProvince,
+      passions,
+      rituals: [],
+      tribeCount: 0,
+      warning:
+        "I rituali delle tue tribu non sono disponibili in questo momento. Controlla che le migration rituali siano state applicate.",
+    };
+  }
 
   return {
     locationStatus,

@@ -8,6 +8,7 @@ import { RitualParticipationButton } from "@/components/rituals/ritual-participa
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { formatItalianDateTime } from "@/lib/date";
 import type { RitualDetail, RitualParticipant } from "@/lib/rituals";
 import { formatRitualLocationLabel } from "@/lib/rituals";
 import { cn } from "@/lib/utils";
@@ -18,10 +19,10 @@ type RitualDetailViewProps = {
 };
 
 function formatSchedule(value: string): string {
-  return new Intl.DateTimeFormat("it-IT", {
+  return formatItalianDateTime(value, {
     dateStyle: "full",
     timeStyle: "short",
-  }).format(new Date(value));
+  });
 }
 
 function avatarFallback(username: string): string {

@@ -40,7 +40,17 @@ export default async function RitualCreatePage({ searchParams }: RitualCreatePag
     );
   }
 
-  const { tribes, warning } = await getViewerLocalTribes(supabase, user.id);
+  let tribes = [] as Awaited<ReturnType<typeof getViewerLocalTribes>>["tribes"];
+  let warning: string | null = null;
+
+  try {
+    const ritualContext = await getViewerLocalTribes(supabase, user.id);
+    tribes = ritualContext.tribes;
+    warning = ritualContext.warning;
+  } catch {
+    warning =
+      "Le tue tribu locali non sono ancora disponibili in questo ambiente. Controlla le migration e riprova tra poco.";
+  }
 
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-col gap-6">
