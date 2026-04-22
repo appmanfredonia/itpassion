@@ -127,7 +127,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
       <SectionHeader
         badge="Feed"
         title="Feed"
-        description="Contenuti affini, rituali delle tue tribu e suggerimenti locali, senza rompere il ritmo dei post."
+        description="Nel feed vedrai contenuti di persone con passioni in comune, rituali delle tue tribu e suggerimenti di utenti affini nella tua provincia."
         action={
           <div className="flex items-center gap-2">
             <Link
@@ -223,8 +223,8 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
           title="Nessun contenuto disponibile"
           description={
             selectedTab === "seguiti"
-              ? "Segui altri profili per popolare questa sezione."
-              : "Scegli le tue passioni e pubblica i primi contenuti per far crescere il feed."
+              ? "Segui altri profili per riempire questa sezione con contenuti, rituali e aggiornamenti delle persone che ti interessano."
+              : "Scegli da 1 a 3 passioni. Nel feed vedrai contenuti affini, rituali delle tue tribu locali e suggerimenti di persone della tua provincia."
           }
         />
       ) : (
@@ -249,7 +249,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
                   Rituali delle tue tribu
                 </p>
                 <h2 className="mt-1 text-lg font-semibold tracking-tight">
-                  Appuntamenti locali delle passioni che condividi
+                  Eventi creati dagli utenti dentro le tue tribu locali
                 </h2>
               </div>
               <p className="text-xs text-muted-foreground">
@@ -258,7 +258,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
             </div>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-xs text-muted-foreground">
-                Crea un rituale solo dentro una tribu a cui appartieni e ritrovalo subito qui e in mappa.
+                Un rituale appartiene sempre a una sola tribu: stessa passione, stessa provincia.
               </p>
               <Link
                 href="/rituals/create"
@@ -272,7 +272,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
               <StateCard
                 variant="empty"
                 title="Nessun rituale disponibile"
-                description="Quando una delle tue tribu locali pubblichera un rituale, lo vedrai qui nel feed."
+                description="Quando qualcuno creera un rituale in una delle tue tribu locali, lo vedrai qui nel feed insieme ai contenuti affini."
               />
             ) : (
               <div className="grid gap-3 lg:grid-cols-2">
@@ -290,7 +290,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
                   Persone affini
                 </p>
                 <h2 className="mt-1 text-lg font-semibold tracking-tight">
-                  Profili con passioni in comune nella tua provincia
+                  Persone con passioni in comune nella tua provincia
                 </h2>
               </div>
               <p className="text-xs text-muted-foreground">
@@ -304,7 +304,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
               <StateCard
                 variant="empty"
                 title="Nessun suggerimento disponibile"
-                description="Torna piu tardi: il feed aggiungera nuovi profili affini quando trovera passioni in comune nella tua provincia."
+                description="Torna piu tardi: qui compariranno persone con passioni in comune nella tua provincia che non segui ancora."
               />
             ) : (
               <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">

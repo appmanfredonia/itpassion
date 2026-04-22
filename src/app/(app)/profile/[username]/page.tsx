@@ -160,7 +160,7 @@ export default async function PublicProfilePage({
       <SectionHeader
         badge="Profilo pubblico"
         title={`Profilo di @${profileData.profile.username}`}
-        description="Profilo pubblico piu forte e visivo, con CTA e contenuti immersivi."
+        description="Passioni principali, tribu locali e rituali creati raccontano questo profilo pubblico."
       />
 
       {pageParams.commentError && (
@@ -239,7 +239,7 @@ export default async function PublicProfilePage({
         <StateCard
           variant="empty"
           title="Profilo privato"
-          description="Segui questo utente per vedere i suoi contenuti."
+          description="Segui questo utente per vedere contenuti, rituali creati e aggiornamenti del suo profilo."
         />
       ) : (
         <>
@@ -250,7 +250,7 @@ export default async function PublicProfilePage({
                   Rituali creati
                 </p>
                 <h2 className="mt-1 text-lg font-semibold tracking-tight">
-                  Appuntamenti pubblici nelle tribu condivise
+                  Rituali pubblici creati nelle tribu locali condivise
                 </h2>
               </div>
 
@@ -266,7 +266,7 @@ export default async function PublicProfilePage({
         <StateCard
           variant="empty"
           title="Nessun contenuto pubblicato"
-          description="Questo profilo non ha ancora pubblicato contenuti."
+          description="Questo profilo non ha ancora pubblicato contenuti o rituali visibili."
         />
       ) : (
         <PostVisualGrid posts={posts} columns={3} />

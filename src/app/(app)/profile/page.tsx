@@ -76,7 +76,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
       <SectionHeader
         badge="Profilo"
         title="Il tuo profilo"
-        description="Un profilo leggibile, forte e coerente con i tuoi contenuti."
+        description="Qui trovi passioni principali, tribu locali e rituali che definiscono il tuo profilo in ItPassion."
       />
 
       {params.commentError && (
@@ -125,7 +125,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                 Rituali creati
               </p>
               <h2 className="mt-1 text-lg font-semibold tracking-tight">
-                I prossimi appuntamenti delle tue tribu
+                I rituali che hai creato nelle tue tribu locali
               </h2>
             </div>
             <Link href="/rituals/create" className={buttonVariants({ size: "sm", variant: "outline" })}>
@@ -148,7 +148,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
               Rituali partecipati
             </p>
             <h2 className="mt-1 text-lg font-semibold tracking-tight">
-              Le prossime uscite delle tribu a cui prendi parte
+              I prossimi rituali delle tribu a cui partecipi
             </h2>
           </div>
 
@@ -164,7 +164,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
         <StateCard
           variant="empty"
           title="Nessun contenuto pubblicato"
-          description="Pubblica dal tab Crea per iniziare a popolare il profilo."
+          description="Pubblica dal tab Crea per iniziare a far vedere chi sei, insieme alle tue passioni e alle tue tribu locali."
         />
       ) : (
         <PostVisualGrid posts={posts} columns={3} />

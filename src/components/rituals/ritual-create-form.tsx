@@ -198,13 +198,13 @@ export function RitualCreateForm({ tribes, action }: RitualCreateFormProps) {
       </div>
 
       <div className="rounded-[1.25rem] border border-border/80 bg-surface-1/92 px-3.5 py-3 text-xs leading-relaxed text-muted-foreground">
-        Crea un rituale solo dentro una tribu a cui appartieni. La data viene salvata in base all&apos;orario scelto dal tuo dispositivo, cosi il dettaglio resta coerente tra feed, mappa e pagina rituale.
+        Crea un rituale solo dentro una tribu a cui appartieni. Un rituale appartiene sempre a una sola tribu locale, quindi a una sola passione e a una sola provincia.
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="inline-flex items-center gap-2 text-xs text-muted-foreground">
           <CalendarDays className="size-3.5" />
-          Si aprira una pagina dettaglio con partecipazione e mappa locale.
+          Dopo il salvataggio lo vedrai nel feed, nella mappa e nella pagina dettaglio del rituale.
         </div>
         <Button type="submit" className="h-11 rounded-2xl px-5">
           Crea rituale

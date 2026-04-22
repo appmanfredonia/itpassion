@@ -45,7 +45,7 @@ export default async function MapPage() {
       <SectionHeader
         badge="Mappa"
         title="Rituali delle tue tribu"
-        description="La mappa mostra solo i rituali delle tribu locali a cui appartieni, colorati per passione e filtrabili per tempo o interesse."
+        description="Nella mappa vedrai solo i rituali delle tribu a cui appartieni."
         action={
           <Link href="/rituals/create" className={buttonVariants({ size: "sm" })}>
             Crea rituale

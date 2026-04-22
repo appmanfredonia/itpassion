@@ -131,7 +131,7 @@ export function ProfileHeader({
             <div className="flex min-w-0 flex-wrap gap-2.5 pt-0.5">
               {localTribes.length === 0 ? (
                 <Badge variant="outline" className="min-h-9 rounded-full px-3.5 py-1.5">
-                  Si aggiornano quando scegli passioni e citta
+                  Si attivano scegliendo da 1 a 3 passioni e la tua citta
                 </Badge>
               ) : (
                 localTribes.map((tribe) => (

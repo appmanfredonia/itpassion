@@ -149,7 +149,7 @@ export function RitualDetailView({ ritual, viewerParticipant }: RitualDetailView
             </p>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Nessuna descrizione aggiunta. Il rituale usa solo titolo, luogo e orario per restare leggero.
+              Nessuna descrizione aggiunta. Per ora il rituale si racconta con titolo, luogo, data e tribu di riferimento.
             </p>
           )}
         </article>
@@ -202,7 +202,7 @@ export function RitualDetailView({ ritual, viewerParticipant }: RitualDetailView
 
           {ritualState.participants.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              Nessuna partecipazione confermata per ora.
+              Nessuna partecipazione confermata per ora. Quando qualcuno della tribu aderira, lo vedrai qui.
             </p>
           ) : (
             <div className="flex flex-col gap-2">

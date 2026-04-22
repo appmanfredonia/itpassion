@@ -193,7 +193,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
       <SectionHeader
         badge="Impostazioni"
         title="Impostazioni account"
-        description="Aggiorna profilo, passioni, privacy e gestione blocchi."
+        description="Scegli da 1 a 3 passioni. Cambiare passioni o provincia aggiornera automaticamente le tue tribu locali."
       />
 
       <div className="stats-grid">
@@ -242,7 +242,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
             <CardHeader>
               <CardTitle>Profilo</CardTitle>
               <CardDescription>
-                Aggiorna nome utente, bio e area in cui vuoi farti trovare.
+                Aggiorna nome utente, bio e citta. Provincia e regione vengono ricavate automaticamente.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -295,8 +295,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
                 </div>
 
                 <p className="text-xs leading-relaxed text-muted-foreground">
-                  La mappa mostra solo un&apos;area approssimata. Provincia e regione vengono
-                  ricavate automaticamente a partire dalla citta.
+                  Provincia e regione vengono ricavate automaticamente a partire dalla citta. Se cambi provincia, cambieranno automaticamente anche le tue tribu locali.
                 </p>
 
                 <Button type="submit" size="sm" className="w-fit">
@@ -394,7 +393,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
                     selectedPassions.length === 0
                       ? "Scegli da 1 a 3 passioni per entrare automaticamente nelle tribu locali della tua provincia."
                       : profile.province
-                        ? "Le tribu locali verranno riallineate automaticamente non appena aggiorni passioni o provincia."
+                        ? "Le tribu locali verranno riallineate automaticamente quando aggiorni passioni o provincia."
                         : "Aggiungi la tua citta per derivare automaticamente la provincia e attivare le tue tribu locali."
                   }
                 />

@@ -83,6 +83,10 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
                 Scegli da 1 a 3 passioni. Entrerai automaticamente nelle tribu locali della tua
                 provincia.
               </p>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Nel feed vedrai contenuti di persone con passioni in comune, rituali delle tue
+                tribu e suggerimenti di utenti affini nella tua provincia.
+              </p>
             </div>
 
             {params.error ? (
@@ -111,7 +115,7 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
                 />
 
                 <div className="flex flex-col gap-3 pt-1 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-                  <span>Potrai aggiornarle in seguito dalle impostazioni.</span>
+                  <span>Potrai aggiornare passioni e tribu locali in seguito dalle impostazioni.</span>
                   <Button type="submit" className="h-11 w-full rounded-2xl sm:min-w-32 sm:w-auto">
                     Continua
                   </Button>

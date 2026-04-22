@@ -65,7 +65,7 @@ export function RitualMapView({ data }: RitualMapViewProps) {
       <StateCard
         variant="empty"
         title="Aggiungi prima le tue passioni"
-        description="Scegli da 1 a 3 passioni per vedere i rituali delle tue tribu locali nella mappa."
+        description="Scegli da 1 a 3 passioni. Nella mappa vedrai solo i rituali delle tribu a cui appartieni."
       />
     );
   }
@@ -75,7 +75,7 @@ export function RitualMapView({ data }: RitualMapViewProps) {
       <StateCard
         variant="empty"
         title="Aggiungi la tua citta"
-        description="Inserisci un comune italiano nelle impostazioni per entrare nelle tribu locali della tua provincia e vedere i rituali in mappa."
+        description="Inserisci un comune italiano nelle impostazioni. Entrerai automaticamente nelle tribu locali della tua provincia e vedrai qui solo i loro rituali."
       />
     );
   }
@@ -85,7 +85,7 @@ export function RitualMapView({ data }: RitualMapViewProps) {
       <StateCard
         variant="empty"
         title="Citta da verificare"
-        description="La tua citta non e stata riconosciuta correttamente. Controlla il nome del comune nelle impostazioni per attivare la mappa dei rituali."
+        description="La tua citta non e stata riconosciuta correttamente. Controlla il nome del comune nelle impostazioni per attivare la mappa dei rituali delle tue tribu."
       />
     );
   }
@@ -128,8 +128,8 @@ export function RitualMapView({ data }: RitualMapViewProps) {
               Rituali delle tue tribu
             </p>
             <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-              Vedi solo i rituali delle tribu locali che corrispondono alle tue passioni nella
-              provincia di{" "}
+              Nella mappa vedrai solo i rituali delle tribu locali che corrispondono alle tue
+              passioni nella provincia di{" "}
               <span className="font-semibold text-foreground">{data.viewerProvince ?? "riferimento"}</span>.
             </p>
           </div>
@@ -212,7 +212,7 @@ export function RitualMapView({ data }: RitualMapViewProps) {
               <div>
                 <p className="text-sm font-semibold tracking-tight">Rituali in mappa</p>
                 <p className="text-xs text-muted-foreground">
-                  Marker colorati per passione, solo per le tribu locali a cui appartieni.
+                  Marker colorati per passione, senza utenti o posizioni approssimative dei profili.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -236,7 +236,7 @@ export function RitualMapView({ data }: RitualMapViewProps) {
               <div>
                 <p className="text-sm font-semibold tracking-tight">Rituali trovati</p>
                 <p className="text-xs text-muted-foreground">
-                  Appuntamenti delle tue tribu locali filtrati per tempo e passione.
+                  Rituali creati dagli utenti dentro le tue tribu locali, filtrati per tempo e passione.
                 </p>
               </div>
               <span className="rounded-full border border-border/80 bg-black/14 px-2.5 py-1 text-[11px] text-muted-foreground">

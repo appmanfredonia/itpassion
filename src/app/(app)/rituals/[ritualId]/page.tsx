@@ -60,7 +60,7 @@ export default async function RitualDetailPage({ params }: RitualDetailPageProps
       <SectionHeader
         badge="Rituale"
         title={ritual.title}
-        description="Un rituale appartiene sempre a una sola tribu locale: stessa passione, stessa provincia, partecipazione immediata."
+        description="Un rituale e un evento creato dagli utenti dentro una sola tribu locale: stessa passione, stessa provincia."
         action={
           <div className="flex items-center gap-2">
             <Link href="/map" className={buttonVariants({ size: "sm", variant: "outline" })}>

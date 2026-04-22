@@ -47,7 +47,7 @@ export default async function RitualCreatePage({ searchParams }: RitualCreatePag
       <SectionHeader
         badge="Rituali"
         title="Crea rituale"
-        description="Organizza un incontro dentro una delle tue tribu locali. Scegli la tribu, fissa luogo e orario, poi pubblica."
+        description="Un rituale e un evento creato dagli utenti dentro una delle proprie tribu locali."
         action={
           <div className="flex items-center gap-2">
             <Link href="/map" className={buttonVariants({ size: "sm", variant: "outline" })}>
@@ -73,7 +73,7 @@ export default async function RitualCreatePage({ searchParams }: RitualCreatePag
         <StateCard
           variant="empty"
           title="Nessuna tribu disponibile"
-          description="Completa profilo e passioni per entrare automaticamente nelle tribu locali della tua provincia e iniziare a creare rituali."
+          description="Scegli da 1 a 3 passioni e completa la tua citta. Entrerai automaticamente nelle tribu locali della tua provincia e potrai creare rituali."
         />
       ) : (
         <RitualCreateForm tribes={tribes} action={createRitualAction} />
