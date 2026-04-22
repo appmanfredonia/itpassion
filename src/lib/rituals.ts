@@ -583,6 +583,24 @@ export async function getRitualsByCreator(
   return { rituals: result.rituals, warning: result.warning };
 }
 
+export async function getParticipatingRitualsForViewer(
+  supabase: SupabaseClient<Database>,
+  viewerUserId: string,
+  limit = 6,
+): Promise<{ rituals: RitualSummary[]; warning: string | null }> {
+  const result = await getRitualSummariesForViewer(supabase, viewerUserId, {
+    upcomingOnly: true,
+    sort: "scheduled-asc",
+  });
+
+  return {
+    rituals: result.rituals
+      .filter((ritual) => ritual.joinedByMe && !ritual.isCreator)
+      .slice(0, limit),
+    warning: result.warning,
+  };
+}
+
 export function formatRitualLocationLabel(ritual: Pick<RitualSummary, "city" | "province" | "place">): string {
   const baseLocation = formatLocationLabel({
     city: ritual.city,

@@ -4,13 +4,18 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { AppProfile } from "@/lib/auth";
 import { formatLocationLabel } from "@/lib/location";
-import type { ProfileCounter, ProfilePassion } from "@/lib/profile";
+import type {
+  ProfileCounter,
+  ProfileLocalTribe,
+  ProfilePassion,
+} from "@/lib/profile";
 import type { ReactNode } from "react";
 
 type ProfileHeaderProps = {
   profile: AppProfile;
   counters: ProfileCounter;
   passions: ProfilePassion[];
+  localTribes: ProfileLocalTribe[];
   actionSlot?: ReactNode;
 };
 
@@ -27,6 +32,7 @@ export function ProfileHeader({
   profile,
   counters,
   passions,
+  localTribes,
   actionSlot,
 }: ProfileHeaderProps) {
   const locationLabel = formatLocationLabel(profile);
@@ -94,22 +100,59 @@ export function ProfileHeader({
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2.5 pt-0.5">
-          {passions.length === 0 ? (
-            <Badge variant="outline" className="min-h-9 rounded-full px-3.5 py-1.5">
-              Nessuna passione selezionata
-            </Badge>
-          ) : (
-            passions.map((passion) => (
-              <Badge
-                key={passion.slug}
-                variant="secondary"
-                className="min-h-9 rounded-full border-primary/20 bg-primary/10 px-3.5 py-1.5 text-primary"
-              >
-                {passion.name}
-              </Badge>
-            ))
-          )}
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="flex min-w-0 flex-col gap-2.5">
+            <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+              Passioni principali
+            </p>
+            <div className="flex min-w-0 flex-wrap gap-2.5 pt-0.5">
+              {passions.length === 0 ? (
+                <Badge variant="outline" className="min-h-9 rounded-full px-3.5 py-1.5">
+                  Nessuna passione selezionata
+                </Badge>
+              ) : (
+                passions.map((passion) => (
+                  <Badge
+                    key={passion.slug}
+                    variant="secondary"
+                    className="min-h-9 rounded-full border-primary/20 bg-primary/10 px-3.5 py-1.5 text-primary"
+                  >
+                    {passion.name}
+                  </Badge>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="flex min-w-0 flex-col gap-2.5">
+            <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+              Tribu locali
+            </p>
+            <div className="flex min-w-0 flex-wrap gap-2.5 pt-0.5">
+              {localTribes.length === 0 ? (
+                <Badge variant="outline" className="min-h-9 rounded-full px-3.5 py-1.5">
+                  Si aggiornano quando scegli passioni e citta
+                </Badge>
+              ) : (
+                localTribes.map((tribe) => (
+                  <span
+                    key={tribe.id}
+                    className="inline-flex min-h-9 max-w-full items-center rounded-full border px-3.5 py-1.5 text-sm font-medium"
+                    style={{
+                      color: tribe.color.badgeText,
+                      backgroundColor: tribe.color.badgeBackground,
+                      borderColor: tribe.color.badgeBorder,
+                    }}
+                    title={tribe.label}
+                  >
+                    <span className="truncate">
+                      {tribe.passionName} - {tribe.province}
+                    </span>
+                  </span>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>

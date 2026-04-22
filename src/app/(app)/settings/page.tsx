@@ -28,6 +28,12 @@ import {
   getUserSelectedPassionSlugs,
 } from "@/lib/auth";
 import {
+  getProfileLocalTribes,
+  getProfilePassions,
+  type ProfileLocalTribe,
+  type ProfilePassion,
+} from "@/lib/profile";
+import {
   ensurePrivacySettings,
   getBlockedUsersList,
   type UserPrivacySettings,
@@ -72,6 +78,8 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
   let profile = buildFallbackProfileFromAuthUser(user);
   let passions: Awaited<ReturnType<typeof getPassionCatalog>>["passions"] = [];
   let selectedPassionSlugs: string[] = [];
+  let selectedPassions: ProfilePassion[] = [];
+  let localTribes: ProfileLocalTribe[] = [];
   let passionsLoadError: string | null = null;
 
   try {
@@ -83,7 +91,32 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
     try {
       ({ passions } = await getPassionCatalog(supabase));
       selectedPassionSlugs = await getUserSelectedPassionSlugs(supabase, user);
+      const selectedPassionSet = new Set(selectedPassionSlugs);
+      selectedPassions = passions
+        .filter((passion) => selectedPassionSet.has(passion.slug))
+        .map((passion) => ({
+          slug: passion.slug,
+          name: passion.name,
+        }));
+      localTribes = await getProfileLocalTribes(
+        supabase,
+        user.id,
+        profile,
+        selectedPassions,
+      );
     } catch {
+      try {
+        selectedPassions = await getProfilePassions(supabase, user.id);
+        localTribes = await getProfileLocalTribes(
+          supabase,
+          user.id,
+          profile,
+          selectedPassions,
+        );
+      } catch {
+        localTribes = [];
+      }
+
       passionsLoadError = "Impossibile caricare le passioni dal database.";
     }
   } catch {
@@ -302,8 +335,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
                     variant="tile"
                   />
                   <p className="text-xs leading-relaxed text-muted-foreground">
-                    Quando cambi passioni o provincia, le tue tribu locali si aggiornano in
-                    automatico.
+                    Cambiare passioni o provincia aggiornera automaticamente le tue tribu locali.
                   </p>
                   <Button type="submit" size="sm" variant="secondary" className="w-fit">
                     Aggiorna passioni
@@ -315,6 +347,61 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
         </div>
 
         <div className="flex flex-col gap-4">
+          <Card className="bg-card/80">
+            <CardHeader>
+              <CardTitle>Tribu locali</CardTitle>
+              <CardDescription>
+                Cambiare passioni o provincia aggiornera automaticamente le tue tribu locali.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              <div className="surface-soft flex items-center justify-between gap-3 p-3">
+                <div className="flex flex-col">
+                  <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+                    Tribu attive
+                  </p>
+                  <p className="mt-1 text-lg font-semibold tracking-tight">{localTribes.length}</p>
+                </div>
+                <p className="max-w-[14rem] text-right text-xs leading-relaxed text-muted-foreground">
+                  Entrerai automaticamente nelle tribu locali della tua provincia.
+                </p>
+              </div>
+
+              {localTribes.length > 0 ? (
+                <div className="flex flex-wrap gap-2.5">
+                  {localTribes.map((tribe) => (
+                    <span
+                      key={tribe.id}
+                      className="inline-flex min-h-9 max-w-full items-center rounded-full border px-3.5 py-1.5 text-sm font-medium"
+                      style={{
+                        color: tribe.color.badgeText,
+                        backgroundColor: tribe.color.badgeBackground,
+                        borderColor: tribe.color.badgeBorder,
+                      }}
+                      title={tribe.label}
+                    >
+                      <span className="truncate">
+                        {tribe.passionName} - {tribe.province}
+                      </span>
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <StateCard
+                  variant="empty"
+                  title="Nessuna tribu locale attiva"
+                  description={
+                    selectedPassions.length === 0
+                      ? "Scegli da 1 a 3 passioni per entrare automaticamente nelle tribu locali della tua provincia."
+                      : profile.province
+                        ? "Le tribu locali verranno riallineate automaticamente non appena aggiorni passioni o provincia."
+                        : "Aggiungi la tua citta per derivare automaticamente la provincia e attivare le tue tribu locali."
+                  }
+                />
+              )}
+            </CardContent>
+          </Card>
+
           <Card className="bg-card/80">
             <CardHeader>
               <CardTitle>Privacy base</CardTitle>

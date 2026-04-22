@@ -103,7 +103,7 @@ export default async function PublicProfilePage({
 
       if (!isBlockedRelation) {
         const [resolvedProfileData, resolvedPosts, resolvedFollowStatus, targetPrivacy, resolvedRituals] = await Promise.all([
-          getProfilePageData(supabase, targetProfile),
+          getProfilePageData(supabase, viewerUser.id, targetProfile),
           getPostsByAuthor(supabase, viewerUser.id, targetProfile.id),
           isOwnProfile
             ? Promise.resolve(false)
@@ -187,6 +187,7 @@ export default async function PublicProfilePage({
         profile={profileData.profile}
         counters={profileData.counters}
         passions={profileData.passions}
+        localTribes={profileData.localTribes}
         actionSlot={
           isOwnProfile ? (
             <Link href="/profile" className={buttonVariants({ size: "sm", variant: "outline" })}>

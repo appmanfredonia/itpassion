@@ -1,5 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AppProfile } from "@/lib/auth";
+import { normalizeProvinceMatchKey } from "@/lib/location";
+import {
+  getRitualColorTheme,
+  getViewerLocalTribes,
+  type ViewerLocalTribe,
+} from "@/lib/rituals";
 import type { Database } from "@/types/database";
 
 export type ProfileCounter = {
@@ -12,6 +18,8 @@ export type ProfilePassion = {
   slug: string;
   name: string;
 };
+
+export type ProfileLocalTribe = ViewerLocalTribe;
 
 function countValue(count: number | null): number {
   return count ?? 0;
@@ -81,6 +89,56 @@ export async function getProfilePassions(
   }));
 }
 
+function buildTribeLabel(passionName: string, province: string): string {
+  return `Tribu ${passionName} - ${province}`;
+}
+
+export function deriveLocalTribesFromProfile(
+  profile: Pick<AppProfile, "province">,
+  passions: ProfilePassion[],
+): ProfileLocalTribe[] {
+  const province = profile.province?.trim() ?? "";
+  const provinceKey = normalizeProvinceMatchKey(province);
+
+  if (!province || !provinceKey || passions.length === 0) {
+    return [];
+  }
+
+  return passions
+    .map((passion) => ({
+      id: `derived:${provinceKey}:${passion.slug}`,
+      passionSlug: passion.slug,
+      passionName: passion.name,
+      province,
+      provinceKey,
+      label: buildTribeLabel(passion.name, province),
+      color: getRitualColorTheme(passion.slug),
+    }))
+    .sort((firstTribe, secondTribe) =>
+      firstTribe.label.localeCompare(secondTribe.label, "it"),
+    );
+}
+
+export async function getProfileLocalTribes(
+  supabase: SupabaseClient<Database>,
+  viewerUserId: string,
+  profile: AppProfile,
+  passions: ProfilePassion[],
+): Promise<ProfileLocalTribe[]> {
+  const derivedTribes = deriveLocalTribesFromProfile(profile, passions);
+
+  if (profile.id !== viewerUserId) {
+    return derivedTribes;
+  }
+
+  try {
+    const { tribes } = await getViewerLocalTribes(supabase, viewerUserId);
+    return tribes.length > 0 ? tribes : derivedTribes;
+  } catch {
+    return derivedTribes;
+  }
+}
+
 export async function isFollowingProfile(
   supabase: SupabaseClient<Database>,
   followerUserId: string,
@@ -104,10 +162,12 @@ export type ProfilePageData = {
   profile: AppProfile;
   counters: ProfileCounter;
   passions: ProfilePassion[];
+  localTribes: ProfileLocalTribe[];
 };
 
 export async function getProfilePageData(
   supabase: SupabaseClient<Database>,
+  viewerUserId: string,
   profile: AppProfile,
 ): Promise<ProfilePageData> {
   const [counters, passions] = await Promise.all([
@@ -115,5 +175,12 @@ export async function getProfilePageData(
     getProfilePassions(supabase, profile.id),
   ]);
 
-  return { profile, counters, passions };
+  const localTribes = await getProfileLocalTribes(
+    supabase,
+    viewerUserId,
+    profile,
+    passions,
+  );
+
+  return { profile, counters, passions, localTribes };
 }

@@ -11,7 +11,11 @@ import {
   ensureUserProfile,
 } from "@/lib/auth";
 import { getPostsByAuthor, type FeedPost } from "@/lib/feed";
-import { getRitualsByCreator, type RitualSummary } from "@/lib/rituals";
+import {
+  getParticipatingRitualsForViewer,
+  getRitualsByCreator,
+  type RitualSummary,
+} from "@/lib/rituals";
 import { getProfilePageData, type ProfilePageData } from "@/lib/profile";
 import { createServerSupabaseClient } from "@/lib/supabase";
 
@@ -35,18 +39,21 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
   let hasError = false;
   let profileData: ProfilePageData | null = null;
   let posts: FeedPost[] = [];
-  let rituals: RitualSummary[] = [];
+  let createdRituals: RitualSummary[] = [];
+  let participatingRituals: RitualSummary[] = [];
 
   try {
     const ensuredProfile = await ensureUserProfile(supabase, user);
     const profile = ensuredProfile ?? buildFallbackProfileFromAuthUser(user);
-    profileData = await getProfilePageData(supabase, profile);
-    const [resolvedPosts, resolvedRituals] = await Promise.all([
+    profileData = await getProfilePageData(supabase, user.id, profile);
+    const [resolvedPosts, resolvedCreatedRituals, resolvedParticipatingRituals] = await Promise.all([
       getPostsByAuthor(supabase, user.id, profile.id),
       getRitualsByCreator(supabase, user.id, profile.id, 3),
+      getParticipatingRitualsForViewer(supabase, user.id, 3),
     ]);
     posts = resolvedPosts;
-    rituals = resolvedRituals.rituals;
+    createdRituals = resolvedCreatedRituals.rituals;
+    participatingRituals = resolvedParticipatingRituals.rituals;
   } catch {
     hasError = true;
   }
@@ -82,6 +89,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
         profile={profileData.profile}
         counters={profileData.counters}
         passions={profileData.passions}
+        localTribes={profileData.localTribes}
         actionSlot={
           <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
             <Link href="/settings" className={buttonVariants({ size: "sm", variant: "secondary" })}>
@@ -109,7 +117,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
         </Link>
       </div>
 
-      {rituals.length > 0 ? (
+      {createdRituals.length > 0 ? (
         <div className="app-page-shell flex flex-col gap-3 rounded-[1.75rem] px-4 py-4 md:px-5">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
@@ -126,7 +134,26 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
           </div>
 
           <div className="grid gap-3 lg:grid-cols-2">
-            {rituals.map((ritual) => (
+            {createdRituals.map((ritual) => (
+              <FeedRitualCard key={ritual.id} ritual={ritual} />
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {participatingRituals.length > 0 ? (
+        <div className="app-page-shell flex flex-col gap-3 rounded-[1.75rem] px-4 py-4 md:px-5">
+          <div>
+            <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+              Rituali partecipati
+            </p>
+            <h2 className="mt-1 text-lg font-semibold tracking-tight">
+              Le prossime uscite delle tribu a cui prendi parte
+            </h2>
+          </div>
+
+          <div className="grid gap-3 lg:grid-cols-2">
+            {participatingRituals.map((ritual) => (
               <FeedRitualCard key={ritual.id} ritual={ritual} />
             ))}
           </div>
